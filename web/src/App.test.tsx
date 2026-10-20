@@ -22,13 +22,22 @@ describe('IRQGuard workspace states', () => {
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Start with a C source file' })).toBeInTheDocument()
     expect(screen.queryByText(/candidate lock-order cycles/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/browser cannot browse your WSL files/i)).toBeInTheDocument()
+    expect(screen.getByText(/absolute linux path inside an allowed workspace/i)).toBeInTheDocument()
   })
 
   it('shows a useful error when the local API cannot be reached', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')))
     render(<App />)
     expect(await screen.findByRole('alert')).toHaveTextContent(/local irqguard api is unavailable/i)
+  })
+
+  it('allows the desktop sidebar to collapse without hiding its navigation controls', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
+      ? jsonResponse(health) : jsonResponse({ analyses: [] })))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Collapse sidebar' }))
+    expect(document.querySelector('.sidebar')).toHaveClass('sidebar-narrow')
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument()
   })
 
   it('validates an outside workspace path before sending a request', async () => {
@@ -85,7 +94,7 @@ describe('IRQGuard workspace states', () => {
       return jsonResponse({ analysis: metadata })
     }))
     render(<App />)
-    await waitFor(() => expect(screen.getByText(/Latest report/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Lock Dependency Graph' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Lock graph' }))
     expect(await screen.findByRole('heading', { name: 'No lock dependency edges' })).toBeInTheDocument()
   })
@@ -126,11 +135,50 @@ describe('IRQGuard workspace states', () => {
     }))
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Recent analyses' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Lock Dependency Graph' })).toBeInTheDocument()
+    expect(screen.getByRole('tablist', { name: 'Finding detail sections' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Execution Context' }))
+    expect(screen.getByText(/process → hardirq/)).toBeInTheDocument()
     fireEvent.click(await screen.findByRole('button', { name: 'Lock graph' }))
     const findingSelect = await screen.findByLabelText('Highlight a finding')
     expect(findingSelect.querySelectorAll('option')).toHaveLength(3)
     expect(document.querySelector('.graph-count')?.textContent).toBe('2 / 2 edges')
     fireEvent.change(findingSelect, { target: { value: '1' } })
     expect(await screen.findByText(/Highlighting candidate lock order cycle/)).toBeInTheDocument()
+  })
+
+  it('searches report locks from the top bar and opens a filtered graph', async () => {
+    const metadata = { id: 'run-search', created_at: new Date().toISOString(), status: 'completed', source_path: '/tmp/irqguard-test/demo.c', analyzer_schema_version: 3, summary: { functions: 2 } }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: [metadata] })
+      if (url.endsWith('/report')) return jsonResponse(fixture)
+      return jsonResponse({ analysis: metadata })
+    }))
+    render(<App />)
+    const search = await screen.findByRole('textbox', { name: 'Search current analysis' })
+    fireEvent.change(search, { target: { value: 'lock-A' } })
+    fireEvent.click(await screen.findByRole('option', { name: /Lock lock-A/ }))
+    expect(await screen.findByRole('textbox', { name: 'Search lock graph' })).toHaveValue('lock-A')
+    expect(document.querySelector('.graph-count')?.textContent).toBe('2 / 2 edges')
+  })
+
+  it('opens a selected finding in the graph with that cycle highlighted', async () => {
+    const metadata = { id: 'run-finding', created_at: new Date().toISOString(), status: 'completed', source_path: '/tmp/irqguard-test/demo.c', analyzer_schema_version: 3, summary: { functions: 2, graph_edges: 2, candidate_cycles: 1 } }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: [metadata] })
+      if (url.endsWith('/report')) return jsonResponse(fixture)
+      return jsonResponse({ analysis: metadata })
+    }))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Findings' }))
+    fireEvent.click(screen.getAllByRole('row')[1])
+    expect(await screen.findByRole('dialog', { name: /interrupt-aware candidate/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Highlight in lock graph' }))
+    expect(await screen.findByRole('heading', { name: 'Lock dependency graph' })).toBeInTheDocument()
+    expect(await screen.findByText(/Highlighting interrupt aware candidate/)).toBeInTheDocument()
   })
 })

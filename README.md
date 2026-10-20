@@ -13,6 +13,8 @@ sudo apt install build-essential cmake ninja-build clang-20 llvm-20-dev libclang
   python3-pip nodejs npm
 ```
 
+The graphical backend requires Node.js 20 or newer. Check with `node --version`; Ubuntu's packaged Node.js may be older on some releases. The Node.js backend itself uses only built-in modules.
+
 Build with LLVM 20's CMake package files:
 
 ```sh
@@ -57,36 +59,34 @@ Each `--clang-arg` value is the next single argument. Compilation-database mode 
 
 ## Graphical interface (Phase 8)
 
-The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads the real schema-v3 analyzer JSON through a small FastAPI adapter; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
+The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads the real schema-v3 analyzer JSON through a small Node.js API; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
 
 ```mermaid
 flowchart LR
-  Browser[React + TypeScript UI] -->|HTTP /api/v1| API[Local FastAPI adapter]
+  Browser[React + TypeScript UI] -->|HTTP /api/v1| API[Local Node.js API]
   API -->|fixed argv, timeout and output limits| Analyzer[C++ Clang analyzer]
   Analyzer -->|schema-v3 JSON| API
-  API -->|metadata + report JSON| DB[(SQLite + local report files)]
+  API -->|metadata + report JSON| DB[(Local JSON history + report files)]
   API -->|bounded source ranges| Browser
 ```
 
-Create a backend environment and build the analyzer from the repository root:
+Build the analyzer from the repository root. The GUI backend uses Node.js 20 or newer and has no npm package dependencies:
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r backend/requirements.txt
 cmake -S . -B build -G Ninja \
   -DLLVM_DIR=/usr/lib/llvm-20/lib/cmake/llvm \
   -DClang_DIR=/usr/lib/llvm-20/lib/cmake/clang
 cmake --build build
 ```
 
-Start the local API in one WSL terminal. Only paths inside `IRQGUARD_WORKSPACES` are accepted. The default root is the repository. To permit additional workspaces, provide an explicit colon-separated list of existing directories.
+Start the local API in one WSL terminal from the repository root. Only paths inside `IRQGUARD_WORKSPACES` are accepted. The default root is the repository. Set the variable explicitly to the repository path so the UI displays the intended allowed root; add other existing directories with a colon-separated list.
 
 ```sh
 export IRQGUARD_ANALYZER="$PWD/build/deadlock-analyzer"
 export IRQGUARD_WORKSPACES="$PWD"
 export IRQGUARD_DATA_DIR="$HOME/.local/share/irqguard"
-python -m uvicorn irqguard_api.main:app --app-dir backend --host 127.0.0.1 --port 8000
+cd backend
+npm start
 ```
 
 In another WSL terminal, start the frontend:
@@ -101,9 +101,9 @@ Open [http://localhost:5173](http://localhost:5173) in a Windows browser. WSL 2 
 
 In **New analysis**, enter an absolute Linux path such as `/home/user/project/example.c`. The browser does not browse the WSL filesystem. Optional inputs are a build directory or `compile_commands.json`, and an API-registry JSON file. Raw shell commands and arbitrary Clang arguments are not accepted through the GUI. The backend resolves symlinks before enforcing workspace roots, limits source files to 20 MiB, limits analyzer output streams to 16 MiB each, allows at most two concurrent runs, and terminates a run after 180 seconds by default.
 
-The API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, and bounded source snippets. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
+The Node.js API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, and bounded source snippets. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Run metadata is stored in `history.json`; reports are separate JSON files. Existing history from the retired Python API remains in `history.sqlite3` and is not automatically imported. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
 
-The Overview uses backend-measured duration and counts from the report; missing values are shown as unavailable. History comparisons warn when report schema versions differ. Runtime Evidence and Benchmarks are visibly unavailable because this repository does not implement runtime instrumentation or a benchmark suite. The small JSON under `web/src/test-data` is test-only and is never loaded by the running interface.
+The Overview is a graph-centered observability workspace with a finding inspector, real report metrics, lock API counts derived from lock-bearing analyzer events, recent runs, measured run-time history, and diagnostics/uncertainties from the saved report. Search filters files, functions, lock identities, and findings within the selected report. Graph nodes, edges and context/API filters use identities present in the analyzer JSON. Lock API types, analyzer build version, target kernel version, severity, and live process logs are not universally emitted and are shown as unavailable where unknown. History comparisons warn when report schema versions differ. Runtime Evidence, Benchmarks, and Linux kernel tree browsing are visibly unavailable because those capabilities are not implemented. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
 
 Run the GUI checks after installing backend and frontend dependencies:
 

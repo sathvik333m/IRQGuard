@@ -4,7 +4,7 @@ import {
   Braces, Check, ChevronDown, Clock3,
   Database, FileCode2, FileJson2, FileSearch, GitBranch, Gauge,
   HardDrive, History, Info, LayoutDashboard, LoaderCircle, LockKeyhole,
-  Menu, Moon, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck,
+  Menu, Moon, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck,
   Sun, TerminalSquare, X,
 } from 'lucide-react'
 import { getAnalyses, getAnalysis, getHealth, getReport, getSource, startAnalysis } from './api'
@@ -13,7 +13,7 @@ import type { AnalysisMetadata, AnalysisReport, Finding, Health, SourceSnippet }
 const LockGraph = lazy(() => import('./components/LockGraph').then((module) => ({ default: module.LockGraph })))
 const DurationChart = lazy(() => import('./components/DurationChart'))
 
-type Page = 'overview' | 'new' | 'history' | 'graph' | 'findings' | 'source' | 'settings' | 'runtime' | 'benchmarks'
+type Page = 'overview' | 'new' | 'history' | 'graph' | 'findings' | 'source' | 'kernel' | 'settings' | 'runtime' | 'benchmarks'
 
 const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard; section: string; unavailable?: boolean }> = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, section: 'Workspace' },
@@ -22,6 +22,7 @@ const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard; s
   { id: 'graph', label: 'Lock graph', icon: GitBranch, section: 'Analysis' },
   { id: 'findings', label: 'Findings', icon: ShieldAlert, section: 'Analysis' },
   { id: 'source', label: 'Source explorer', icon: FileSearch, section: 'Analysis' },
+  { id: 'kernel', label: 'Linux kernel source', icon: HardDrive, section: 'Analysis', unavailable: true },
   { id: 'runtime', label: 'Runtime evidence', icon: Activity, section: 'Evidence', unavailable: true },
   { id: 'benchmarks', label: 'Benchmarks', icon: Gauge, section: 'Evidence', unavailable: true },
   { id: 'settings', label: 'Settings', icon: Settings2, section: 'System' },
@@ -92,6 +93,8 @@ export default function App() {
   const [backendError, setBackendError] = useState('')
   const [loadingReport, setLoadingReport] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('irqguard-sidebar-collapsed') === 'true')
+  const [graphSearchTerm, setGraphSearchTerm] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('irqguard-theme') === 'light' ? 'light' : 'dark')
   const [selectedFindingIndex, setSelectedFindingIndex] = useState<number | null>(null)
   const [source, setSource] = useState<SourceSnippet | null>(null)
@@ -114,8 +117,11 @@ export default function App() {
     if (metadata.status !== 'completed') return
     setLoadingReport(true)
     try {
-      setReport(await getReport(metadata.id))
+      const parsed = await getReport(metadata.id)
+      setReport(parsed)
+      setSelectedFindingIndex(parsed.interrupt_cycles.length ? 0 : null)
       setBackendError('')
+      setPage('overview')
     } catch (error) {
       setBackendError(error instanceof Error ? error.message : 'Could not load the saved analyzer report.')
     } finally {
@@ -141,11 +147,11 @@ export default function App() {
     document.documentElement.dataset.theme = theme
     localStorage.setItem('irqguard-theme', theme)
   }, [theme])
+  useEffect(() => { localStorage.setItem('irqguard-sidebar-collapsed', String(sidebarCollapsed)) }, [sidebarCollapsed])
 
   const navigate = (next: Page) => {
     setPage(next)
     setMobileNavOpen(false)
-    setSelectedFindingIndex(null)
   }
 
   const openSource = useCallback(async (file: string, line: number) => {
@@ -171,7 +177,7 @@ export default function App() {
       setReport(parsed)
       setBackendError('')
       setPage('overview')
-      setSelectedFindingIndex(null)
+      setSelectedFindingIndex(parsed.interrupt_cycles.length ? 0 : null)
     } catch (error) {
       setBackendError(error instanceof Error ? error.message : 'The analyzer report could not be loaded.')
     } finally {
@@ -184,14 +190,18 @@ export default function App() {
   const pageTitle = navItems.find((item) => item.id === page)?.label ?? 'Overview'
 
   return (
-    <div className="app-shell">
-      <Sidebar page={page} navigate={navigate} mobileOpen={mobileNavOpen} closeMobile={() => setMobileNavOpen(false)} />
+    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <Sidebar page={page} navigate={navigate} mobileOpen={mobileNavOpen} closeMobile={() => setMobileNavOpen(false)} collapsed={sidebarCollapsed} health={health} active={active} />
       <div className="main-column">
         <header className="topbar">
           <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}><Menu size={18} /></button>
+          <button className="icon-button sidebar-toggle" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed((value) => !value)}>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>
           <div className="breadcrumb"><span>IRQGuard</span><span className="breadcrumb-sep">/</span><strong>{pageTitle}</strong></div>
+          <WorkspaceSearch report={report} onOpenSource={openSource} onOpenFinding={(index) => { setSelectedFindingIndex(index); navigate('findings') }} onOpenGraph={(term) => { setGraphSearchTerm(term); navigate('graph') }} />
+          <div className="topbar-project" title={active?.source_path ?? health?.workspace_roots[0] ?? 'Workspace unavailable'}><span className="project-label">{active ? 'ANALYZED SOURCE' : 'WORKSPACE'}</span><code>{active?.source_path ?? health?.workspace_roots[0] ?? 'Not available'}</code></div>
+          <div className="topbar-target"><span>Target kernel</span><strong>{health?.environment?.target_kernel ?? 'Not reported'}</strong></div>
           <div className="topbar-right">
-            <div className="top-status"><span className={`status-dot ${health?.analyzer_available ? 'online' : ''}`} />{health?.analyzer_available ? 'Analyzer ready' : 'API status'}</div>
+            <div className="top-status"><span className={`status-dot ${health?.analyzer_available ? 'online' : ''}`} />{active?.status ? active.status : health?.analyzer_available ? 'Analyzer ready' : 'API unavailable'}</div>
             <button className="icon-button theme-toggle" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
@@ -208,6 +218,9 @@ export default function App() {
             onOpenFinding={(index) => { setSelectedFindingIndex(index); navigate('findings') }}
             onOpenGraph={() => navigate('graph')}
             onSelectAnalysis={openAnalysis}
+            selectedFinding={selectedFinding}
+            onSelectFinding={(finding) => setSelectedFindingIndex(finding ? findings.indexOf(finding) : null)}
+            onOpenSource={openSource}
           />}
           {page === 'new' && <NewAnalysisPage health={health} status={activeStatus} onStart={async (values) => {
             setBackendError('')
@@ -242,17 +255,20 @@ export default function App() {
           {page === 'findings' && <FindingsPage
             report={report} analysis={active} selectedIndex={selectedFindingIndex}
             onSelect={setSelectedFindingIndex} onOpenSource={openSource}
+            onOpenGraph={(index) => { setSelectedFindingIndex(index); navigate('graph') }}
           />}
           {page === 'graph' && <GraphPage
             report={report} active={active} selectedFinding={selectedFinding}
             onSelectFinding={(finding) => setSelectedFindingIndex(finding ? findings.indexOf(finding) : null)}
             onOpenSource={openSource}
+            searchTerm={graphSearchTerm}
           />}
           {page === 'source' && <SourcePage
             report={report} snippet={source} loading={sourceLoading} error={sourceError}
             onOpenSource={openSource}
           />}
           {page === 'settings' && <SettingsPage health={health} onRefresh={() => void bootstrap()} />}
+          {page === 'kernel' && <UnavailablePage title="Linux kernel source" icon={<HardDrive size={19} />} detail="Kernel source browsing is not part of this analyzer yet. Analyze a selected C translation unit from an explicitly allowed workspace; this interface does not imply full kernel tree or build-system coverage." />}
           {page === 'runtime' && <UnavailablePage title="Runtime evidence" icon={<Activity size={19} />} detail="No runtime instrumentation records are available in this project yet. This page will display recorded lock events only after a runtime evidence phase produces them." />}
           {page === 'benchmarks' && <UnavailablePage title="Benchmarks" icon={<Gauge size={19} />} detail="No benchmark record format or benchmark runner is implemented yet. Analysis time shown in history is measured by the local backend for each real run; it is not a benchmark result." />}
         </main>
@@ -262,13 +278,13 @@ export default function App() {
   )
 }
 
-function Sidebar({ page, navigate, mobileOpen, closeMobile }: { page: Page; navigate: (page: Page) => void; mobileOpen: boolean; closeMobile: () => void }) {
+function Sidebar({ page, navigate, mobileOpen, closeMobile, collapsed, health, active }: { page: Page; navigate: (page: Page) => void; mobileOpen: boolean; closeMobile: () => void; collapsed: boolean; health: Health | null; active: AnalysisMetadata | null }) {
   const sections = ['Workspace', 'Analysis', 'Evidence', 'System']
   return <>
     {mobileOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={closeMobile} />}
-    <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
-      <div className="brand-lockup"><div className="brand-mark"><LockKeyhole size={17} strokeWidth={2.2} /></div><div><div className="brand-name">IRQGuard</div><div className="brand-caption">STATIC ANALYSIS</div></div></div>
-      <div className="workspace-switcher"><div className="workspace-avatar">OS</div><div className="workspace-copy"><strong>Local workspace</strong><span>WSL · Ubuntu</span></div><ChevronDown size={15} /></div>
+    <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-narrow' : ''}`}>
+      <div className="brand-lockup"><div className="brand-mark"><LockKeyhole size={17} strokeWidth={2.2} /></div><div className="brand-text"><div className="brand-name">IRQGuard</div><div className="brand-caption">KERNEL ANALYSIS</div></div></div>
+      <div className="workspace-switcher" title={health?.workspace_roots[0] ?? 'Workspace unavailable'}><div className="workspace-avatar"><HardDrive size={14} /></div><div className="workspace-copy"><strong>Workspace</strong><span>{health?.workspace_roots[0] ? basename(health.workspace_roots[0]) : 'Not available'}</span></div><ChevronDown size={15} /></div>
       <nav aria-label="Primary navigation" className="sidebar-nav">
         {sections.map((section) => <div className="nav-section" key={section}>
           <div className="nav-section-title">{section}</div>
@@ -276,13 +292,14 @@ function Sidebar({ page, navigate, mobileOpen, closeMobile }: { page: Page; navi
             const Icon = item.icon
             return <button key={item.id} className={`nav-item ${page === item.id ? 'active' : ''} ${item.unavailable ? 'nav-planned' : ''}`}
               onClick={() => navigate(item.id)}
-              title={item.unavailable ? `${item.label} is not implemented yet` : undefined}>
+              title={collapsed || item.unavailable ? `${item.label}${item.unavailable ? ' is not implemented yet' : ''}` : undefined}>
               <Icon size={16} strokeWidth={1.8} /><span>{item.label}</span>{item.unavailable && <span className="nav-soon">Unavailable</span>}
             </button>
           })}
         </div>)}
       </nav>
-      <div className="sidebar-bottom"><div className="local-only"><span className="local-dot" /><span>Local-only API</span><span className="local-tag">127.0.0.1</span></div><div className="sidebar-version">Analyzer report schema 3</div></div>
+      <div className="sidebar-environment"><div className="eyebrow">SYSTEM INFORMATION</div><div><span>Operating system</span><strong title={health?.environment?.operating_system ?? undefined}>{health?.environment?.operating_system ?? 'Not available'}</strong></div><div><span>WSL</span><strong>{health?.environment?.wsl === true ? 'Detected' : health?.environment?.wsl === false ? 'Not detected' : 'Not available'}</strong></div><div><span>Analyzer</span><strong className={health?.analyzer_available ? 'value-good' : 'value-bad'}>{health?.analyzer_available ? 'Ready' : 'Unavailable'}</strong></div><div><span>Version</span><strong>{health?.environment?.analyzer_version ?? 'Not reported'}</strong></div><div><span>Run</span><strong>{active?.status ?? 'Idle'}</strong></div></div>
+      <div className="sidebar-bottom"><div className="local-only"><span className="local-dot" /><span>Loopback API</span><span className="local-tag">v{health?.api_version ?? '—'}</span></div><div className="sidebar-version">Report schema {health?.analyzer_report_schema ?? '—'}</div></div>
     </aside>
   </>
 }
@@ -291,98 +308,138 @@ function PageHeading({ eyebrow, title, subtitle, action }: { eyebrow: string; ti
   return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{subtitle}</p></div>{action && <div className="heading-action">{action}</div>}</div>
 }
 
-function OverviewPage({ active, report, history, health, loading, onNew, onOpenHistory, onOpenFinding, onOpenGraph, onSelectAnalysis }: {
+function WorkspaceSearch({ report, onOpenSource, onOpenFinding, onOpenGraph }: { report: AnalysisReport | null; onOpenSource: (file: string, line: number) => void; onOpenFinding: (index: number) => void; onOpenGraph: (term: string) => void }) {
+  const [query, setQuery] = useState('')
+  const matches = useMemo(() => {
+    if (!report || !query.trim()) return []
+    const normalized = query.toLowerCase()
+    const results: Array<{ kind: string; label: string; detail: string; action: () => void }> = []
+    const files = new Map<string, number>()
+    if (report.source) files.set(report.source, 1)
+    report.functions.forEach((fn) => { const point = locationOf(fn.location); if (point) files.set(point.file, point.line) })
+    report.api_operations.forEach((operation) => { const point = locationOf(operation.location); if (point) files.set(point.file, point.line) })
+    report.interrupt_lock_graph.edges.forEach((edge) => [edge.from_location, edge.to_location].forEach((location) => { const point = locationOf(location); if (point) files.set(point.file, point.line) }))
+    for (const [file, line] of files) if (file.toLowerCase().includes(normalized)) results.push({ kind: 'File', label: basename(file), detail: file, action: () => onOpenSource(file, line) })
+    report.functions.forEach((fn) => {
+      const name = fn.qualified_name ?? fn.name ?? ''
+      const point = locationOf(fn.location)
+      if (name.toLowerCase().includes(normalized) && point) results.push({ kind: 'Function', label: name, detail: `${basename(point.file)}:${point.line}`, action: () => onOpenSource(point.file, point.line) })
+    })
+    const locks = new Set(report.interrupt_lock_graph.nodes.map((node) => node.lock_identity))
+    report.interrupt_lock_graph.edges.forEach((edge) => { locks.add(edge.from_lock); locks.add(edge.to_lock) })
+    ;[...locks].filter((lock) => lock.toLowerCase().includes(normalized)).slice(0, 8).forEach((lock) => results.push({ kind: 'Lock', label: shortLock(lock), detail: lock, action: () => onOpenGraph(lock) }))
+    report.interrupt_cycles.forEach((finding, index) => {
+      const text = `${finding.category} ${finding.explanation ?? ''} ${(finding.lock_sequence ?? []).join(' ')} ${finding.edges?.map((edge) => `${edge.from_location?.expansion?.file ?? ''} ${edge.to_location?.expansion?.file ?? ''}`).join(' ') ?? ''}`
+      if (text.toLowerCase().includes(normalized)) results.push({ kind: 'Finding', label: categoryLabel(finding.category), detail: finding.lock_sequence?.map(shortLock).join(' → ') ?? 'Cycle sequence unavailable', action: () => onOpenFinding(index) })
+    })
+    return results.slice(0, 10)
+  }, [onOpenFinding, onOpenGraph, onOpenSource, query, report])
+  return <div className="workspace-search"><Search size={14} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search files, functions, locks…" aria-label="Search current analysis" aria-expanded={!!query} />{query && <button className="search-clear" aria-label="Clear search" onClick={() => setQuery('')}><X size={13} /></button>}{query && <div className="search-results" role="listbox" aria-label="Search results">{matches.length ? matches.map((item, index) => <button role="option" aria-selected="false" key={`${item.kind}-${item.label}-${index}`} onClick={() => { setQuery(''); item.action() }}><span className="search-result-kind">{item.kind}</span><span><strong>{item.label}</strong><small>{item.detail}</small></span><ArrowUpRight size={13} /></button>) : <div className="search-no-results">No matches in the selected report.</div>}</div>}</div>
+}
+
+function OverviewPage({ active, report, history, health, loading, onNew, onOpenHistory, onOpenFinding, onOpenGraph, onSelectAnalysis, selectedFinding, onSelectFinding, onOpenSource }: {
   active: AnalysisMetadata | null; report: AnalysisReport | null; history: AnalysisMetadata[]; health: Health | null; loading: boolean;
   onNew: () => void; onOpenHistory: () => void; onOpenFinding: (index: number) => void; onOpenGraph: () => void; onSelectAnalysis: (item: AnalysisMetadata) => void;
+  selectedFinding: Finding | null; onSelectFinding: (finding: Finding | null) => void; onOpenSource: (file: string, line: number) => void;
 }) {
   const summary = active?.summary
-  const successful = active?.status === 'completed' && report
+  const completed = active?.status === 'completed' && report
   const metrics = [
-    { label: 'Translation units', value: summary?.translation_units, icon: FileCode2, note: 'Submitted source units' },
-    { label: 'Functions', value: summary?.functions, icon: Braces, note: 'Definitions extracted' },
-    { label: 'Lock operations', value: summary?.lock_operations, icon: LockKeyhole, note: 'Configured API calls' },
-    { label: 'Dependency edges', value: summary?.graph_edges, icon: GitBranch, note: 'Context-labelled graph' },
-    { label: 'Potential cycles', value: summary?.candidate_cycles, icon: ShieldAlert, note: 'Static candidates' },
+    { label: 'Translation units', value: summary?.translation_units, icon: FileCode2, tone: 'cyan', note: 'Submitted C units' },
+    { label: 'Functions', value: summary?.functions, icon: Braces, tone: 'green', note: 'Definitions extracted' },
+    { label: 'Lock operations', value: summary?.lock_operations, icon: LockKeyhole, tone: 'amber', note: 'API events observed' },
+    { label: 'Dependencies', value: summary?.graph_edges, icon: GitBranch, tone: 'violet', note: 'Directed graph edges' },
+    { label: 'Potential cycles', value: summary?.candidate_cycles, icon: ShieldAlert, tone: 'red', note: 'Static candidates' },
+    { label: 'Analysis time', value: active?.duration_ms == null ? undefined : formatDuration(active.duration_ms), icon: Clock3, tone: 'blue', note: 'Backend measured' },
   ]
-  const chartRuns = [...history].filter((item) => item.status === 'completed' && item.duration_ms != null).slice(0, 8).reverse().map((item) => ({ name: basename(item.source_path), duration: item.duration_ms }))
+  const activeFinding = selectedFinding
+  const graphSize = report?.interrupt_lock_graph.edges.length ?? 0
+  const durationRuns = history.filter((item) => item.status === 'completed' && item.duration_ms != null).slice(0, 8).reverse().map((item) => ({ name: basename(item.source_path), duration: item.duration_ms! }))
   return <>
-    <PageHeading eyebrow="WORKSPACE OVERVIEW" title="Analysis overview" subtitle={active ? `Latest report · ${basename(active.source_path)}` : 'Run a source analysis to inspect lock behavior and interrupt-aware findings.'}
-      action={<button className="button button-primary" onClick={onNew}><Play size={15} />New analysis</button>} />
+    <div className="observatory-heading"><div><div className="eyebrow">IRQGUARD / LOCAL WORKSPACE</div><h1>Kernel lock observatory</h1><p>{active ? active.source_path : 'Analyze a C translation unit to explore lock dependencies and interrupt contexts.'}</p></div><div className="observatory-heading-actions"><span className={`status-pill ${statusTone(active?.status)}`}><i className={`status-dot status-${statusTone(active?.status)}`} />{active?.status ?? 'No run selected'}</span><button className="button button-primary" onClick={onNew}><Play size={14} />New analysis</button></div></div>
     {!health?.analyzer_available && <div className="inline-notice"><AlertCircle size={16} /><span>The local analyzer executable is unavailable. Build it with CMake, then refresh this page.</span></div>}
-    {active && <div className="run-strip"><span className={`status-dot status-${statusTone(active.status)}`} /><span className="run-strip-label">{active.status === 'completed' ? 'Latest analysis' : active.status === 'running' ? 'Analysis running' : active.status === 'queued' ? 'Analysis queued' : active.status === 'failed' ? 'Analysis failed' : 'No run selected'}</span><code>{active.source_path}</code><span className="run-time">{new Date(active.created_at).toLocaleString()}</span><span className={`status-pill ${statusTone(active.status)}`}>{active.status}</span></div>}
+    {active?.status === 'failed' && <div className="alert alert-error" role="alert"><AlertCircle size={16} /><span>{active.error ?? 'The analyzer did not produce a report.'}</span></div>}
     {loading && <div className="loading-line"><LoaderCircle size={16} className="spin" />Loading report from local history…</div>}
     {!active && history.length === 0 && !loading ? <div className="empty-workspace">
       <div className="empty-glyph"><TerminalSquare size={24} /></div><div className="eyebrow">NO ANALYSIS RUNS</div><h2>Start with a C source file</h2>
       <p>IRQGuard invokes the Clang-based analyzer on your WSL workspace and stores the resulting JSON report locally.</p>
-      <button className="button button-primary" onClick={onNew}><Play size={15} />Configure analysis</button>
-      <div className="empty-help"><Info size={14} />The browser cannot browse your WSL files. Enter an absolute path from an allowed workspace.</div>
+      <button className="button button-primary" onClick={onNew}><Play size={15} />Run your first analysis</button>
+      <div className="empty-help"><Info size={14} />Enter an absolute Linux path inside an allowed workspace.</div>
     </div> : null}
-    {active && !successful && !loading && <div className="empty-workspace compact-empty">
-      {active.status === 'failed' ? <><div className="empty-glyph danger-glyph"><AlertCircle size={23} /></div><div className="eyebrow">RUN FAILED</div><h2>Analyzer did not produce a report</h2><p>{active.error ?? 'Open analysis history for the recorded process status.'}</p><button className="button button-secondary" onClick={onOpenHistory}>View analysis history</button></> : <><div className="empty-glyph"><LoaderCircle size={23} className="spin" /></div><div className="eyebrow">ANALYSIS IN PROGRESS</div><h2>Waiting for the analyzer</h2><p>The backend reports status only. It does not provide percentage progress.</p></>}
+    {active && !completed && !loading && active.status !== 'failed' && <div className="empty-workspace compact-empty">
+      <div className="empty-glyph"><LoaderCircle size={23} className="spin" /></div><div className="eyebrow">ANALYSIS {active.status.toUpperCase()}</div><h2>Waiting for the analyzer</h2><p>The local service reports status without percentage progress. This run remains available in history.</p>
     </div>}
-    {successful && <>
-      <section className="metrics-row" aria-label="Analysis metrics">
-        {metrics.map(({ label, value, icon: Icon, note }) => <div className="metric" key={label}><div className="metric-head"><span>{label}</span><Icon size={15} /></div><strong>{value == null ? 'Not available' : value.toLocaleString()}</strong><small>{note}</small></div>)}
+    {completed && <>
+      <section className="metrics-row observatory-metrics" aria-label="Analysis metrics">
+        {metrics.map(({ label, value, icon: Icon, tone, note }) => <div className={`metric metric-${tone}`} key={label}><div className="metric-head"><span>{label}</span><Icon size={15} /></div><strong>{value == null ? 'Not available' : typeof value === 'number' ? value.toLocaleString() : value}</strong><small>{note}</small></div>)}
       </section>
-      <section className="overview-grid">
-        <div className="panel findings-preview">
-          <div className="panel-heading"><div><div className="eyebrow">REVIEW QUEUE</div><h2>Recent findings</h2></div><button className="text-button" onClick={() => onOpenFinding(0)} disabled={!report.interrupt_cycles.length}>View all <ArrowRight size={14} /></button></div>
-          {report.interrupt_cycles.length === 0 ? <div className="panel-empty"><Check size={17} /><span>No cycles were reported for this translation unit.</span></div> : <div className="finding-preview-list">
-            {report.interrupt_cycles.slice(0, 4).map((finding, index) => <button className="preview-row" key={findingId(finding, index, active.id)} onClick={() => onOpenFinding(index)}>
-              <span className={`finding-mark ${finding.category}`}><LockKeyhole size={14} /></span><span className="preview-copy"><strong>{categoryLabel(finding.category)}</strong><small>{finding.lock_sequence?.map((lock) => shortLock(lock)).join(' → ') ?? 'Cycle sequence unavailable'}</small></span><ArrowRight size={14} className="row-arrow" />
-            </button>)}
-          </div>}
+      <section className="observatory-workspace">
+        <div className="panel observatory-graph-panel">
+          <div className="observatory-panel-heading"><div><div className="eyebrow">LIVE REPORT · {report.schema_version === 3 ? 'SCHEMA 3' : `SCHEMA ${report.schema_version}`}</div><h2><GitBranch size={17} />Lock Dependency Graph</h2><p>Actual lock relationships across the analyzer’s modeled execution contexts</p></div><div className="graph-heading-actions"><span className="graph-edge-count"><strong>{graphSize.toLocaleString()}</strong> edges</span><button className="text-button" onClick={onOpenGraph}>Full graph <ArrowUpRight size={14} /></button></div></div>
+          <div className="observatory-legend"><span><i className="legend-line normal-line" />Normal context</span><span><i className="legend-line irq-line" />Interrupt relationship</span><span><i className="legend-line candidate-line" />Selected candidate</span><span><i className="legend-line rejected-line" />Rejected edge</span></div>
+          <div className="observatory-graph-canvas"><Suspense fallback={<div className="graph-loading"><LoaderCircle size={16} className="spin" />Loading report graph…</div>}><LockGraph report={report} selectedFinding={activeFinding} onSelectFinding={onSelectFinding} onOpenSource={onOpenSource} compact /></Suspense></div>
+          <div className="graph-preview-foot"><span>{report.interrupt_lock_graph.nodes.length.toLocaleString()} lock nodes</span><span>{report.interrupt_cycles.length.toLocaleString()} findings</span><span>Lock type metadata: {report.api_operations.some((item) => item.api) ? 'API labels available' : 'Not reported'}</span><button className="text-button" onClick={onOpenGraph}>Open graph workspace <ArrowRight size={13} /></button></div>
         </div>
-        <div className="panel graph-preview-panel">
-          <div className="panel-heading"><div><div className="eyebrow">DEPENDENCY GRAPH</div><h2>Lock relationships</h2></div><button className="icon-button" aria-label="Open lock graph" onClick={onOpenGraph}><ArrowUpRight size={16} /></button></div>
-          <GraphPreview report={report} onOpen={onOpenGraph} />
-          <div className="graph-preview-foot"><span><i className="legend-dot normal" />Lock order</span><span><i className="legend-dot irq" />IRQ preemption</span><button className="text-button" onClick={onOpenGraph}>Explore graph <ArrowRight size={13} /></button></div>
-        </div>
+        <FindingInspector finding={activeFinding} index={activeFinding ? report.interrupt_cycles.indexOf(activeFinding) : -1} report={report} analysisId={active.id} onOpenSource={onOpenSource} onOpenAll={onOpenFinding} />
       </section>
-      <section className="panel recent-runs-panel">
-        <div className="panel-heading"><div><div className="eyebrow">LOCAL HISTORY</div><h2>Recent analyses</h2></div><button className="text-button" onClick={onOpenHistory}>All runs <ArrowRight size={14} /></button></div>
-        <div className="recent-runs-list">{history.slice(0, 4).map((item) => <button className={`recent-run-row ${item.id === active.id ? 'selected' : ''}`} key={item.id} onClick={() => onSelectAnalysis(item)}><span className={`status-dot status-${statusTone(item.status)}`} /><span className="recent-run-copy"><strong>{basename(item.source_path)}</strong><small>{item.source_path}</small></span><span className="recent-run-date">{new Date(item.created_at).toLocaleString()}</span><span className={`status-pill ${statusTone(item.status)}`}>{item.status}</span><ArrowRight size={13} /></button>)}{history.length === 0 && <div className="panel-empty"><Info size={16} />No runs have been stored yet.</div>}</div>
-      </section>
-      <section className="overview-grid lower-grid">
-        <div className="panel run-summary-panel">
-          <div className="panel-heading"><div><div className="eyebrow">REPORT QUALITY</div><h2>Analysis notes</h2></div><span className="schema-tag">JSON schema {report.schema_version}</span></div>
-          <div className="quality-row"><span>Candidate lock-order cycles</span><strong>{summary?.finding_categories?.candidate_lock_order_cycle ?? 'Not available'}</strong></div>
-          <div className="quality-row"><span>Interrupt-aware candidates</span><strong>{summary?.finding_categories?.interrupt_aware_candidate ?? 'Not available'}</strong></div>
-          <div className="quality-row"><span>Rejected candidates</span><strong>{summary?.rejected_candidates ?? 'Not available'}</strong></div>
-          <div className="quality-row"><span>Inconclusive findings</span><strong>{summary?.inconclusive_findings ?? 'Not available'}</strong></div>
-          <div className="quality-row"><span>Uncertainties in report</span><strong>{summary?.uncertainties ?? 'Not available'}</strong></div>
-          <p className="panel-note">Cycle categories are static-analysis outcomes, not calibrated probabilities or confirmed runtime deadlocks.</p>
+      <section className="observatory-support-grid">
+        <div className="panel observatory-findings-panel"><div className="panel-heading"><div><div className="eyebrow">REVIEW QUEUE</div><h2>Recent findings</h2></div><button className="text-button" onClick={() => onOpenFinding(0)} disabled={!report.interrupt_cycles.length}>All findings <ArrowRight size={13} /></button></div>
+          {report.interrupt_cycles.length ? <div className="observatory-finding-list">{report.interrupt_cycles.slice(0, 5).map((finding, index) => { const place = firstFindingLocation(finding); return <button className={`observatory-finding-row ${activeFinding === finding ? 'selected' : ''}`} key={findingId(finding, index, active.id)} onClick={() => onSelectFinding(finding)}><code>{findingId(finding, index, active.id)}</code><span className={`finding-classification ${finding.category}`}>{categoryLabel(finding.category)}</span><span className="finding-locks">{finding.lock_sequence?.map(shortLock).join(' ↔ ') ?? 'Lock sequence unavailable'}</span><code className="finding-source-location">{place ? `${basename(place.file)}:${place.line}` : 'Location unavailable'}</code><ArrowRight size={13} /></button> })}</div> : <div className="panel-empty"><Check size={16} />No cycles were reported for this translation unit.</div>}
         </div>
-        <div className="panel duration-panel">
-          <div className="panel-heading"><div><div className="eyebrow">LOCAL RUN METADATA</div><h2>Analysis duration</h2></div><Clock3 size={16} className="subtle-icon" /></div>
-          {chartRuns.length > 0 ? <><div className="duration-current">{formatDuration(active.duration_ms)}<span>current run · backend measured</span></div><div className="duration-chart"><Suspense fallback={<div className="chart-unavailable">Loading duration chart…</div>}><DurationChart data={chartRuns} /></Suspense></div></> : <div className="chart-unavailable"><Info size={15} /><span>Not available until a completed run records backend duration.</span></div>}
-        </div>
+        <LockApiMix operations={report.api_operations} />
+        <AnalysisActivity report={report} active={active} />
       </section>
-      <div className="overview-bottomline"><span><Check size={14} />Report loaded from the local analysis history</span><button className="text-button" onClick={onOpenHistory}>All runs <ArrowRight size={14} /></button></div>
+      <section className="panel recent-runs-panel"><div className="panel-heading"><div><div className="eyebrow">LOCAL HISTORY</div><h2>Recent analyses</h2></div><button className="text-button" onClick={onOpenHistory}>All runs <ArrowRight size={14} /></button></div>
+        <div className="recent-runs-list">{history.slice(0, 3).map((item) => <button className={`recent-run-row ${item.id === active.id ? 'selected' : ''}`} key={item.id} onClick={() => onSelectAnalysis(item)}><span className={`status-dot status-${statusTone(item.status)}`} /><span className="recent-run-copy"><strong>{basename(item.source_path)}</strong><small>{item.source_path}</small></span><span className="recent-run-date">{new Date(item.created_at).toLocaleString()}</span><span className={`status-pill ${statusTone(item.status)}`}>{item.status}</span><ArrowRight size={13} /></button>)}</div>
+        {durationRuns.length > 1 && <div className="duration-history"><div className="eyebrow">MEASURED RUN DURATION · HISTORY</div><Suspense fallback={<div className="chart-unavailable">Loading duration history…</div>}><DurationChart data={durationRuns} /></Suspense></div>}
+      </section>
+      <div className="overview-bottomline"><span><Info size={14} />Static candidates are not runtime-confirmed deadlocks. Severity classification is not provided by the analyzer.</span><span>Analyzer version · {health?.environment?.analyzer_version ?? 'Not reported'}</span></div>
     </>}
   </>
 }
 
-function GraphPreview({ report, onOpen }: { report: AnalysisReport; onOpen: () => void }) {
-  const edges = report.interrupt_lock_graph.edges.slice(0, 5)
-  if (!edges.length) return <button className="mini-empty" onClick={onOpen}><GitBranch size={20} /><span>No lock dependencies in this report</span><small>Open graph view</small></button>
-  const ids = [...new Set(edges.flatMap((edge) => [edge.from_lock, edge.to_lock]))]
-  const points = new Map(ids.map((id, index) => {
-    const angle = 2 * Math.PI * index / Math.max(ids.length, 1) - Math.PI / 2
-    return [id, [200 + Math.cos(angle) * Math.min(145, 55 + ids.length * 17), 74 + Math.sin(angle) * 42] as [number, number]]
-  }))
-  return <button className="mini-graph" onClick={onOpen} aria-label="Open lock dependency graph">
-    <svg viewBox="0 0 400 148" role="img" aria-label={`${edges.length} lock edges preview`}>
-      <defs><marker id="miniArrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 z" fill="#596678" /></marker><marker id="miniRedArrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 z" fill="#f0786e" /></marker></defs>
-      {edges.map((edge, index) => {
-        const from = points.get(edge.from_lock) ?? [0, 0]
-        const to = points.get(edge.to_lock) ?? [0, 0]
-        const interrupt = edge.kind.includes('interrupt')
-        return <g key={`${edge.from_lock}-${edge.to_lock}-${index}`}><path d={`M${from[0]} ${from[1]} Q${(from[0] + to[0]) / 2} ${(from[1] + to[1]) / 2 - 11} ${to[0]} ${to[1]}`} stroke={interrupt ? '#f0786e' : '#566274'} strokeWidth="1.4" fill="none" strokeDasharray={edge.feasibility === 'rejected' ? '4 4' : undefined} markerEnd={interrupt ? 'url(#miniRedArrow)' : 'url(#miniArrow)'} /></g>
-      })}
-      {ids.map((id) => { const point = points.get(id) ?? [0, 0]; return <g key={id}><rect x={point[0] - 39} y={point[1] - 14} width="78" height="28" rx="5" fill="#161c23" stroke="#394553" /><text x={point[0]} y={point[1] + 3} textAnchor="middle" fill="#c9d2de" fontSize="9" fontFamily="monospace">{shortLock(id).slice(0, 12)}</text></g> })}
-    </svg>
-  </button>
+function FindingInspector({ finding, index, report, analysisId, onOpenSource, onOpenAll }: { finding: Finding | null; index: number; report: AnalysisReport; analysisId: string; onOpenSource: (file: string, line: number) => void; onOpenAll: (index: number) => void }) {
+  const [tab, setTab] = useState<'Overview' | 'Source Code' | 'Execution Context' | 'Analysis Evidence'>('Overview')
+  if (!finding) return <aside className="panel finding-inspector empty-inspector"><div className="eyebrow">FINDING INSPECTOR</div><ShieldCheck size={22} /><h2>No finding selected</h2><p>Select a reported candidate or graph edge to inspect its source evidence.</p></aside>
+  const tabs = ['Overview', 'Source Code', 'Execution Context', 'Analysis Evidence'] as const
+  const edges = finding.edges ?? []
+  return <aside className="panel finding-inspector"><div className="inspector-head"><div><div className="eyebrow">FINDING INSPECTOR · {findingId(finding, index, analysisId)}</div><h2>{categoryLabel(finding.category)}</h2></div><button className="icon-button" aria-label="Open all findings" onClick={() => onOpenAll(Math.max(index, 0))}><ArrowUpRight size={15} /></button></div>
+    <div className={`inspector-status ${finding.category}`}><ShieldAlert size={14} /><span>{finding.category === 'rejected_candidate' ? 'Rejected by feasibility check' : finding.category === 'inconclusive_analysis' ? 'Inconclusive analysis' : 'Potential deadlock candidate'}</span><span className="status-pill">{finding.feasibility ?? 'Not reported'}</span></div>
+    <div className="inspector-tabs" role="tablist" aria-label="Finding detail sections">{tabs.map((item) => <button key={item} role="tab" aria-selected={tab === item} className={tab === item ? 'active' : ''} onClick={() => setTab(item)}>{item}</button>)}</div>
+    <div className="inspector-body" role="tabpanel">
+      {tab === 'Overview' && <><p className="inspector-explanation">{finding.explanation ?? 'The analyzer did not provide an explanation.'}</p><div className="inspector-section-title">Lock order cycle</div><div className="inspector-cycle">{(finding.lock_sequence ?? []).map((lock, itemIndex) => <div className="inspector-cycle-row" key={`${lock}-${itemIndex}`}><b>{itemIndex + 1}</b><code>{shortLock(lock)}</code>{itemIndex < (finding.lock_sequence?.length ?? 0) - 1 && <ArrowRight size={12} />}</div>)}</div><div className="inspector-facts"><span>Classification</span><strong>{finding.classification ?? finding.category}</strong><span>Confidence</span><strong>Not reported</strong><span>Severity</span><strong>Not reported</strong><span>Uncertain edge</span><strong>{finding.contains_uncertain_edge ? 'Yes' : 'No'}</strong></div></>}
+      {tab === 'Source Code' && <SourceEvidence edges={edges} onOpenSource={onOpenSource} />}
+      {tab === 'Execution Context' && <div className="inspector-evidence-list">{edges.map((edge, edgeIndex) => <div className="inspector-context-row" key={edgeIndex}><span className="context-step">{edgeIndex + 1}</span><span><strong>{edge.from_context ?? 'Context not reported'} → {edge.to_context ?? 'Context not reported'}</strong><small>{edge.source_function ?? 'Function unavailable'} → {edge.target_function ?? 'Function unavailable'}</small><small>IRQ state · {edge.irq_state ?? 'Not reported'}{edge.handler ? ` · handler ${edge.handler}` : ''}</small></span></div>)}</div>}
+      {tab === 'Analysis Evidence' && <div className="inspector-evidence-list">{edges.map((edge, edgeIndex) => <div className="inspector-context-row" key={edgeIndex}><span className="context-step">{edgeIndex + 1}</span><span><strong>{shortLock(edge.from_lock)} → {shortLock(edge.to_lock)}</strong><small>{edge.kind} · {edge.certainty ?? 'certainty not reported'}</small><small>{edge.feasibility_reason ?? 'No feasibility explanation attached to this edge.'}</small></span></div>)}{report.uncertainties.length > 0 && <div className="inspector-limitation"><Info size={13} /><span>{report.uncertainties.slice(0, 3).join(' ')}</span></div>}</div>}
+    </div>
+    <button className="inspector-open-findings" onClick={() => onOpenAll(Math.max(index, 0))}>Open finding in explorer <ArrowRight size={13} /></button>
+  </aside>
+}
+
+function SourceEvidence({ edges, onOpenSource }: { edges: Finding['edges']; onOpenSource: (file: string, line: number) => void }) {
+  const locations: Array<{ place: ReturnType<typeof locationOf>; label: string; lock: string }> = (edges ?? []).flatMap((edge) => [
+    { place: locationOf(edge.from_location), label: 'Acquisition from', lock: edge.from_lock },
+    { place: locationOf(edge.to_location), label: 'Acquisition to', lock: edge.to_lock },
+  ])
+  const available = locations.filter((item): item is { place: { file: string; line: number }; label: string; lock: string } => item.place !== null)
+  return <div className="inspector-evidence-list">{available.map(({ place, label, lock }, index) => <button className="inspector-source-row" key={`${place.file}-${place.line}-${index}`} onClick={() => onOpenSource(place.file, place.line)}><FileCode2 size={14} /><span><strong>{label} · {shortLock(lock)}</strong><small>{place.file}:{place.line}</small></span><ArrowUpRight size={13} /></button>)}{available.length < locations.length && <p className="inspector-muted">{locations.length - available.length} source location(s) are unavailable in the report.</p>}{locations.length === 0 && <p className="inspector-muted">No source locations were provided for this finding.</p>}</div>
+}
+
+function LockApiMix({ operations }: { operations: AnalysisReport['api_operations'] }) {
+  const counts = useMemo(() => { const result = new Map<string, number>(); operations.filter((operation) => operation.lock && operation.api).forEach((operation) => result.set(operation.api!, (result.get(operation.api!) ?? 0) + 1)); return [...result.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6) }, [operations])
+  const total = counts.reduce((sum, [, count]) => sum + count, 0)
+  return <section className="panel mix-panel"><div className="panel-heading"><div><div className="eyebrow">API EVENTS</div><h2>Lock API mix</h2></div><LockKeyhole size={15} className="subtle-icon" /></div>{total ? <div className="api-mix-list">{counts.map(([name, count], index) => <div className="api-mix-row" key={name}><div><code>{name}</code><span>{Math.round(count / total * 100)}%</span></div><div className="api-mix-track"><i style={{ width: `${count / total * 100}%`, ['--mix-index' as string]: index }} /></div><small>{count} recorded API operation{count === 1 ? '' : 's'}</small></div>)}</div> : <div className="unavailable-mini"><Info size={15} /><span>Lock API distribution is not reported for this analysis.</span></div>}<div className="panel-footnote">Counts are grouped from actual lock-bearing API events.</div></section>
+}
+
+function AnalysisActivity({ report, active }: { report: AnalysisReport; active: AnalysisMetadata }) {
+  const [filter, setFilter] = useState<'all' | 'diagnostic' | 'uncertainty'>('all')
+  const [cleared, setCleared] = useState(false)
+  const entries = [
+    ...report.diagnostics.map((message) => ({ kind: 'diagnostic', message })),
+    ...report.uncertainties.map((message) => ({ kind: 'uncertainty', message })),
+  ]
+  const visibleEntries = entries.filter((entry) => filter === 'all' || entry.kind === filter).slice(0, 8)
+  return <section className="panel activity-panel"><div className="panel-heading"><div><div className="eyebrow">REPORT RECORD</div><h2>Analysis activity</h2></div><span className="status-pill good">{active.status}</span></div><div className="activity-meta"><span><Clock3 size={12} />{formatDuration(active.duration_ms)}</span><code>{active.return_code === 0 ? 'exit 0' : `exit ${active.return_code ?? 'not reported'}`}</code></div><div className="activity-summary"><div><span>Functions</span><strong>{active.summary?.functions ?? 'Not available'}</strong></div><div><span>Operations</span><strong>{active.summary?.lock_operations ?? 'Not available'}</strong></div><div><span>Diagnostics</span><strong>{report.diagnostics.length}</strong></div></div><div className="activity-filters"><button className={filter === 'all' ? 'selected' : ''} onClick={() => { setFilter('all'); setCleared(false) }}>All {entries.length}</button><button className={filter === 'diagnostic' ? 'selected' : ''} onClick={() => { setFilter('diagnostic'); setCleared(false) }}>Diagnostics {report.diagnostics.length}</button><button className={filter === 'uncertainty' ? 'selected' : ''} onClick={() => { setFilter('uncertainty'); setCleared(false) }}>Uncertainty {report.uncertainties.length}</button><button className="activity-clear" onClick={() => setCleared((value) => !value)}>{cleared ? 'Restore view' : 'Clear view'}</button></div><div className="activity-log" aria-label="Analyzer report diagnostics">{cleared ? <div className="activity-clean">Visible entries cleared. The saved report is unchanged.</div> : visibleEntries.length ? visibleEntries.map((entry, index) => <div className={`activity-line ${entry.kind}`} key={`${entry.kind}-${index}`}><span>{entry.kind === 'diagnostic' ? 'DIAG' : 'NOTE'}</span><code>{entry.message}</code></div>) : <div className="activity-clean">{entries.length ? 'No entries in this filter.' : <><Check size={13} />The report contains no diagnostics or uncertainty notes.</>}</div>}</div><div className="panel-footnote">Summary from the final report. No live process log is available.</div></section>
 }
 
 function NewAnalysisPage({ health, status, onStart }: { health: Health | null; status: string; onStart: (values: { source_path: string; compile_commands_path?: string; api_config_path?: string }) => Promise<void> }) {
@@ -429,7 +486,7 @@ function NewAnalysisPage({ health, status, onStart }: { health: Health | null; s
       </form>
       <aside className="analysis-aside">
         <div className="aside-section"><div className="eyebrow">WHAT WILL RUN</div><div className="command-preview"><span className="command-prompt">$</span><code>deadlock-analyzer analyze<br />--source &lt;path&gt;<br />--format json</code></div><div className="aside-note"><TerminalSquare size={15} /><span>Started with a fixed argument list. Browser input is never interpreted as a shell command.</span></div></div>
-        <div className="aside-section"><div className="eyebrow">REPORT OUTPUT</div><div className="output-list"><span><Check size={14} />Clang AST and CFG facts</span><span><Check size={14} />Interprocedural lock edges</span><span><Check size={14} />Process and hardirq contexts</span><span><Check size={14} />Schema 3 JSON with provenance</span></div></div>
+        <div className="aside-section"><div className="eyebrow">REPORT OUTPUT</div><div className="output-list"><span><Check size={14} />Clang AST and CFG facts</span><span><Check size={14} />Interprocedural lock edges</span><span><Check size={14} />Process and hardirq contexts</span><span><Check size={14} />Schema 3 JSON with provenance</span></div><div className="field-hint">JSON is selected because the graph and finding views consume the versioned analyzer report.</div></div>
         <div className="aside-warning"><Info size={16} /><p>One translation unit is analyzed per run. Included header definitions and full-kernel coverage are not implied.</p></div>
       </aside>
     </div>
@@ -462,8 +519,8 @@ function HistoryPage({ history, activeId, compareIds, onRefresh, onOpen, onToggl
   </>
 }
 
-function FindingsPage({ report, analysis, selectedIndex, onSelect, onOpenSource }: {
-  report: AnalysisReport | null; analysis: AnalysisMetadata | null; selectedIndex: number | null; onSelect: (index: number | null) => void; onOpenSource: (file: string, line: number) => void;
+function FindingsPage({ report, analysis, selectedIndex, onSelect, onOpenSource, onOpenGraph }: {
+  report: AnalysisReport | null; analysis: AnalysisMetadata | null; selectedIndex: number | null; onSelect: (index: number | null) => void; onOpenSource: (file: string, line: number) => void; onOpenGraph: (index: number) => void;
 }) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
@@ -472,7 +529,7 @@ function FindingsPage({ report, analysis, selectedIndex, onSelect, onOpenSource 
   const [exportMessage, setExportMessage] = useState('')
   const cycles = report?.interrupt_cycles ?? []
   const filtered = cycles.map((finding, index) => ({ finding, index, id: findingId(finding, index, analysis?.id) })).filter(({ finding, id }) => {
-    const text = [id, finding.category, finding.explanation, ...(finding.lock_sequence ?? [])].join(' ').toLowerCase()
+    const text = [id, finding.category, finding.explanation, ...(finding.lock_sequence ?? []), ...(finding.edges ?? []).flatMap((edge) => [edge.from_context ?? '', edge.to_context ?? '', edge.source_function ?? '', edge.target_function ?? ''])].join(' ').toLowerCase()
     return (category === 'all' || finding.category === category) && text.includes(search.toLowerCase())
   }).sort((a, b) => sort === 'category' ? a.finding.category.localeCompare(b.finding.category) : firstFindingFile(a.finding).localeCompare(firstFindingFile(b.finding)))
   const pageSize = 25
@@ -488,12 +545,12 @@ function FindingsPage({ report, analysis, selectedIndex, onSelect, onOpenSource 
   return <>
     <PageHeading eyebrow="STATIC ANALYSIS" title="Findings" subtitle="Review candidate lock cycles and the source evidence included in the analyzer report." action={<button className="button button-secondary" onClick={exportJson} disabled={!report}><FileJson2 size={15} />Export JSON</button>} />
     {!report ? <AnalysisEmpty /> : <>
-      <div className="finding-countline"><span><strong>{filtered.length}</strong> of {cycles.length} findings</span><span>Static candidates are not confirmed deadlocks.</span></div>
+      <div className="finding-countline"><span><strong>{filtered.length}</strong> of {cycles.length} findings</span><span>Severity is not reported by the analyzer; static candidates are not confirmed deadlocks.</span></div>
       <FindingsTable findings={visible.map(({ finding, index, id }) => ({ finding, index, id }))} selectedIndex={selectedIndex}
         search={search} onSearch={(value) => { setSearch(value); setPage(0) }} category={category} onCategory={(value) => { setCategory(value); setPage(0) }} categories={categories} sort={sort} onSort={setSort} onSelect={onSelect} />
       {filtered.length === 0 && <div className="table-empty"><Search size={17} /><span>No findings match these filters.</span></div>}
       {pageCount > 1 && <div className="pagination"><span>Page {page + 1} of {pageCount} · showing up to 25</span><div><button className="button button-small button-secondary" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={page === 0}>Previous</button><button className="button button-small button-secondary" onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} disabled={page + 1 >= pageCount}>Next</button></div></div>}
-      {selectedIndex != null && cycles[selectedIndex] && <FindingDetail finding={cycles[selectedIndex]} id={findingId(cycles[selectedIndex], selectedIndex, analysis?.id)} onClose={() => onSelect(null)} onOpenSource={onOpenSource} />}
+      {selectedIndex != null && cycles[selectedIndex] && <FindingDetail finding={cycles[selectedIndex]} id={findingId(cycles[selectedIndex], selectedIndex, analysis?.id)} onClose={() => onSelect(null)} onOpenSource={onOpenSource} onOpenGraph={() => onOpenGraph(selectedIndex)} />}
       {exportMessage && <div className="toast" role="status"><Check size={14} />{exportMessage}<button onClick={() => setExportMessage('')} aria-label="Dismiss export message"><X size={13} /></button></div>}
     </>}
   </>
@@ -507,12 +564,14 @@ function FindingsTable({ findings, selectedIndex, search, onSearch, category, on
     <div className="table-toolbar"><div className="toolbar-search"><Search size={15} /><input aria-label="Search findings" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search findings, locks, explanations…" /></div>
       <div className="toolbar-filters"><label><span>Category</span><select aria-label="Filter findings by category" value={category} onChange={(event) => onCategory(event.target.value)}><option value="all">All categories</option>{categories.map((item) => <option value={item} key={item}>{categoryLabel(item)}</option>)}</select></label><label><span>Sort</span><select aria-label="Sort findings" value={sort} onChange={(event) => onSort(event.target.value as 'category' | 'file')}><option value="category">Category</option><option value="file">Source file</option></select></label></div>
     </div>
-    <div className="finding-table" role="table" aria-label="Analyzer findings"><div className="finding-table-header" role="row"><span>Finding</span><span>Lock sequence</span><span>Evidence location</span><span>Feasibility</span><span /></div>
+    <div className="finding-table" role="table" aria-label="Analyzer findings"><div className="finding-table-header" role="row"><span>Finding</span><span>Lock sequence</span><span>Execution context</span><span>Evidence location</span><span>Feasibility</span><span /></div>
       {findings.map(({ finding, index, id }) => {
         const place = firstFindingLocation(finding)
+        const contexts = [...new Set((finding.edges ?? []).map((edge) => `${edge.from_context ?? 'unknown'} → ${edge.to_context ?? 'unknown'}`))]
         return <button role="row" className={`finding-table-row ${selectedIndex === index ? 'row-selected' : ''}`} key={id} onClick={() => onSelect(index)}>
           <span className="finding-table-title"><i className={`finding-mini-dot ${finding.category}`} /><span><strong>{categoryLabel(finding.category)}</strong><small>{id}</small></span></span>
           <span className="lock-sequence-cell">{finding.lock_sequence?.slice(0, 4).map(shortLock).join(' → ') ?? 'Unavailable'}</span>
+          <span className="finding-context-cell">{contexts.length ? contexts.slice(0, 2).join(' · ') : 'Not reported'}</span>
           <span className="location-cell"><code>{place ? `${basename(place.file)}:${place.line}` : 'Not available'}</code></span>
           <span className={`feasibility-label ${finding.feasibility ?? 'unknown'}`}>{finding.feasibility ?? 'Not available'}</span><ArrowRight size={14} className="row-arrow" />
         </button>
@@ -521,7 +580,7 @@ function FindingsTable({ findings, selectedIndex, search, onSearch, category, on
   </div>
 }
 
-function FindingDetail({ finding, id, onClose, onOpenSource }: { finding: Finding; id: string; onClose: () => void; onOpenSource: (file: string, line: number) => void }) {
+function FindingDetail({ finding, id, onClose, onOpenSource, onOpenGraph }: { finding: Finding; id: string; onClose: () => void; onOpenSource: (file: string, line: number) => void; onOpenGraph: () => void }) {
   const edges = finding.edges ?? []
   return <div className="detail-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="finding-detail" role="dialog" aria-modal="true" aria-labelledby="finding-detail-title">
@@ -540,16 +599,17 @@ function FindingDetail({ finding, id, onClose, onOpenSource }: { finding: Findin
       })}</div></div>
       {finding.provenance_variants && finding.provenance_variants.length > 1 && <div className="variant-note"><GitBranch size={14} />{finding.provenance_variants.length} equivalent provenance paths are grouped in this finding.</div>}
       <div className="detail-footnote"><Info size={14} /><span>A cycle is a static candidate. It does not establish that the locks alias at runtime, that the handler will run, or that a deadlock occurred.</span></div>
+      <button className="button button-primary finding-open-graph" onClick={onOpenGraph}><GitBranch size={14} />Highlight in lock graph</button>
     </section>
   </div>
 }
 
-function GraphPage({ report, active, selectedFinding, onSelectFinding, onOpenSource }: {
-  report: AnalysisReport | null; active: AnalysisMetadata | null; selectedFinding: Finding | null; onSelectFinding: (finding: Finding | null) => void; onOpenSource: (file: string, line: number) => void;
+function GraphPage({ report, active, selectedFinding, onSelectFinding, onOpenSource, searchTerm }: {
+  report: AnalysisReport | null; active: AnalysisMetadata | null; selectedFinding: Finding | null; onSelectFinding: (finding: Finding | null) => void; onOpenSource: (file: string, line: number) => void; searchTerm: string;
 }) {
   return <>
     <PageHeading eyebrow="LOCK ORDER MODEL" title="Lock dependency graph" subtitle={active ? `Actual graph edges from ${basename(active.source_path)} · select an edge for provenance.` : 'Select a completed analysis to inspect its graph.'} />
-    {!report ? <AnalysisEmpty /> : <div className="graph-workspace"><Suspense fallback={<div className="loading-line graph-loading"><LoaderCircle size={16} className="spin" />Loading lock graph…</div>}><LockGraph report={report} selectedFinding={selectedFinding} onSelectFinding={onSelectFinding} onOpenSource={onOpenSource} /></Suspense></div>}
+    {!report ? <AnalysisEmpty /> : <div className="graph-workspace"><Suspense fallback={<div className="loading-line graph-loading"><LoaderCircle size={16} className="spin" />Loading lock graph…</div>}><LockGraph report={report} selectedFinding={selectedFinding} onSelectFinding={onSelectFinding} onOpenSource={onOpenSource} initialSearchTerm={searchTerm} /></Suspense></div>}
   </>
 }
 

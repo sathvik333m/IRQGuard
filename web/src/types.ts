@@ -140,6 +140,12 @@ export interface Health {
   analyzer_available: boolean
   analyzer_report_schema: number
   workspace_roots: string[]
+  environment?: {
+    operating_system?: string | null
+    wsl?: boolean | null
+    analyzer_version?: string | null
+    target_kernel?: string | null
+  }
   data_directory: string
   runtime_evidence_available: boolean
   benchmarks_available: boolean
