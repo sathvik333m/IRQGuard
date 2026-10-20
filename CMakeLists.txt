@@ -46,6 +46,7 @@ add_executable(deadlock-analyzer
     src/Analyzer.cpp
     src/ApiRegistry.cpp
     src/Interprocedural.cpp
+    src/InterruptAnalysis.cpp
     src/Output.cpp
 )
 
@@ -79,6 +80,16 @@ if(BUILD_TESTING)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_interprocedural.py
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interprocedural.c
+    )
+    add_test(NAME analyzer_interrupt_aware
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_interrupts.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
+    )
+    add_test(NAME analyzer_feasibility
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_phase4.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
     )
 endif()
 

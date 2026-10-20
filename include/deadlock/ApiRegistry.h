@@ -10,6 +10,8 @@ struct ApiSpec {
     std::string name;
     std::string kind;
     int lockArgument = -1;
+    int stateArgument = -1;
+    int handlerArgument = -1;
 };
 
 class ApiRegistry {

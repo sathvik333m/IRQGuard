@@ -16,7 +16,7 @@ void usage(std::ostream &out) {
            "  --compile-commands DIR  Compilation database directory\n"
            "  --api-config FILE       JSON API registry (extends/replaces defaults by name)\n"
            "  --clang-arg ARG         Add a Clang argument (repeatable; direct mode only)\n"
-           "  --format text|json      Output format (default: text)\n"
+           "  --format text|json|dot  Output format (default: text)\n"
            "  --output FILE           Write report to file instead of stdout\n"
            "  --help                  Show this help\n";
 }
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
         else { std::cerr << "error: unknown option '" << argument << "'\n"; return 2; }
     }
     if (options.source.empty()) { std::cerr << "error: --source is required\n"; return 2; }
-    if (format != "text" && format != "json") {
-        std::cerr << "error: --format must be 'text' or 'json'\n";
+    if (format != "text" && format != "json" && format != "dot") {
+        std::cerr << "error: --format must be 'text', 'json', or 'dot'\n";
         return 2;
     }
     if (!options.compilationDatabase.empty() && !options.clangArguments.empty()) {
@@ -77,7 +77,8 @@ int main(int argc, char **argv) {
         std::cerr << "error: " << error << '\n';
         return status;
     }
-    const std::string report = format == "json" ? deadlock::toJson(result) : deadlock::toText(result);
+    const std::string report = format == "json" ? deadlock::toJson(result) :
+        (format == "dot" ? deadlock::toDot(result) : deadlock::toText(result));
     if (outputPath.empty()) {
         std::cout << report;
     } else {

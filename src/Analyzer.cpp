@@ -1,5 +1,6 @@
 #include "deadlock/Analyzer.h"
 #include "deadlock/Interprocedural.h"
+#include "deadlock/InterruptAnalysis.h"
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"
@@ -296,6 +297,7 @@ public:
         operation.callIndex = callIndex;
         operation.caller = currentFunction_;
         operation.location = makeLocated(call->getExprLoc(), manager_);
+        operation.stateArgument = spec->stateArgument;
         for (const auto *argument : call->arguments())
             operation.arguments.push_back(expressionText(argument, context_));
         if (spec->lockArgument >= 0) {
@@ -314,6 +316,29 @@ public:
                     locationString(operation.location.expansion) +
                     " has no configured lock argument at index " +
                     std::to_string(spec->lockArgument));
+            }
+        }
+        if (spec->handlerArgument >= 0) {
+            operation.handlerArgument = spec->handlerArgument;
+            if (static_cast<unsigned>(spec->handlerArgument) < call->getNumArgs()) {
+                const auto *handlerExpr = call->getArg(spec->handlerArgument)->IgnoreParenImpCasts();
+                if (const auto *handler = referencedFunction(handlerExpr)) {
+                    directHandlerTargets_[callIndex] = handler->getCanonicalDecl();
+                    operation.handlerResolution = "pending_direct";
+                } else if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(handlerExpr)) {
+                    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(reference->getDecl())) {
+                        handlerVariables_[callIndex] = variable->getCanonicalDecl();
+                        operation.handlerResolution = "pending_indirect";
+                    } else {
+                        operation.handlerResolution = "unresolved";
+                    }
+                } else {
+                    operation.handlerResolution = "unresolved";
+                }
+            } else {
+                operation.handlerResolution = "missing_argument";
+                result_.uncertainties.push_back("interrupt registration API '" + spec->name +
+                    "' has no configured handler argument at " + locationString(operation.location.expansion));
             }
         }
         result_.apiOperations.push_back(std::move(operation));
@@ -367,6 +392,56 @@ public:
                 }
             }
             call.resolution = call.targetIds.empty() ? "unresolved_indirect" : "resolved_indirect";
+        }
+
+        for (auto &operation : result_.apiOperations) {
+            if (operation.handlerArgument < 0)
+                continue;
+            auto appendTarget = [&](const clang::FunctionDecl *target) {
+                const std::string name = target->getQualifiedNameAsString();
+                auto internal = definitionIds.find(target->getCanonicalDecl());
+                const std::string id = internal != definitionIds.end()
+                    ? internal->second : "external:" + name;
+                if (std::find(operation.handlerTargetIds.begin(), operation.handlerTargetIds.end(), id) ==
+                    operation.handlerTargetIds.end()) {
+                    operation.handlerTargetIds.push_back(id);
+                    operation.handlerTargetNames.push_back(name);
+                }
+            };
+            auto direct = directHandlerTargets_.find(operation.callIndex);
+            if (direct != directHandlerTargets_.end()) {
+                appendTarget(direct->second);
+                operation.handlerResolution = operation.handlerTargetIds.front().rfind("external:", 0) == 0
+                    ? "external_handler" : "resolved_direct";
+            } else {
+                auto variable = handlerVariables_.find(operation.callIndex);
+                if (variable != handlerVariables_.end()) {
+                    auto targets = pointerTargets_.find(variable->second);
+                    if (targets != pointerTargets_.end()) {
+                        std::vector<const clang::FunctionDecl *> ordered(targets->second.begin(),
+                                                                          targets->second.end());
+                        std::sort(ordered.begin(), ordered.end(), [&](const auto *left, const auto *right) {
+                            const std::string leftKey = left->getQualifiedNameAsString() + "@" +
+                                locationIdentity(left->getLocation(), manager_);
+                            const std::string rightKey = right->getQualifiedNameAsString() + "@" +
+                                locationIdentity(right->getLocation(), manager_);
+                            return leftKey < rightKey;
+                        });
+                        for (const auto *target : ordered)
+                            appendTarget(target);
+                    }
+                    operation.handlerResolution = operation.handlerTargetIds.empty()
+                        ? "unresolved_handler" : "resolved_indirect";
+                } else if (operation.handlerResolution != "missing_argument") {
+                    operation.handlerResolution = "unresolved_handler";
+                }
+            }
+            if (operation.handlerResolution == "unresolved_handler" ||
+                operation.handlerResolution == "external_handler") {
+                result_.uncertainties.push_back("handler target for '" + operation.api +
+                    "' at " + locationString(operation.location.expansion) + " is " +
+                    operation.handlerResolution);
+            }
         }
     }
 
@@ -488,7 +563,9 @@ private:
     std::unordered_map<std::size_t, unsigned> callEndOffsets_;
     std::unordered_map<std::string, std::vector<std::size_t>> functionCallIndices_;
     std::unordered_map<std::size_t, const clang::FunctionDecl *> directTargets_;
+    std::unordered_map<std::size_t, const clang::FunctionDecl *> directHandlerTargets_;
     std::unordered_map<std::size_t, const clang::VarDecl *> indirectVariables_;
+    std::unordered_map<std::size_t, const clang::VarDecl *> handlerVariables_;
     std::unordered_map<const clang::VarDecl *, std::unordered_set<const clang::FunctionDecl *>> pointerTargets_;
     std::unordered_map<const clang::FunctionDecl *, std::string> functionDefinitions_;
 };
@@ -558,8 +635,10 @@ int analyzeSource(const AnalyzeOptions &options, const ApiRegistry &registry,
     if (status != 0)
         error = "Clang failed to parse or analyze the requested source (tool status " +
                 std::to_string(status) + ")";
-    else
+    else {
         analyzeInterprocedural(result);
+        analyzeInterrupts(result);
+    }
     return status;
 }
 

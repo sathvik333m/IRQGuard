@@ -7,16 +7,16 @@ namespace deadlock {
 
 ApiRegistry::ApiRegistry() {
     const ApiSpec defaults[] = {
-        {"mutex_lock", "lock_acquire", 0},
-        {"mutex_unlock", "lock_release", 0},
-        {"spin_lock", "lock_acquire", 0},
-        {"spin_unlock", "lock_release", 0},
-        {"spin_lock_irqsave", "lock_acquire_irqsave", 0},
-        {"spin_unlock_irqrestore", "lock_release_irqrestore", 0},
-        {"local_irq_disable", "irq_disable", -1},
-        {"local_irq_enable", "irq_enable", -1},
-        {"request_irq", "interrupt_register", -1},
-        {"free_irq", "interrupt_unregister", -1},
+        {"mutex_lock", "lock_acquire", 0, -1, -1},
+        {"mutex_unlock", "lock_release", 0, -1, -1},
+        {"spin_lock", "lock_acquire", 0, -1, -1},
+        {"spin_unlock", "lock_release", 0, -1, -1},
+        {"spin_lock_irqsave", "lock_acquire_irqsave", 0, 1, -1},
+        {"spin_unlock_irqrestore", "lock_release_irqrestore", 0, 1, -1},
+        {"local_irq_disable", "irq_disable", -1, -1, -1},
+        {"local_irq_enable", "irq_enable", -1, -1, -1},
+        {"request_irq", "interrupt_register", -1, -1, 1},
+        {"free_irq", "interrupt_unregister", -1, -1, -1},
     };
     for (const auto &spec : defaults)
         entries_.emplace(spec.name, spec);
@@ -65,9 +65,26 @@ bool ApiRegistry::loadFile(const std::string &path, std::string &error) {
             }
             lockArgument = static_cast<int>(*argument);
         }
+        int stateArgument = -1;
+        if (auto argument = object->getInteger("state_argument")) {
+            if (*argument < 0 || *argument > 1024) {
+                error = "state_argument must be between 0 and 1024";
+                return false;
+            }
+            stateArgument = static_cast<int>(*argument);
+        }
+        int handlerArgument = -1;
+        if (auto argument = object->getInteger("handler_argument")) {
+            if (*argument < 0 || *argument > 1024) {
+                error = "handler_argument must be between 0 and 1024";
+                return false;
+            }
+            handlerArgument = static_cast<int>(*argument);
+        }
         const std::string apiName = name->str();
         const std::string apiKind = kind->str();
-        updated[apiName] = ApiSpec{apiName, apiKind, lockArgument};
+        updated[apiName] = ApiSpec{apiName, apiKind, lockArgument,
+                                   stateArgument, handlerArgument};
     }
     entries_ = std::move(updated);
     return true;

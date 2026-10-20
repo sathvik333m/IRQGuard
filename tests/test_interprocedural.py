@@ -9,7 +9,7 @@ run = subprocess.run([binary, "analyze", "--source", fixture, "--format", "json"
                      text=True, capture_output=True)
 assert run.returncode == 0, run.stderr
 report = json.loads(run.stdout)
-assert report["analysis_kind"] == "interprocedural_lock_summaries"
+assert report["analysis_kind"] == "interrupt_aware_lock_analysis"
 assert report["diagnostics"] == []
 assert all(function["cfg_available"] and function["cfg_events_complete"]
            for function in report["functions"])

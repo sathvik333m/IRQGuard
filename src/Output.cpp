@@ -1,6 +1,7 @@
 #include "deadlock/Output.h"
 
 #include <iomanip>
+#include <set>
 #include <sstream>
 
 namespace deadlock {
@@ -106,12 +107,67 @@ void arrayJson(std::ostringstream &out, const Range &range, WriteItem writeItem)
     out << ']';
 }
 
+void registrationJson(std::ostringstream &out, const InterruptRegistration &registration) {
+    out << "{\"api\":" << quote(registration.api)
+        << ",\"caller\":" << quote(registration.caller)
+        << ",\"irq_expression\":" << quote(registration.irqExpression)
+        << ",\"resolution\":" << quote(registration.resolution)
+        << ",\"handler_ids\":";
+    arrayJson(out, registration.handlerIds, [&](const std::string &value) { out << quote(value); });
+    out << ",\"handler_names\":";
+    arrayJson(out, registration.handlerNames, [&](const std::string &value) { out << quote(value); });
+    out << ",\"location\":";
+    locationJson(out, registration.location);
+    out << '}';
+}
+
+void snapshotJson(std::ostringstream &out, const InterruptStateSnapshot &snapshot) {
+    out << "{\"lock_identity\":" << quote(snapshot.lockIdentity)
+        << ",\"identity_status\":" << quote(snapshot.identityStatus)
+        << ",\"context\":" << quote(snapshot.context)
+        << ",\"irq_state\":" << quote(snapshot.irqState)
+        << ",\"source_function\":" << quote(snapshot.sourceFunction)
+        << ",\"origin_function\":" << quote(snapshot.originFunction)
+        << ",\"location\":";
+    locationJson(out, snapshot.location);
+    out << ",\"through_calls\":";
+    provenanceJson(out, snapshot.throughCalls);
+    out << ",\"provenance_truncated\":"
+        << (snapshot.provenanceTruncated ? "true" : "false") << '}';
+}
+
+void interruptEdgeJson(std::ostringstream &out, const InterruptLockEdge &edge) {
+    out << "{\"from_lock\":" << quote(edge.fromLock)
+        << ",\"to_lock\":" << quote(edge.toLock)
+        << ",\"kind\":" << quote(edge.kind)
+        << ",\"from_context\":" << quote(edge.fromContext)
+        << ",\"to_context\":" << quote(edge.toContext)
+        << ",\"source_function\":" << quote(edge.sourceFunction)
+        << ",\"target_function\":" << quote(edge.targetFunction)
+        << ",\"handler\":" << quote(edge.handler)
+        << ",\"irq_state\":" << quote(edge.irqState)
+        << ",\"certainty\":" << quote(edge.certainty)
+        << ",\"feasibility\":" << quote(edge.feasibility)
+        << ",\"feasibility_reason\":" << quote(edge.feasibilityReason)
+        << ",\"from_location\":";
+    locationJson(out, edge.fromLocation);
+    out << ",\"to_location\":";
+    locationJson(out, edge.toLocation);
+    out << ",\"registration_location\":";
+    locationJson(out, edge.registrationLocation);
+    out << ",\"source_provenance\":";
+    provenanceJson(out, edge.sourceProvenance);
+    out << ",\"target_provenance\":";
+    provenanceJson(out, edge.targetProvenance);
+    out << '}';
+}
+
 } // namespace
 
 std::string toJson(const AnalysisResult &result) {
     std::ostringstream out;
-    out << "{\n  \"schema_version\":2,\n  \"source\":" << quote(result.source)
-        << ",\n  \"analysis_kind\":\"interprocedural_lock_summaries\",\n  \"functions\":[";
+    out << "{\n  \"schema_version\":3,\n  \"source\":" << quote(result.source)
+        << ",\n  \"analysis_kind\":\"interrupt_aware_lock_analysis\",\n  \"functions\":[";
     for (std::size_t i = 0; i < result.functions.size(); ++i) {
         const auto &item = result.functions[i];
         if (i) out << ',';
@@ -153,6 +209,9 @@ std::string toJson(const AnalysisResult &result) {
         if (i) out << ',';
         out << "\n    {\"api\":" << quote(item.api) << ",\"kind\":" << quote(item.kind)
             << ",\"caller\":" << quote(item.caller) << ",\"call_index\":" << item.callIndex
+            << ",\"state_argument\":" << item.stateArgument
+            << ",\"handler_argument\":" << item.handlerArgument
+            << ",\"handler_resolution\":" << quote(item.handlerResolution)
             << ",\"arguments\":";
         arrayJson(out, item.arguments, [&](const std::string &value) { out << quote(value); });
         out << ",\"lock\":";
@@ -165,6 +224,10 @@ std::string toJson(const AnalysisResult &result) {
             locationJson(out, item.lock->location);
             out << '}';
         } else out << "null";
+        out << ",\"handler_target_ids\":";
+        arrayJson(out, item.handlerTargetIds, [&](const std::string &value) { out << quote(value); });
+        out << ",\"handler_target_names\":";
+        arrayJson(out, item.handlerTargetNames, [&](const std::string &value) { out << quote(value); });
         out << ",\"location\":";
         locationJson(out, item.location);
         out << '}';
@@ -219,6 +282,49 @@ std::string toJson(const AnalysisResult &result) {
     if (!result.functionSummaries.empty()) out << '\n' << "  ";
     out << "],\n  \"lock_dependencies\":";
     arrayJson(out, result.lockDependencies, [&](const LockDependency &dependency) { dependencyJson(out, dependency); });
+    out << ",\n  \"interrupt_registrations\":";
+    arrayJson(out, result.interruptRegistrations,
+              [&](const InterruptRegistration &registration) { registrationJson(out, registration); });
+    out << ",\n  \"interrupt_state_snapshots\":";
+    arrayJson(out, result.interruptSnapshots,
+              [&](const InterruptStateSnapshot &snapshot) { snapshotJson(out, snapshot); });
+    out << ",\n  \"interrupt_lock_graph\":{\"nodes\":[";
+    std::set<std::string> lockNodes;
+    for (const auto &edge : result.interruptLockEdges) {
+        lockNodes.insert(edge.fromLock);
+        lockNodes.insert(edge.toLock);
+    }
+    bool firstNode = true;
+    for (const auto &node : lockNodes) {
+        if (!firstNode) out << ',';
+        firstNode = false;
+        out << "{\"lock_identity\":" << quote(node) << '}';
+    }
+    out << "],\"edges\":";
+    arrayJson(out, result.interruptLockEdges,
+              [&](const InterruptLockEdge &edge) { interruptEdgeJson(out, edge); });
+    out << "},\n  \"interrupt_cycles\":";
+    arrayJson(out, result.interruptCycles, [&](const InterruptCycle &cycle) {
+        out << "{\"classification\":" << quote(cycle.classification)
+            << ",\"category\":" << quote(cycle.category)
+            << ",\"feasibility\":" << quote(cycle.feasibility)
+            << ",\"contains_uncertain_edge\":" << (cycle.containsUncertainEdge ? "true" : "false")
+            << ",\"explanation\":" << quote(cycle.explanation) << ",\"lock_sequence\":";
+        arrayJson(out, cycle.lockSequence, [&](const std::string &value) { out << quote(value); });
+        out << ",\"provenance_variants\":";
+        arrayJson(out, cycle.provenanceVariants, [&](const std::vector<std::size_t> &variant) {
+            arrayJson(out, variant, [&](std::size_t index) { out << index; });
+        });
+        out << ",\"edges\":[";
+        bool first = true;
+        for (auto index : cycle.edgeIndexes) {
+            if (!first) out << ',';
+            first = false;
+            if (index < result.interruptLockEdges.size())
+                interruptEdgeJson(out, result.interruptLockEdges[index]);
+        }
+        out << "]}";
+    });
     out << ",\n  \"uncertainties\":";
     arrayJson(out, result.uncertainties, [&](const std::string &value) { out << quote(value); });
     out << ",\n  \"diagnostics\":";
@@ -269,11 +375,75 @@ std::string toText(const AnalysisResult &result) {
         }
         out << '\n';
     }
+    out << "Interrupt registrations (" << result.interruptRegistrations.size() << "):\n";
+    for (const auto &registration : result.interruptRegistrations) {
+        out << "  " << registration.api << " in " << registration.caller << " -> ";
+        if (registration.handlerNames.empty()) out << "<unresolved>";
+        else for (std::size_t i = 0; i < registration.handlerNames.size(); ++i) {
+            if (i) out << ", ";
+            out << registration.handlerNames[i];
+        }
+        out << " [" << registration.resolution << "] at "
+            << registration.location.expansion.file << ':'
+            << registration.location.expansion.line << '\n';
+    }
+    out << "Interrupt-aware lock edges (" << result.interruptLockEdges.size() << "):\n";
+    for (const auto &edge : result.interruptLockEdges)
+        out << "  " << edge.fromLock << " -> " << edge.toLock << " [" << edge.kind << ", "
+            << edge.fromContext << "->" << edge.toContext << ", irq=" << edge.irqState
+            << ", " << edge.certainty << "]\n";
+    out << "Interrupt cycle candidates (" << result.interruptCycles.size() << "):\n";
+    for (const auto &cycle : result.interruptCycles)
+    {
+        out << "  " << cycle.category << " [" << cycle.feasibility << "] locks=";
+        for (std::size_t i = 0; i < cycle.lockSequence.size(); ++i)
+            out << (i ? " -> " : "") << cycle.lockSequence[i];
+        out << "\n    " << cycle.explanation << '\n';
+        for (auto index : cycle.edgeIndexes) if (index < result.interruptLockEdges.size()) {
+            const auto &edge = result.interruptLockEdges[index];
+            out << "    " << edge.fromLock << " -> " << edge.toLock << " ["
+                << edge.fromContext << "->" << edge.toContext << ", " << edge.kind << "] "
+                << edge.sourceFunction << '@' << edge.fromLocation.expansion.file << ':'
+                << edge.fromLocation.expansion.line << " -> " << edge.targetFunction << '@'
+                << edge.toLocation.expansion.file << ':' << edge.toLocation.expansion.line << '\n';
+        }
+    }
     for (const auto &uncertainty : result.uncertainties)
         out << "Uncertainty: " << uncertainty << '\n';
     for (const auto &diagnostic : result.diagnostics)
         out << "Diagnostic: " << diagnostic << '\n';
-    out << "Phase 2 reports possible lock-order dependencies; it does not identify deadlock cycles.\n";
+    out << "Cycle reports are static candidates under the process/hardirq model; they are not confirmed deadlocks.\n";
+    return out.str();
+}
+
+std::string toDot(const AnalysisResult &result) {
+    auto dotQuote = [](const std::string &value) {
+        std::string output;
+        for (char c : value) {
+            if (c == '\\' || c == '"') output.push_back('\\');
+            if (c == '\n' || c == '\r') output.push_back(' ');
+            else output.push_back(c);
+        }
+        return output;
+    };
+    std::ostringstream out;
+    out << "digraph interrupt_lock_dependencies {\n  rankdir=LR;\n  node [shape=box];\n";
+    std::set<std::string> nodes;
+    for (const auto &edge : result.interruptLockEdges) {
+        nodes.insert(edge.fromLock); nodes.insert(edge.toLock);
+    }
+    for (const auto &node : nodes)
+        out << "  \"" << dotQuote(node) << "\";\n";
+    for (const auto &edge : result.interruptLockEdges) {
+        const bool rejected = edge.feasibility == "rejected";
+        out << "  \"" << dotQuote(edge.fromLock) << "\" -> \"" << dotQuote(edge.toLock)
+            << "\" [label=\"" << dotQuote(edge.kind + " " + edge.fromContext + "->" +
+                edge.toContext + " @" + edge.fromLocation.expansion.file + ":" +
+                std::to_string(edge.fromLocation.expansion.line)) << "\", color=\""
+            << (rejected ? "gray" : edge.kind == "interrupt_preemption" ? "red" : "black")
+            << "\", style=\"" << (rejected ? "dashed" : "solid") << "\"];\n";
+    }
+    out << "}\n";
     return out.str();
 }
 

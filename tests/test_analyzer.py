@@ -15,7 +15,7 @@ run = subprocess.run([binary, "analyze", "--source", str(fixture), "--format", "
                      text=True, capture_output=True)
 assert run.returncode == 0, run.stderr
 data = json.loads(run.stdout)
-assert data["analysis_kind"] == "interprocedural_lock_summaries"
+assert data["analysis_kind"] == "interrupt_aware_lock_analysis"
 functions = {function["name"]: function for function in data["functions"]}
 assert {"inner", "indirect", "analyze_me"}.issubset(functions)
 assert all(item["location"]["expansion"]["line"] > 0 for item in functions.values())
