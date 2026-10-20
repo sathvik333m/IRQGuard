@@ -9,7 +9,8 @@ Install the C++ build tools and matching LLVM/Clang development packages:
 ```sh
 sudo apt update
 sudo apt install build-essential cmake ninja-build clang-20 llvm-20-dev libclang-20-dev \
-  zlib1g-dev libzstd-dev libedit-dev libcurl4-openssl-dev python3
+  zlib1g-dev libzstd-dev libedit-dev libcurl4-openssl-dev python3 python3-venv \
+  python3-pip nodejs npm
 ```
 
 Build with LLVM 20's CMake package files:
@@ -53,6 +54,78 @@ build/deadlock-analyzer analyze --source file.c \
 ```
 
 Each `--clang-arg` value is the next single argument. Compilation-database mode uses the command recorded for the requested source and does not accept `--clang-arg`.
+
+## Graphical interface (Phase 8)
+
+The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads the real schema-v3 analyzer JSON through a small FastAPI adapter; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
+
+```mermaid
+flowchart LR
+  Browser[React + TypeScript UI] -->|HTTP /api/v1| API[Local FastAPI adapter]
+  API -->|fixed argv, timeout and output limits| Analyzer[C++ Clang analyzer]
+  Analyzer -->|schema-v3 JSON| API
+  API -->|metadata + report JSON| DB[(SQLite + local report files)]
+  API -->|bounded source ranges| Browser
+```
+
+Create a backend environment and build the analyzer from the repository root:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r backend/requirements.txt
+cmake -S . -B build -G Ninja \
+  -DLLVM_DIR=/usr/lib/llvm-20/lib/cmake/llvm \
+  -DClang_DIR=/usr/lib/llvm-20/lib/cmake/clang
+cmake --build build
+```
+
+Start the local API in one WSL terminal. Only paths inside `IRQGUARD_WORKSPACES` are accepted. The default root is the repository. To permit additional workspaces, provide an explicit colon-separated list of existing directories.
+
+```sh
+export IRQGUARD_ANALYZER="$PWD/build/deadlock-analyzer"
+export IRQGUARD_WORKSPACES="$PWD"
+export IRQGUARD_DATA_DIR="$HOME/.local/share/irqguard"
+python -m uvicorn irqguard_api.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+In another WSL terminal, start the frontend:
+
+```sh
+cd web
+npm ci
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in a Windows browser. WSL 2 localhost forwarding should connect to the development server. If forwarding is unavailable, use the WSL address in the browser while keeping the API bound to loopback and configure the frontend proxy accordingly.
+
+In **New analysis**, enter an absolute Linux path such as `/home/user/project/example.c`. The browser does not browse the WSL filesystem. Optional inputs are a build directory or `compile_commands.json`, and an API-registry JSON file. Raw shell commands and arbitrary Clang arguments are not accepted through the GUI. The backend resolves symlinks before enforcing workspace roots, limits source files to 20 MiB, limits analyzer output streams to 16 MiB each, allows at most two concurrent runs, and terminates a run after 180 seconds by default.
+
+The API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, and bounded source snippets. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
+
+The Overview uses backend-measured duration and counts from the report; missing values are shown as unavailable. History comparisons warn when report schema versions differ. Runtime Evidence and Benchmarks are visibly unavailable because this repository does not implement runtime instrumentation or a benchmark suite. The small JSON under `web/src/test-data` is test-only and is never loaded by the running interface.
+
+Run the GUI checks after installing backend and frontend dependencies:
+
+```sh
+source .venv/bin/activate
+cmake -S . -B build -G Ninja
+cmake --build build
+ctest --test-dir build --output-on-failure
+cd web
+npm test
+npm run build
+```
+
+See [Phase 8 architecture and API notes](docs/design-phase8.md) for report mapping, security boundaries, persistence, and current UI limits.
+
+### Troubleshooting
+
+- **The UI says the local API is unavailable:** confirm the backend is running on `127.0.0.1:8000` and that the Vite proxy has not been changed.
+- **The API says the analyzer is unavailable:** rebuild with `cmake --build build` and confirm `IRQGUARD_ANALYZER` points to the executable.
+- **A source path is rejected:** enter an absolute Linux path and add its parent workspace to `IRQGUARD_WORKSPACES`; symlinks resolving outside those roots are intentionally denied.
+- **Windows cannot reach the development server:** first check WSL 2 localhost forwarding. The documented frontend and API bind to loopback; do not expose the API on a public interface.
+- **A report schema is rejected:** this interface is currently pinned to analyzer JSON schema 3. Update and test the frontend adapter when the analyzer schema changes.
 
 API models can be extended or overridden by name with `--api-config config/apis.example.json`. The configuration is JSON with an `apis` array. Each item has `name`, `kind`, and optional zero-based `lock_argument`, `state_argument`, and `handler_argument` indexes. Built-ins include selected mutex/spinlock operations, `spin_lock_irqsave`/`spin_unlock_irqrestore`, `local_irq_disable`/`local_irq_enable`, `request_irq`, and `free_irq`. See [Phase 3 design](docs/design-phase3.md) and [Phase 4 design](docs/design-phase4.md) for the modeled semantics and limits.
 

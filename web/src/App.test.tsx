@@ -1,0 +1,136 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import App from './App'
+import fixture from './test-data/report.fixture.json'
+
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); localStorage.clear() })
+
+function jsonResponse(payload: unknown, status = 200) {
+  return { ok: status >= 200 && status < 300, status, json: async () => payload } as Response
+}
+
+const health = {
+  api_version: '1', status: 'ok', analyzer_path: '/tmp/deadlock-analyzer', analyzer_available: true,
+  analyzer_report_schema: 3, workspace_roots: ['/tmp/irqguard-test'], data_directory: '/tmp/irqguard-test/data',
+  runtime_evidence_available: false, benchmarks_available: false,
+}
+
+describe('IRQGuard workspace states', () => {
+  it('renders the no-history dashboard without sample findings or invented metrics', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
+      ? jsonResponse(health) : jsonResponse({ analyses: [] })))
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Start with a C source file' })).toBeInTheDocument()
+    expect(screen.queryByText(/candidate lock-order cycles/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/browser cannot browse your WSL files/i)).toBeInTheDocument()
+  })
+
+  it('shows a useful error when the local API cannot be reached', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')))
+    render(<App />)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/local irqguard api is unavailable/i)
+  })
+
+  it('validates an outside workspace path before sending a request', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      void init
+      return String(input).includes('/health') ? jsonResponse(health) : jsonResponse({ analyses: [] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Start with a C source file' })
+    fireEvent.click(screen.getAllByRole('button', { name: /new analysis/i })[0])
+    fireEvent.change(screen.getByLabelText(/Source file path/), { target: { value: '/etc/passwd' } })
+    fireEvent.click(screen.getByRole('button', { name: /start analysis/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/outside the configured workspace roots/i)
+    expect(fetchMock.mock.calls.some(([url, init]) => String(url).includes('/analyses') && init?.method === 'POST')).toBe(false)
+  })
+
+  it('paginates large finding lists instead of rendering every result at once', async () => {
+    const bigReport = {
+      ...fixture,
+      interrupt_lock_graph: { nodes: [], edges: [] },
+      interrupt_cycles: Array.from({ length: 60 }, (_, index) => ({
+        ...fixture.interrupt_cycles[0], explanation: `Test-only fixture finding ${index + 1}`,
+      })),
+    }
+    const metadata = {
+      id: 'run-12345678', created_at: new Date().toISOString(), status: 'completed',
+      source_path: '/tmp/irqguard-test/demo.c', analyzer_schema_version: 3,
+      summary: { functions: 2, lock_operations: 2, graph_edges: 0, candidate_cycles: 60 },
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: [metadata] })
+      if (url.endsWith('/report')) return jsonResponse(bigReport)
+      return jsonResponse({ analysis: metadata })
+    }))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Findings' }))
+    expect(await screen.findByText('Page 1 of 3 · showing up to 25')).toBeInTheDocument()
+    expect(screen.getAllByRole('row').length).toBeLessThanOrEqual(26)
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Page 2 of 3 · showing up to 25')).toBeInTheDocument()
+  })
+
+  it('shows an empty graph instead of drawing sample edges', async () => {
+    const emptyReport = { ...fixture, interrupt_lock_graph: { nodes: [], edges: [] }, interrupt_cycles: [] }
+    const metadata = { id: 'run-9', created_at: new Date().toISOString(), status: 'completed', source_path: '/tmp/irqguard-test/demo.c', analyzer_schema_version: 3, summary: { functions: 0, graph_edges: 0, candidate_cycles: 0 } }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: [metadata] })
+      if (url.endsWith('/report')) return jsonResponse(emptyReport)
+      return jsonResponse({ analysis: metadata })
+    }))
+    render(<App />)
+    await waitFor(() => expect(screen.getByText(/Latest report/)).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Lock graph' }))
+    expect(await screen.findByRole('heading', { name: 'No lock dependency edges' })).toBeInTheDocument()
+  })
+
+  it('shows report functions and syntax-colored source with exact line numbers', async () => {
+    const metadata = { id: 'run-source', created_at: new Date().toISOString(), status: 'completed', source_path: '/tmp/irqguard-test/demo.c', analyzer_schema_version: 3, summary: { functions: 2 } }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: [metadata] })
+      if (url.endsWith('/report')) return jsonResponse(fixture)
+      if (url.includes('/source?')) return jsonResponse({ file: '/tmp/irqguard-test/demo.c', requested_line: 4, lines: [{ line: 4, text: 'int worker(void) {', highlighted: true }] })
+      return jsonResponse({ analysis: metadata })
+    }))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Source explorer' }))
+    fireEvent.click(await screen.findByRole('button', { name: /worker/ }))
+    expect(await screen.findByRole('region', { name: 'Source at line 4' })).toBeInTheDocument()
+    expect(screen.getByText('int', { selector: '.syntax-keyword' })).toBeInTheDocument()
+    expect(screen.getByText('4')).toBeInTheDocument()
+  })
+
+  it('shows actual graph edges and makes multiple report cycles selectable', async () => {
+    const multipleReport = {
+      ...fixture,
+      interrupt_cycles: [fixture.interrupt_cycles[0], {
+        ...fixture.interrupt_cycles[0], category: 'candidate_lock_order_cycle',
+        lock_sequence: ['lock-B', 'lock-A', 'lock-B'],
+      }],
+    }
+    const metadata = { id: 'run-2', created_at: new Date().toISOString(), status: 'completed', source_path: '/tmp/irqguard-test/demo.c', analyzer_schema_version: 3, summary: { functions: 2, graph_edges: 2, candidate_cycles: 2 } }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: [metadata] })
+      if (url.endsWith('/report')) return jsonResponse(multipleReport)
+      return jsonResponse({ analysis: metadata })
+    }))
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Recent analyses' })).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: 'Lock graph' }))
+    const findingSelect = await screen.findByLabelText('Highlight a finding')
+    expect(findingSelect.querySelectorAll('option')).toHaveLength(3)
+    expect(document.querySelector('.graph-count')?.textContent).toBe('2 / 2 edges')
+    fireEvent.change(findingSelect, { target: { value: '1' } })
+    expect(await screen.findByText(/Highlighting candidate lock order cycle/)).toBeInTheDocument()
+  })
+})

@@ -1,0 +1,38 @@
+{
+  "test_only": true,
+  "schema_version": 3,
+  "source": "/tmp/irqguard-test/demo.c",
+  "analysis_kind": "interrupt_aware_lock_analysis",
+  "functions": [
+    { "name": "worker", "qualified_name": "worker", "location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 4, "column": 1, "valid": true } } },
+    { "name": "irq_handler", "qualified_name": "irq_handler", "location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 12, "column": 1, "valid": true } } }
+  ],
+  "api_operations": [],
+  "lock_dependencies": [],
+  "interrupt_registrations": [],
+  "interrupt_state_snapshots": [],
+  "interrupt_lock_graph": {
+    "nodes": [{ "lock_identity": "lock-A" }, { "lock_identity": "lock-B" }],
+    "edges": [
+      { "from_lock": "lock-A", "to_lock": "lock-B", "kind": "regular", "from_context": "process", "to_context": "process", "certainty": "possible", "from_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 6, "column": 5, "valid": true } }, "to_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 7, "column": 5, "valid": true } } },
+      { "from_lock": "lock-B", "to_lock": "lock-A", "kind": "interrupt_preemption", "from_context": "process", "to_context": "hardirq", "irq_state": "enabled", "certainty": "possible", "from_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 6, "column": 5, "valid": true } }, "to_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 14, "column": 5, "valid": true } } }
+    ]
+  },
+  "interrupt_cycles": [
+    {
+      "classification": "interrupt_preemption_candidate",
+      "category": "interrupt_aware_candidate",
+      "feasibility": "candidate",
+      "contains_uncertain_edge": false,
+      "explanation": "Test-only fixture candidate. Not an analysis of Linux source.",
+      "lock_sequence": ["lock-A", "lock-B", "lock-A"],
+      "provenance_variants": [[0, 1]],
+      "edges": [
+        { "from_lock": "lock-A", "to_lock": "lock-B", "kind": "regular", "from_context": "process", "to_context": "process", "source_function": "worker", "target_function": "worker", "certainty": "possible", "from_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 6, "column": 5, "valid": true } }, "to_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 7, "column": 5, "valid": true } } },
+        { "from_lock": "lock-B", "to_lock": "lock-A", "kind": "interrupt_preemption", "from_context": "process", "to_context": "hardirq", "source_function": "worker", "target_function": "irq_handler", "irq_state": "enabled", "certainty": "possible", "registration_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 15, "column": 5, "valid": true } }, "from_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 6, "column": 5, "valid": true } }, "to_location": { "expansion": { "file": "/tmp/irqguard-test/demo.c", "line": 14, "column": 5, "valid": true } } }
+      ]
+    }
+  ],
+  "uncertainties": [],
+  "diagnostics": []
+}

@@ -9,3 +9,8 @@ Makefile
 *.so
 __pycache__/
 *.py[cod]
+/web/node_modules/
+/web/dist/
+/web/tsconfig.tsbuildinfo
+/.venv/
+*.sqlite3

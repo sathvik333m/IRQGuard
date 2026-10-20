@@ -91,6 +91,11 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
     )
+    add_test(NAME irqguard_local_api
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/backend/tests/test_api.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
+    )
 endif()
 
 install(TARGETS deadlock-analyzer RUNTIME DESTINATION bin)
