@@ -1,0 +1,566 @@
+#include "deadlock/Analyzer.h"
+#include "deadlock/Interprocedural.h"
+
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Expr.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Analysis/CFG.h"
+#include "clang/Frontend/ASTConsumers.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/FrontendActions.h"
+#include "clang/Lex/Lexer.h"
+#include "clang/Tooling/CompilationDatabase.h"
+#include "clang/Tooling/Tooling.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <algorithm>
+#include <map>
+#include <limits>
+#include <set>
+#include <sstream>
+#include <unordered_map>
+#include <unordered_set>
+
+namespace deadlock {
+namespace {
+
+SourceLocation makeLocation(clang::SourceLocation location,
+                            const clang::SourceManager &manager) {
+    if (location.isInvalid())
+        return {};
+    auto presumed = manager.getPresumedLoc(location);
+    if (presumed.isInvalid())
+        return {};
+    SourceLocation result;
+    result.file = presumed.getFilename();
+    result.line = presumed.getLine();
+    result.column = presumed.getColumn();
+    result.valid = true;
+    return result;
+}
+
+LocatedSource makeLocated(clang::SourceLocation location,
+                          const clang::SourceManager &manager) {
+    LocatedSource result;
+    result.isMacro = location.isMacroID();
+    result.expansion = makeLocation(manager.getExpansionLoc(location), manager);
+    result.spelling = makeLocation(manager.getSpellingLoc(location), manager);
+    return result;
+}
+
+std::string expressionText(const clang::Expr *expression,
+                           const clang::ASTContext &context) {
+    if (!expression)
+        return "<missing>";
+    bool invalid = false;
+    auto text = clang::Lexer::getSourceText(
+        clang::CharSourceRange::getTokenRange(expression->getSourceRange()),
+        context.getSourceManager(), context.getLangOpts(), &invalid);
+    if (!invalid && !text.empty())
+        return text.str();
+    std::string printed;
+    llvm::raw_string_ostream stream(printed);
+    expression->printPretty(stream, nullptr, context.getPrintingPolicy());
+    stream.flush();
+    return printed;
+}
+
+std::string expressionSyntax(const clang::Expr *expression) {
+    expression = expression ? expression->IgnoreParenImpCasts() : nullptr;
+    if (llvm::isa_and_nonnull<clang::DeclRefExpr>(expression)) return "decl_ref";
+    if (llvm::isa_and_nonnull<clang::MemberExpr>(expression)) return "member";
+    if (llvm::isa_and_nonnull<clang::ArraySubscriptExpr>(expression)) return "array_subscript";
+    if (llvm::isa_and_nonnull<clang::UnaryOperator>(expression)) return "unary";
+    if (llvm::isa_and_nonnull<clang::CallExpr>(expression)) return "call";
+    return expression ? "compound_or_other" : "unknown";
+}
+
+std::string locationIdentity(clang::SourceLocation location,
+                             const clang::SourceManager &manager) {
+    location = manager.getExpansionLoc(location);
+    if (location.isInvalid())
+        return "unknown-location";
+    auto presumed = manager.getPresumedLoc(location);
+    if (presumed.isInvalid())
+        return "unknown-location";
+    return std::string(presumed.getFilename()) + ":" +
+           std::to_string(presumed.getLine()) + ":" +
+           std::to_string(presumed.getColumn());
+}
+
+std::string declarationIdentity(const clang::ValueDecl *declaration,
+                                const clang::SourceManager &manager) {
+    const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+    const std::string kind = variable && variable->hasLocalStorage() ? "local@" : "decl@";
+    return kind + locationIdentity(declaration->getLocation(), manager) +
+           ":" + declaration->getQualifiedNameAsString();
+}
+
+std::string canonicalExpression(const clang::Expr *expression,
+                               clang::ASTContext &context,
+                               const clang::FunctionDecl *function,
+                               bool &resolved) {
+    const clang::SourceManager &manager = context.getSourceManager();
+    if (!expression) {
+        resolved = false;
+        return "unknown@missing";
+    }
+    expression = expression->IgnoreParenImpCasts();
+    if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(expression)) {
+        const auto *value = llvm::dyn_cast<clang::ValueDecl>(reference->getDecl());
+        if (const auto *parameter = llvm::dyn_cast_or_null<clang::ParmVarDecl>(value)) {
+            if (function) {
+                for (unsigned index = 0; index < function->getNumParams(); ++index) {
+                    if (function->getParamDecl(index)->getCanonicalDecl() == parameter->getCanonicalDecl())
+                        return "@param[" + std::to_string(index) + "]";
+                }
+            }
+        }
+        if (value)
+            return declarationIdentity(value, manager);
+    }
+    if (const auto *member = llvm::dyn_cast<clang::MemberExpr>(expression)) {
+        bool baseResolved = true;
+        std::string base = canonicalExpression(member->getBase(), context, function, baseResolved);
+        resolved &= baseResolved;
+        const auto *field = llvm::dyn_cast<clang::ValueDecl>(member->getMemberDecl());
+        std::string fieldName = field ? field->getQualifiedNameAsString() : "<member>";
+        return "member(" + base + (member->isArrow() ? "->" : ".") + fieldName + ")";
+    }
+    if (const auto *subscript = llvm::dyn_cast<clang::ArraySubscriptExpr>(expression)) {
+        bool baseResolved = true, indexResolved = true;
+        auto base = canonicalExpression(subscript->getBase(), context, function, baseResolved);
+        auto index = canonicalExpression(subscript->getIdx(), context, function, indexResolved);
+        resolved &= baseResolved && indexResolved;
+        return "index(" + base + "," + index + ")";
+    }
+    if (const auto *unary = llvm::dyn_cast<clang::UnaryOperator>(expression)) {
+        bool operandResolved = true;
+        auto operand = canonicalExpression(unary->getSubExpr(), context, function, operandResolved);
+        resolved &= operandResolved;
+        return "unary(" + unary->getOpcodeStr(unary->getOpcode()).str() + "," + operand + ")";
+    }
+    if (const auto *binary = llvm::dyn_cast<clang::BinaryOperator>(expression)) {
+        bool leftResolved = true, rightResolved = true;
+        auto left = canonicalExpression(binary->getLHS(), context, function, leftResolved);
+        auto right = canonicalExpression(binary->getRHS(), context, function, rightResolved);
+        resolved &= leftResolved && rightResolved;
+        return "binary(" + binary->getOpcodeStr().str() + "," + left + "," + right + ")";
+    }
+    if (const auto *conditional = llvm::dyn_cast<clang::ConditionalOperator>(expression)) {
+        bool conditionResolved = true, trueResolved = true, falseResolved = true;
+        auto condition = canonicalExpression(conditional->getCond(), context, function, conditionResolved);
+        auto yes = canonicalExpression(conditional->getTrueExpr(), context, function, trueResolved);
+        auto no = canonicalExpression(conditional->getFalseExpr(), context, function, falseResolved);
+        resolved = false; // It may identify either arm; no alias/branch proof is available.
+        (void)conditionResolved;
+        (void)trueResolved;
+        (void)falseResolved;
+        return "conditional(" + condition + "," + yes + "," + no + ")";
+    }
+    if (const auto *cast = llvm::dyn_cast<clang::ExplicitCastExpr>(expression)) {
+        bool childResolved = true;
+        auto child = canonicalExpression(cast->getSubExpr(), context, function, childResolved);
+        resolved &= childResolved;
+        return "cast(" + cast->getTypeAsWritten().getAsString() + "," + child + ")";
+    }
+    resolved = false;
+    return "unknown@" + locationIdentity(expression->getExprLoc(), manager);
+}
+
+const clang::FunctionDecl *referencedFunction(const clang::Expr *expression) {
+    if (!expression)
+        return nullptr;
+    expression = expression->IgnoreParenImpCasts();
+    while (const auto *unary = llvm::dyn_cast<clang::UnaryOperator>(expression)) {
+        if (unary->getOpcode() != clang::UO_AddrOf && unary->getOpcode() != clang::UO_Deref)
+            return nullptr;
+        expression = unary->getSubExpr()->IgnoreParenImpCasts();
+    }
+    if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(expression))
+        return llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl());
+    return nullptr;
+}
+
+class CFGCallCollector : public clang::RecursiveASTVisitor<CFGCallCollector> {
+public:
+    bool VisitCallExpr(clang::CallExpr *call) {
+        calls.push_back(call);
+        return true;
+    }
+    std::vector<clang::CallExpr *> calls;
+};
+
+class Extractor : public clang::RecursiveASTVisitor<Extractor> {
+public:
+    Extractor(clang::ASTContext &context, const ApiRegistry &registry,
+              AnalysisResult &result)
+        : context_(context), manager_(context.getSourceManager()),
+          registry_(registry), result_(result) {}
+
+    bool TraverseFunctionDecl(clang::FunctionDecl *function) {
+        if (!function || !function->doesThisDeclarationHaveABody())
+            return clang::RecursiveASTVisitor<Extractor>::TraverseFunctionDecl(function);
+        const std::string previous = currentFunction_;
+        const std::string previousId = currentFunctionId_;
+        const clang::FunctionDecl *previousDecl = currentFunctionDecl_;
+        currentFunction_ = function->getQualifiedNameAsString();
+        currentFunctionDecl_ = function;
+        std::optional<std::size_t> infoIndex;
+        if (isMainFile(function->getLocation())) {
+            FunctionInfo info;
+            info.name = function->getNameAsString();
+            info.qualifiedName = currentFunction_;
+            info.returnType = function->getReturnType().getAsString();
+            info.location = makeLocated(function->getLocation(), manager_);
+            info.id = functionId(function, manager_);
+            for (const auto *parameter : function->parameters())
+                info.parameters.push_back(parameter->getNameAsString());
+            result_.functions.push_back(std::move(info));
+            infoIndex = result_.functions.size() - 1;
+            currentFunctionId_ = result_.functions.back().id;
+            functionCallIndices_[currentFunctionId_].clear();
+            functionDefinitions_[function->getCanonicalDecl()] = currentFunctionId_;
+        }
+        bool traversed = clang::RecursiveASTVisitor<Extractor>::TraverseFunctionDecl(function);
+        if (infoIndex)
+            buildCFG(function, *infoIndex);
+        currentFunction_ = previous;
+        currentFunctionId_ = previousId;
+        currentFunctionDecl_ = previousDecl;
+        return traversed;
+    }
+
+    bool VisitVarDecl(clang::VarDecl *variable) {
+        if (!variable->hasInit())
+            return true;
+        if (const auto *target = referencedFunction(variable->getInit()))
+            pointerTargets_[variable->getCanonicalDecl()].insert(target->getCanonicalDecl());
+        return true;
+    }
+
+    bool VisitBinaryOperator(clang::BinaryOperator *binary) {
+        if (!binary->isAssignmentOp())
+            return true;
+        const auto *lhs = binary->getLHS()->IgnoreParenImpCasts();
+        const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(lhs);
+        const auto *variable = reference ? llvm::dyn_cast<clang::VarDecl>(reference->getDecl()) : nullptr;
+        const auto *target = referencedFunction(binary->getRHS());
+        if (variable && target)
+            pointerTargets_[variable->getCanonicalDecl()].insert(target->getCanonicalDecl());
+        return true;
+    }
+
+    bool VisitCallExpr(clang::CallExpr *call) {
+        if (!isMainFile(call->getExprLoc()))
+            return true;
+        const auto *direct = call->getDirectCallee();
+        std::string callee = direct ? direct->getQualifiedNameAsString()
+                                    : expressionText(call->getCallee(), context_);
+        CallInfo info;
+        info.caller = currentFunction_;
+        info.callerId = currentFunctionId_;
+        info.callee = callee;
+        info.calleeExpression = expressionText(call->getCallee(), context_);
+        info.location = makeLocated(call->getExprLoc(), manager_);
+        info.resolution = direct ? "direct_pending" : "unresolved_indirect";
+        for (const auto *argument : call->arguments()) {
+            bool resolved = true;
+            info.argumentIdentities.push_back(canonicalExpression(argument, context_, currentFunctionDecl_, resolved));
+        }
+        const std::size_t callIndex = result_.calls.size();
+        result_.calls.push_back(std::move(info));
+        callIndices_[call] = callIndex;
+        if (!currentFunctionId_.empty())
+            functionCallIndices_[currentFunctionId_].push_back(callIndex);
+        callEndOffsets_[callIndex] = sourceOffset(call->getEndLoc());
+        if (direct) {
+            directTargets_[callIndex] = direct->getCanonicalDecl();
+        } else {
+            const auto *calleeExpr = call->getCallee()->IgnoreParenImpCasts();
+            if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(calleeExpr))
+                if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(reference->getDecl()))
+                    indirectVariables_[callIndex] = variable->getCanonicalDecl();
+        }
+
+        if (!direct)
+            return true;
+        auto spec = registry_.find(direct->getNameAsString());
+        if (!spec)
+            return true;
+        result_.calls.back().modeledApi = true;
+        ApiOperation operation;
+        operation.api = spec->name;
+        operation.kind = spec->kind;
+        operation.callIndex = callIndex;
+        operation.caller = currentFunction_;
+        operation.location = makeLocated(call->getExprLoc(), manager_);
+        for (const auto *argument : call->arguments())
+            operation.arguments.push_back(expressionText(argument, context_));
+        if (spec->lockArgument >= 0) {
+            if (static_cast<unsigned>(spec->lockArgument) < call->getNumArgs()) {
+                const auto *argument = call->getArg(spec->lockArgument);
+                LockExpression lock;
+                lock.text = expressionText(argument, context_);
+                lock.syntax = expressionSyntax(argument);
+                bool resolved = true;
+                lock.identityTemplate = canonicalExpression(argument, context_, currentFunctionDecl_, resolved);
+                lock.identityStatus = resolved ? "symbolic" : "unresolved";
+                lock.location = makeLocated(argument->getExprLoc(), manager_);
+                operation.lock = std::move(lock);
+            } else {
+                result_.diagnostics.push_back("API '" + spec->name + "' at " +
+                    locationString(operation.location.expansion) +
+                    " has no configured lock argument at index " +
+                    std::to_string(spec->lockArgument));
+            }
+        }
+        result_.apiOperations.push_back(std::move(operation));
+        return true;
+    }
+
+    void finalizeCallTargets() {
+        std::unordered_map<const clang::FunctionDecl *, std::string> definitionIds;
+        for (const auto &entry : functionDefinitions_)
+            definitionIds[entry.first] = entry.second;
+
+        for (std::size_t index = 0; index < result_.calls.size(); ++index) {
+            CallInfo &call = result_.calls[index];
+            auto direct = directTargets_.find(index);
+            if (direct != directTargets_.end()) {
+                auto internal = definitionIds.find(direct->second);
+                if (internal != definitionIds.end()) {
+                    call.targetIds.push_back(internal->second);
+                    call.targetNames.push_back(call.callee);
+                    call.resolution = "direct";
+                } else {
+                    call.targetIds.push_back("external:" + call.callee);
+                    call.targetNames.push_back(call.callee);
+                    call.resolution = call.modeledApi ? "modeled_api" : "external";
+                }
+                continue;
+            }
+            auto variable = indirectVariables_.find(index);
+            if (variable != indirectVariables_.end()) {
+                auto targets = pointerTargets_.find(variable->second);
+                if (targets != pointerTargets_.end()) {
+                    std::vector<const clang::FunctionDecl *> orderedTargets(targets->second.begin(),
+                                                                            targets->second.end());
+                    std::sort(orderedTargets.begin(), orderedTargets.end(), [&](const auto *left, const auto *right) {
+                        const std::string leftKey = left->getQualifiedNameAsString() + "@" +
+                            locationIdentity(left->getLocation(), manager_);
+                        const std::string rightKey = right->getQualifiedNameAsString() + "@" +
+                            locationIdentity(right->getLocation(), manager_);
+                        return leftKey < rightKey;
+                    });
+                    for (const auto *target : orderedTargets) {
+                        const std::string targetName = target->getQualifiedNameAsString();
+                        auto internal = definitionIds.find(target->getCanonicalDecl());
+                        const std::string targetId = internal != definitionIds.end()
+                            ? internal->second : "external:" + targetName;
+                        if (std::find(call.targetIds.begin(), call.targetIds.end(), targetId) == call.targetIds.end()) {
+                            call.targetIds.push_back(targetId);
+                            call.targetNames.push_back(targetName);
+                        }
+                    }
+                }
+            }
+            call.resolution = call.targetIds.empty() ? "unresolved_indirect" : "resolved_indirect";
+        }
+    }
+
+    bool VisitIfStmt(clang::IfStmt *statement) { return addControl("if", statement->getCond(), statement->getIfLoc()); }
+    bool VisitSwitchStmt(clang::SwitchStmt *statement) { return addControl("switch", statement->getCond(), statement->getSwitchLoc()); }
+    bool VisitForStmt(clang::ForStmt *statement) { return addControl("for", statement->getCond(), statement->getForLoc()); }
+    bool VisitWhileStmt(clang::WhileStmt *statement) { return addControl("while", statement->getCond(), statement->getWhileLoc()); }
+    bool VisitDoStmt(clang::DoStmt *statement) { return addControl("do_while", statement->getCond(), statement->getDoLoc()); }
+    bool VisitConditionalOperator(clang::ConditionalOperator *expression) { return addControl("conditional_operator", expression->getCond(), expression->getQuestionLoc()); }
+
+private:
+    static std::string functionId(const clang::FunctionDecl *function,
+                                  const clang::SourceManager &manager) {
+        return function->getQualifiedNameAsString() + "@" +
+               locationIdentity(function->getLocation(), manager);
+    }
+
+    unsigned sourceOffset(clang::SourceLocation location) const {
+        location = manager_.getExpansionLoc(location);
+        return location.isValid() ? manager_.getFileOffset(location) : 0;
+    }
+
+    void buildCFG(clang::FunctionDecl *function, std::size_t infoIndex) {
+        clang::CFG::BuildOptions options;
+        auto cfg = clang::CFG::buildCFG(function, function->getBody(), &context_, options);
+        if (!cfg) {
+            result_.diagnostics.push_back("could not construct CFG for " + currentFunction_);
+            return;
+        }
+        auto &info = result_.functions[infoIndex];
+        info.cfgAvailable = true;
+        info.cfg.resize(cfg->getNumBlockIDs());
+        info.entryBlock = cfg->getEntry().getBlockID();
+        std::unordered_map<std::size_t, std::pair<unsigned, unsigned long long>> chosenBlock;
+        for (const clang::CFGBlock *block : *cfg) {
+            auto &record = info.cfg[block->getBlockID()];
+            record.id = block->getBlockID();
+            record.isExit = block == &cfg->getExit();
+            for (auto successor : block->succs())
+                if (const clang::CFGBlock *target = successor.getReachableBlock())
+                    record.successors.push_back(target->getBlockID());
+            for (const auto &element : *block) {
+                auto cfgStmt = element.getAs<clang::CFGStmt>();
+                if (!cfgStmt)
+                    continue;
+                const clang::Stmt *statement = cfgStmt->getStmt();
+                CFGCallCollector collector;
+                collector.TraverseStmt(const_cast<clang::Stmt *>(statement));
+                unsigned statementBegin = sourceOffset(statement->getBeginLoc());
+                unsigned statementEnd = sourceOffset(statement->getEndLoc());
+                unsigned long long span = statementEnd >= statementBegin
+                    ? static_cast<unsigned long long>(statementEnd - statementBegin) + 1
+                    : std::numeric_limits<unsigned>::max();
+                for (const auto *call : collector.calls) {
+                    auto found = callIndices_.find(call);
+                    if (found == callIndices_.end())
+                        continue;
+                    auto candidate = std::make_pair(record.id, span);
+                    auto previous = chosenBlock.find(found->second);
+                    if (previous == chosenBlock.end() || span < previous->second.second ||
+                        (span == previous->second.second && statement == call))
+                        chosenBlock[found->second] = candidate;
+                }
+            }
+        }
+        for (const auto &entry : chosenBlock)
+            info.cfg[entry.second.first].callEvents.push_back(entry.first);
+        auto expected = functionCallIndices_.find(info.id);
+        if (expected != functionCallIndices_.end()) {
+            for (std::size_t callIndex : expected->second) {
+                if (!chosenBlock.count(callIndex)) {
+                    info.cfgEventsComplete = false;
+                    const auto &location = result_.calls[callIndex].location.expansion;
+                    result_.diagnostics.push_back("could not map call at " + location.file + ":" +
+                        std::to_string(location.line) + ":" + std::to_string(location.column) +
+                        " into CFG for " + currentFunction_);
+                }
+            }
+        }
+        auto offsets = [&](std::size_t index) {
+            auto found = callEndOffsets_.find(index);
+            return found == callEndOffsets_.end() ? 0u : found->second;
+        };
+        for (auto &block : info.cfg)
+            std::stable_sort(block.callEvents.begin(), block.callEvents.end(),
+                [&](std::size_t left, std::size_t right) { return offsets(left) < offsets(right); });
+    }
+
+    bool isMainFile(clang::SourceLocation location) const {
+        return location.isValid() && manager_.isWrittenInMainFile(manager_.getExpansionLoc(location));
+    }
+
+    static std::string locationString(const SourceLocation &location) {
+        if (!location.valid) return "<unknown>";
+        return location.file + ":" + std::to_string(location.line) + ":" + std::to_string(location.column);
+    }
+
+    bool addControl(const std::string &kind, const clang::Expr *condition,
+                    clang::SourceLocation location) {
+        if (!isMainFile(location))
+            return true;
+        ControlConstruct construct;
+        construct.kind = kind;
+        construct.condition = condition ? expressionText(condition, context_) : "";
+        construct.function = currentFunction_;
+        construct.location = makeLocated(location, manager_);
+        result_.controls.push_back(std::move(construct));
+        return true;
+    }
+
+    clang::ASTContext &context_;
+    clang::SourceManager &manager_;
+    const ApiRegistry &registry_;
+    AnalysisResult &result_;
+    std::string currentFunction_;
+    std::string currentFunctionId_;
+    const clang::FunctionDecl *currentFunctionDecl_ = nullptr;
+    std::unordered_map<const clang::CallExpr *, std::size_t> callIndices_;
+    std::unordered_map<std::size_t, unsigned> callEndOffsets_;
+    std::unordered_map<std::string, std::vector<std::size_t>> functionCallIndices_;
+    std::unordered_map<std::size_t, const clang::FunctionDecl *> directTargets_;
+    std::unordered_map<std::size_t, const clang::VarDecl *> indirectVariables_;
+    std::unordered_map<const clang::VarDecl *, std::unordered_set<const clang::FunctionDecl *>> pointerTargets_;
+    std::unordered_map<const clang::FunctionDecl *, std::string> functionDefinitions_;
+};
+
+class ExtractConsumer : public clang::ASTConsumer {
+public:
+    ExtractConsumer(clang::ASTContext &context, const ApiRegistry &registry,
+                    AnalysisResult &result)
+        : extractor_(context, registry, result) {}
+    void HandleTranslationUnit(clang::ASTContext &context) override {
+        extractor_.TraverseDecl(context.getTranslationUnitDecl());
+        extractor_.finalizeCallTargets();
+    }
+private:
+    Extractor extractor_;
+};
+
+class ExtractAction : public clang::ASTFrontendAction {
+public:
+    ExtractAction(const ApiRegistry &registry, AnalysisResult &result)
+        : registry_(registry), result_(result) {}
+    std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(
+        clang::CompilerInstance &compiler, llvm::StringRef) override {
+        return std::make_unique<ExtractConsumer>(compiler.getASTContext(), registry_, result_);
+    }
+private:
+    const ApiRegistry &registry_;
+    AnalysisResult &result_;
+};
+
+class ExtractFactory : public clang::tooling::FrontendActionFactory {
+public:
+    ExtractFactory(const ApiRegistry &registry, AnalysisResult &result)
+        : registry_(registry), result_(result) {}
+    std::unique_ptr<clang::FrontendAction> create() override {
+        return std::make_unique<ExtractAction>(registry_, result_);
+    }
+private:
+    const ApiRegistry &registry_;
+    AnalysisResult &result_;
+};
+
+} // namespace
+
+int analyzeSource(const AnalyzeOptions &options, const ApiRegistry &registry,
+                  AnalysisResult &result, std::string &error) {
+    result.source = options.source;
+    std::unique_ptr<clang::tooling::CompilationDatabase> database;
+    if (!options.compilationDatabase.empty()) {
+        std::string loadError;
+        database = clang::tooling::CompilationDatabase::loadFromDirectory(
+            options.compilationDatabase, loadError);
+        if (!database) {
+            error = "cannot load compilation database from '" +
+                    options.compilationDatabase + "': " + loadError;
+            return 2;
+        }
+    } else {
+        std::vector<std::string> arguments = options.clangArguments;
+        if (arguments.empty())
+            arguments.push_back("-std=c11");
+        database = std::make_unique<clang::tooling::FixedCompilationDatabase>(".", arguments);
+    }
+    clang::tooling::ClangTool tool(*database, {options.source});
+    ExtractFactory factory(registry, result);
+    int status = tool.run(&factory);
+    if (status != 0)
+        error = "Clang failed to parse or analyze the requested source (tool status " +
+                std::to_string(status) + ")";
+    else
+        analyzeInterprocedural(result);
+    return status;
+}
+
+} // namespace deadlock

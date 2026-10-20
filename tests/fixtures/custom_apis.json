@@ -1,0 +1,6 @@
+{
+  "apis": [
+    {"name": "project_lock", "kind": "lock_acquire", "lock_argument": 1},
+    {"name": "spin_lock", "kind": "custom_spin_acquire", "lock_argument": 0}
+  ]
+}
