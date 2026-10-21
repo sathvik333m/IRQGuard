@@ -158,3 +158,6 @@ python3 runtime/runtime_evidence.py compare \
 - This is a controlled fixture harness, not a transparent instrumenter for
   arbitrary pthread programs. Code must use the provided wrappers to appear in
   traces.
+# GUI integration
+
+The local Node API exposes `GET /api/v1/runtime/runs`, `GET /api/v1/runtime/runs/:id`, `POST /api/v1/runtime/runs`, `POST /api/v1/runtime/benchmarks`, and `POST /api/v1/runtime/compare`. Scenario inputs are an allowlisted name and bounded timeout; benchmark inputs are bounded iteration/repeat counts. The API always invokes the repository's built runtime demo and does not accept user-supplied executable paths or shell text. Run summaries, event traces, benchmark output, and comparisons are stored under the backend data directory's `runtime/` folder.

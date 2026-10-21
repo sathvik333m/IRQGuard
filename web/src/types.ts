@@ -151,6 +151,26 @@ export interface Health {
   benchmarks_available: boolean
 }
 
+export interface RuntimeRun {
+  id: string
+  created_at: string
+  kind: 'scenario' | 'benchmark' | 'comparison' | string
+  status: string
+  scenario?: string | null
+  termination?: string | null
+  deadlock_reproduction?: string | null
+  event_count?: number | null
+  error?: string | null
+}
+
+export interface RuntimeEvidence {
+  run: RuntimeRun
+  summary: Record<string, any> | null
+  events: Array<Record<string, any>>
+  comparison: Record<string, any> | null
+  benchmark: Record<string, any> | null
+}
+
 export interface SourceSnippet {
   file: string
   requested_line: number

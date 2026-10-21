@@ -1,4 +1,4 @@
-import type { AnalysisMetadata, AnalysisReport, Health, SourceSnippet } from './types'
+import type { AnalysisMetadata, AnalysisReport, Health, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
 
 export class ApiError extends Error {
   status: number
@@ -104,4 +104,33 @@ export async function getGraph(id: string) {
   return request<{ nodes: Array<{ lock_identity: string }>; edges: AnalysisReport['interrupt_lock_graph']['edges'] }>(
     `/api/v1/analyses/${encodeURIComponent(id)}/graph`,
   )
+}
+
+export async function getRuntimeRuns(): Promise<RuntimeRun[]> {
+  const result = await request<{ runs: RuntimeRun[] }>('/api/v1/runtime/runs')
+  return result.runs
+}
+
+export async function getRuntimeEvidence(id: string): Promise<RuntimeEvidence> {
+  return request(`/api/v1/runtime/runs/${encodeURIComponent(id)}`)
+}
+
+export async function startRuntimeScenario(scenario: string): Promise<RuntimeRun> {
+  const result = await request<{ run: RuntimeRun }>('/api/v1/runtime/runs', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scenario }),
+  })
+  return result.run
+}
+
+export async function startRuntimeBenchmark(): Promise<RuntimeRun> {
+  const result = await request<{ run: RuntimeRun }>('/api/v1/runtime/benchmarks', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+  })
+  return result.run
+}
+
+export async function compareRuntimeEvidence(input: { analysis_id: string; runtime_run_ids: string[]; static_to_runtime: Record<string, string> }) {
+  return request<{ run: RuntimeRun; comparison: Record<string, any> }>('/api/v1/runtime/compare', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  })
 }

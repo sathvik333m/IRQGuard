@@ -2,7 +2,7 @@ import { createServer } from 'node:http'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { constants, accessSync } from 'node:fs'
-import { mkdir, readFile, realpath, rename, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, realpath, rename, stat, writeFile, unlink } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -15,6 +15,10 @@ const reportDir = path.join(dataDir, 'reports')
 const historyPath = path.join(dataDir, 'history.json')
 const apiVersion = '1'
 const reportSchema = 3
+const runtimeScript = path.join(repoRoot, 'runtime/runtime_evidence.py')
+const runtimeProgram = path.join(repoRoot, 'build/irqguard-runtime-demo')
+const runtimeDir = path.join(dataDir, 'runtime')
+const runtimeHistoryPath = path.join(runtimeDir, 'history.json')
 const maxSourceBytes = 20 * 1024 * 1024
 const maxOutputBytes = 16 * 1024 * 1024
 const maxContextLines = 80
@@ -37,6 +41,7 @@ async function configuredRoots() {
 
 const workspaceRoots = await configuredRoots()
 await mkdir(reportDir, { recursive: true })
+await mkdir(runtimeDir, { recursive: true })
 let analyses = []
 try {
   const saved = JSON.parse(await readFile(historyPath, 'utf8'))
@@ -53,12 +58,29 @@ function saveHistory() {
   })
   return saveQueue
 }
+let runtimeRuns = []
+try {
+  const saved = JSON.parse(await readFile(runtimeHistoryPath, 'utf8'))
+  if (Array.isArray(saved)) runtimeRuns = saved.filter((item) => item && typeof item === 'object')
+} catch (error) {
+  if (error.code !== 'ENOENT') throw new Error(`Could not read IRQGuard runtime history at ${runtimeHistoryPath}: ${error.message}`)
+}
+let runtimeSaveQueue = Promise.resolve()
+function saveRuntimeHistory() {
+  runtimeSaveQueue = runtimeSaveQueue.then(async () => {
+    const temporary = `${runtimeHistoryPath}.tmp`
+    await writeFile(temporary, `${JSON.stringify(runtimeRuns)}\n`, 'utf8')
+    await rename(temporary, runtimeHistoryPath)
+  })
+  return runtimeSaveQueue
+}
 
 const allowedOrigins = new Set([
   'http://localhost:5173', 'http://127.0.0.1:5173',
   'http://localhost:4173', 'http://127.0.0.1:4173',
 ])
 const activeRuns = new Set()
+const activeRuntimeRuns = new Set()
 
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status }
@@ -249,6 +271,77 @@ function executeAnalyzer(command, cwd) {
   })
 }
 
+function executeRuntime(command, cwd, timeoutMs = 45000) {
+  return new Promise((resolve) => {
+    let child
+    try { child = spawn(command[0], command.slice(1), { cwd, shell: false, detached: true, stdio: ['ignore', 'pipe', 'pipe'] }) }
+    catch (error) { resolve({ code: 127, stdout: '', stderr: '', error: `Could not start runtime evidence tool: ${error.message}` }); return }
+    const buffers = { stdout: [], stderr: [] }
+    let failure = null
+    let settled = false
+    const killGroup = () => { try { process.kill(-child.pid, 'SIGKILL') } catch { child.kill('SIGKILL') } }
+    const timer = setTimeout(() => { failure = 'Runtime evidence command exceeded its time limit'; killGroup() }, timeoutMs)
+    for (const name of ['stdout', 'stderr']) child[name].on('data', (chunk) => {
+      buffers[name].push(chunk)
+      if (Buffer.concat(buffers[name]).length > maxOutputBytes) { failure = `Runtime evidence ${name} exceeded the output limit`; killGroup() }
+    })
+    child.on('error', (error) => {
+      if (settled) return
+      settled = true; clearTimeout(timer)
+      resolve({ code: 127, stdout: '', stderr: '', error: `Could not start runtime evidence tool: ${error.message}` })
+    })
+    child.on('close', (code) => {
+      if (settled) return
+      settled = true; clearTimeout(timer)
+      resolve({ code: code ?? 1, stdout: Buffer.concat(buffers.stdout).toString('utf8'), stderr: Buffer.concat(buffers.stderr).toString('utf8'), error: failure })
+    })
+  })
+}
+
+function runtimeMetadata(run) {
+  return { id: run.id, created_at: run.created_at, kind: run.kind, status: run.status,
+    scenario: run.scenario ?? null, termination: run.summary?.termination ?? null,
+    deadlock_reproduction: run.summary?.deadlock_reproduction ?? null,
+    event_count: run.summary?.event_count ?? null, error: run.error ?? null }
+}
+
+function runtimeRun(id) {
+  if (!/^[a-f0-9-]{1,64}$/i.test(id)) throw new HttpError(404, 'Runtime evidence run was not found')
+  const run = runtimeRuns.find((item) => item.id === id)
+  if (!run) throw new HttpError(404, 'Runtime evidence run was not found')
+  return run
+}
+
+async function readRuntimeTrace(run) {
+  if (!run.trace_path) return []
+  try {
+    const text = await readFile(run.trace_path, 'utf8')
+    return text.split(/\r?\n/).filter(Boolean).slice(-5000).map((line) => JSON.parse(line))
+  } catch { return [] }
+}
+
+function validateRuntimeInputs(body, allowed) {
+  if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some((key) => !allowed.has(key))) throw new HttpError(422, 'Unexpected runtime request fields')
+}
+
+function runtimeFilesAvailable() {
+  try { accessSync(runtimeProgram, constants.X_OK); accessSync(runtimeScript, constants.R_OK); return true } catch { return false }
+}
+
+async function runRuntimeScenario(id, run, scenario, timeout) {
+  const tracePath = path.join(runtimeDir, `${id}.jsonl`)
+  const summaryPath = path.join(runtimeDir, `${id}.summary.json`)
+  const result = await executeRuntime(['python3', runtimeScript, 'run', '--program', runtimeProgram,
+    '--scenario', scenario, '--timeout', String(timeout), '--trace', tracePath, '--summary', summaryPath], repoRoot, Math.max(15000, (timeout + 8) * 1000))
+  const row = runtimeRuns.find((item) => item.id === id)
+  if (result.error || result.code !== 0) Object.assign(row, { status: 'failed', error: (result.error || result.stderr || `Runtime command exited ${result.code}`).slice(-4000) })
+  else {
+    try { Object.assign(row, { status: 'completed', trace_path: tracePath, summary: JSON.parse(await readFile(summaryPath, 'utf8')) }) }
+    catch (error) { Object.assign(row, { status: 'failed', error: `Could not load runtime summary: ${error.message}` }) }
+  }
+  await saveRuntimeHistory()
+}
+
 async function runAnalysis(id, source, compilation, apiConfig) {
   const started = performance.now()
   updateRun(id, { status: 'running' })
@@ -336,12 +429,88 @@ async function route(request, response) {
     const release = os.release()
     let analyzerAvailable = false
     try { accessSync(analyzerPath, constants.X_OK); analyzerAvailable = true } catch { /* Report accurately. */ }
+    const runtimeAvailable = runtimeFilesAvailable()
     json(response, 200, {
       api_version: apiVersion, status: 'ok', analyzer_path: analyzerPath, analyzer_available: analyzerAvailable,
       analyzer_report_schema: reportSchema, workspace_roots: workspaceRoots,
       environment: { operating_system: `${os.type()} ${os.release()} ${os.arch()}`, wsl: /microsoft/i.test(release) || Boolean(process.env.WSL_DISTRO_NAME), analyzer_version: null, target_kernel: null },
-      data_directory: dataDir, runtime_evidence_available: false, benchmarks_available: false,
+      data_directory: dataDir, runtime_evidence_available: runtimeAvailable, benchmarks_available: runtimeAvailable,
     }); return
+  }
+  if (request.method === 'GET' && pathname === '/api/v1/runtime/runs') {
+    json(response, 200, { api_version: apiVersion, runs: [...runtimeRuns].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 50).map(runtimeMetadata) }); return
+  }
+  const runtimeMatch = pathname.match(/^\/api\/v1\/runtime\/runs\/([^/]+)$/)
+  if (request.method === 'GET' && runtimeMatch) {
+    const run = runtimeRun(decodeURIComponent(runtimeMatch[1]))
+    json(response, 200, { api_version: apiVersion, run: runtimeMetadata(run), summary: run.summary ?? null,
+      events: await readRuntimeTrace(run), comparison: run.comparison ?? null, benchmark: run.benchmark ?? null }); return
+  }
+  if (request.method === 'POST' && pathname === '/api/v1/runtime/runs') {
+    if (!runtimeFilesAvailable()) throw new HttpError(503, 'Runtime evidence executable is unavailable; configure and build with CMake first')
+    if (activeRuntimeRuns.size >= 1) throw new HttpError(429, 'A runtime evidence scenario is already running')
+    const body = await readBody(request)
+    validateRuntimeInputs(body, new Set(['scenario', 'timeout']))
+    const scenarios = new Set(['safe', 'reverse-only', 'opposite-order', 'contention', 'deadlock', 'static-only'])
+    if (!scenarios.has(body.scenario)) throw new HttpError(422, 'scenario must be one of the controlled Phase 5 scenarios')
+    const timeout = body.timeout === undefined ? 2.5 : Number(body.timeout)
+    if (!Number.isFinite(timeout) || timeout < 0.5 || timeout > 10) throw new HttpError(422, 'timeout must be between 0.5 and 10 seconds')
+    const id = randomUUID().replaceAll('-', '')
+    const row = { id, created_at: new Date().toISOString(), kind: 'scenario', scenario: body.scenario, status: 'running', summary: null, error: null }
+    runtimeRuns.unshift(row)
+    activeRuntimeRuns.add(id)
+    await saveRuntimeHistory()
+    json(response, 202, { api_version: apiVersion, run: runtimeMetadata(row) })
+    runRuntimeScenario(id, row, body.scenario, timeout).catch(async (error) => {
+      Object.assign(row, { status: 'failed', error: `Runtime task failed: ${error.message}` }); await saveRuntimeHistory()
+    }).finally(() => activeRuntimeRuns.delete(id))
+    return
+  }
+  if (request.method === 'POST' && pathname === '/api/v1/runtime/benchmarks') {
+    if (!runtimeFilesAvailable()) throw new HttpError(503, 'Runtime benchmark executable is unavailable; build it with CMake first')
+    if (activeRuntimeRuns.size >= 1) throw new HttpError(429, 'A runtime evidence task is already running')
+    const body = await readBody(request)
+    validateRuntimeInputs(body, new Set(['iterations', 'repeats']))
+    const iterations = body.iterations === undefined ? 1000 : Number(body.iterations)
+    const repeats = body.repeats === undefined ? 5 : Number(body.repeats)
+    if (!Number.isInteger(iterations) || iterations < 1 || iterations > 2000 || !Number.isInteger(repeats) || repeats < 1 || repeats > 5) throw new HttpError(422, 'iterations must be 1–2000 and repeats 1–5')
+    const id = randomUUID().replaceAll('-', '')
+    const row = { id, created_at: new Date().toISOString(), kind: 'benchmark', status: 'running' }
+    runtimeRuns.unshift(row); activeRuntimeRuns.add(id); await saveRuntimeHistory()
+    json(response, 202, { api_version: apiVersion, run: runtimeMetadata(row) })
+    executeRuntime(['python3', runtimeScript, 'benchmark', '--program', runtimeProgram, '--iterations', String(iterations), '--repeats', String(repeats), '--timeout', '30'], repoRoot, 45000).then(async (result) => {
+      if (result.error || result.code !== 0) Object.assign(row, { status: 'failed', error: (result.error || result.stderr || `Benchmark exited ${result.code}`).slice(-4000) })
+      else { try { Object.assign(row, { status: 'completed', benchmark: JSON.parse(result.stdout) }) } catch { Object.assign(row, { status: 'failed', error: 'Benchmark returned invalid JSON' }) } }
+      await saveRuntimeHistory()
+    }).catch(async (error) => { Object.assign(row, { status: 'failed', error: error.message }); await saveRuntimeHistory() }).finally(() => activeRuntimeRuns.delete(id))
+    return
+  }
+  if (request.method === 'POST' && pathname === '/api/v1/runtime/compare') {
+    if (!runtimeFilesAvailable()) throw new HttpError(503, 'Runtime comparison tool is unavailable')
+    const body = await readBody(request)
+    validateRuntimeInputs(body, new Set(['analysis_id', 'runtime_run_ids', 'static_to_runtime']))
+    if (typeof body.analysis_id !== 'string' || !Array.isArray(body.runtime_run_ids) || !body.runtime_run_ids.length || body.runtime_run_ids.length > 20 || !body.runtime_run_ids.every((id) => typeof id === 'string')) throw new HttpError(422, 'analysis_id and one or more runtime_run_ids are required')
+    if (!body.static_to_runtime || typeof body.static_to_runtime !== 'object' || Array.isArray(body.static_to_runtime) || Object.keys(body.static_to_runtime).length > 1000 || !Object.entries(body.static_to_runtime).every(([key, value]) => typeof key === 'string' && typeof value === 'string')) throw new HttpError(422, 'static_to_runtime must map exact static identities to runtime lock IDs')
+    const analysis = readRun(body.analysis_id)
+    if (!analysis.report_path || analysis.status !== 'completed') throw new HttpError(409, 'Selected static analysis has no completed report')
+    const summaries = body.runtime_run_ids.map((id) => {
+      const run = runtimeRun(id)
+      if (run.kind !== 'scenario' || run.status !== 'completed' || !run.summary) throw new HttpError(409, `Runtime run ${id} has no completed scenario summary`)
+      return run
+    })
+    const id = randomUUID().replaceAll('-', '')
+    const lockMapPath = path.join(runtimeDir, `${id}.map.json`)
+    const outputPath = path.join(runtimeDir, `${id}.comparison.json`)
+    await writeFile(lockMapPath, `${JSON.stringify({ static_to_runtime: body.static_to_runtime })}\n`, { mode: 0o600 })
+    const result = await executeRuntime(['python3', runtimeScript, 'compare', '--static-report', analysis.report_path, '--lock-map', lockMapPath,
+      ...summaries.flatMap((run) => ['--summary', path.join(runtimeDir, `${run.id}.summary.json`)]), '--output', outputPath], repoRoot)
+    await unlink(lockMapPath).catch(() => undefined)
+    if (result.error || result.code !== 0) throw new HttpError(500, (result.stderr || result.error || 'Runtime comparison failed').slice(-4000))
+    const comparison = JSON.parse(await readFile(outputPath, 'utf8'))
+    const row = { id, created_at: new Date().toISOString(), kind: 'comparison', status: 'completed', comparison,
+      analysis_id: analysis.id, runtime_run_ids: body.runtime_run_ids }
+    runtimeRuns.unshift(row); await saveRuntimeHistory()
+    json(response, 201, { api_version: apiVersion, run: runtimeMetadata(row), comparison }); return
   }
   if (request.method === 'GET' && pathname === '/api/v1/analyses') {
     const limit = Number(url.searchParams.get('limit') || '50')
