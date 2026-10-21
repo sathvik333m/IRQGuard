@@ -103,7 +103,7 @@ In **New analysis**, enter an absolute Linux path such as `/home/user/project/ex
 
 The Node.js API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, and bounded source snippets. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Run metadata is stored in `history.json`; reports are separate JSON files. Existing history from the retired Python API remains in `history.sqlite3` and is not automatically imported. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
 
-The Overview is a graph-centered observability workspace with a finding inspector, real report metrics, lock API counts derived from lock-bearing analyzer events, recent runs, measured run-time history, and diagnostics/uncertainties from the saved report. Search filters files, functions, lock identities, and findings within the selected report. Graph nodes, edges and context/API filters use identities present in the analyzer JSON. Lock API types, analyzer build version, target kernel version, severity, and live process logs are not universally emitted and are shown as unavailable where unknown. History comparisons warn when report schema versions differ. Runtime Evidence, Benchmarks, and Linux kernel tree browsing are visibly unavailable because those capabilities are not implemented. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
+The Overview is a graph-centered observability workspace with a finding inspector, real report metrics, lock API counts derived from lock-bearing analyzer events, recent runs, measured run-time history, and diagnostics/uncertainties from the saved report. Search filters files, functions, lock identities, and findings within the selected report. Graph nodes, edges and context/API filters use identities present in the analyzer JSON. Lock API types, analyzer build version, target kernel version, severity, and live process logs are not universally emitted and are shown as unavailable where unknown. History comparisons warn when report schema versions differ. The controlled userspace trace harness runs through its CLI and has no GUI evidence page; the UI's Runtime Evidence, Benchmarks, and Linux kernel tree pages remain unavailable. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
 
 Run the GUI checks after installing backend and frontend dependencies:
 
@@ -118,6 +118,10 @@ npm run build
 ```
 
 See [Phase 8 architecture and API notes](docs/design-phase8.md) for report mapping, security boundaries, persistence, and current UI limits.
+
+## Controlled runtime evidence (Phase 5)
+
+On Linux, CMake also builds `irqguard-runtime-demo`. The harness records JSONL lock events from controlled pthread programs and can compare per-run observations with a static report using explicit lock-identity mappings. It includes a watchdog-terminated deadlock fixture and a baseline-versus-instrumented timing command. The [recorded overhead sample](examples/runtime-overhead-report.json) is specific to this WSL2 machine and this flush-heavy instrumentation. These are userspace experiments; they do not reproduce kernel interrupt behavior. See [Phase 5 runtime evidence design](docs/design-phase5.md) for event semantics, reports, limitations, and reproduction commands.
 
 ### Troubleshooting
 

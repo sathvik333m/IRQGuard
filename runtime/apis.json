@@ -1,0 +1,6 @@
+{
+  "apis": [
+    {"name": "irqguard_lock", "kind": "lock_acquire", "lock_argument": 0},
+    {"name": "irqguard_unlock", "kind": "lock_release", "lock_argument": 0}
+  ]
+}

@@ -65,6 +65,20 @@ target_link_libraries(deadlock-analyzer PRIVATE
     LLVMSupport
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(Threads REQUIRED)
+    add_library(irqguard_runtime_support STATIC runtime/runtime_lock.cpp)
+    target_include_directories(irqguard_runtime_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/runtime)
+    target_link_libraries(irqguard_runtime_support PUBLIC Threads::Threads)
+
+    add_executable(irqguard-runtime-demo
+        runtime/runtime_demo.cpp
+        runtime/fixtures/lock_orders.c
+    )
+    target_include_directories(irqguard-runtime-demo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/runtime)
+    target_link_libraries(irqguard-runtime-demo PRIVATE irqguard_runtime_support Threads::Threads)
+endif()
+
 include(CTest)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 if(BUILD_TESTING)
@@ -91,6 +105,15 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
     )
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        add_test(NAME runtime_lock_evidence
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/runtime/test_runtime_evidence.py
+                    $<TARGET_FILE:irqguard-runtime-demo>
+                    $<TARGET_FILE:deadlock-analyzer>
+                    ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        set_tests_properties(runtime_lock_evidence PROPERTIES TIMEOUT 40)
+    endif()
 endif()
 
 install(TARGETS deadlock-analyzer RUNTIME DESTINATION bin)

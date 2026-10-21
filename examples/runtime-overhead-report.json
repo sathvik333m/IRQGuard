@@ -1,0 +1,36 @@
+{
+  "benchmark_schema_version": 1,
+  "environment": {
+    "operating_system": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel_release": "6.6.87.2-microsoft-standard-WSL2",
+    "architecture": "x86_64",
+    "logical_cpu_count": 14,
+    "python_version": "3.12.3"
+  },
+  "metric": "in-process elapsed nanoseconds for the same mutex-pair loop",
+  "iterations_per_sample": 1000,
+  "repeats": 5,
+  "samples_ns": {
+    "baseline": [
+      14333,
+      12474,
+      45409,
+      14268,
+      12940
+    ],
+    "instrumented": [
+      10375448,
+      9295605,
+      9279038,
+      13526866,
+      10143958
+    ]
+  },
+  "median_ns": {
+    "baseline": 14268,
+    "instrumented": 10143958
+  },
+  "overhead_percent": 70995.86487244183,
+  "formula": "(instrumented_median / baseline_median - 1) * 100",
+  "limitations": "This measures wrapper, event serialization, synchronization and flush cost on this machine. It is not a portable or statistically generalized overhead result."
+}
