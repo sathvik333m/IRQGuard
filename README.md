@@ -29,33 +29,24 @@ To use a different installed LLVM/Clang version, point `LLVM_DIR` and `Clang_DIR
 
 ## CLI
 
-Parse a standalone source file (defaults to C11):
+`./irqguard` is the primary command-line entry point. The C++ analyzer remains
+available as `build/deadlock-analyzer` for direct use.
 
 ```sh
-build/deadlock-analyzer analyze --source tests/fixtures/extraction.c
+./irqguard analyze --source examples/basic.c
+./irqguard analyze --source examples/basic.c --format json --output /tmp/basic.json
+./irqguard graph --source tests/fixtures/interrupts.c --output /tmp/interrupts.dot
+./irqguard analyze --source /path/to/file.c --compile-commands /path/to/build
+./irqguard analyze --source file.c --api-config config/apis.example.json \
+  --clang-arg=-Iinclude --clang-arg=-DCONFIG_EXAMPLE=1
+./irqguard api-registry validate --config config/apis.example.json
 ```
 
-Write machine-readable JSON:
-
-```sh
-build/deadlock-analyzer analyze --source tests/fixtures/extraction.c --format json
-```
-
-Use an existing `compile_commands.json` directory, for example one generated for a project build:
-
-```sh
-build/deadlock-analyzer analyze --source /path/to/file.c \
-  --compile-commands /path/to/build
-```
-
-For direct mode, add compiler arguments one at a time:
-
-```sh
-build/deadlock-analyzer analyze --source file.c \
-  --clang-arg -Iinclude --clang-arg -DCONFIG_EXAMPLE=1
-```
-
-Each `--clang-arg` value is the next single argument. Compilation-database mode uses the command recorded for the requested source and does not accept `--clang-arg`.
+JSON output preserves findings, locations and provenance. `graph` emits
+Graphviz DOT. Compilation-database mode uses the command for the requested
+source and does not accept `--clang-arg`. See the [Phase 7 integration guide](docs/design-phase7.md)
+for runtime trace comparison, benchmark commands, stable report categories,
+the architecture, and limitations.
 
 ## Graphical interface (Phase 8)
 
@@ -101,9 +92,9 @@ Open [http://localhost:5173](http://localhost:5173) in a Windows browser. WSL 2 
 
 In **New analysis**, enter an absolute Linux path such as `/home/user/project/example.c`. The browser does not browse the WSL filesystem. Optional inputs are a build directory or `compile_commands.json`, and an API-registry JSON file. Raw shell commands and arbitrary Clang arguments are not accepted through the GUI. The backend resolves symlinks before enforcing workspace roots, limits source files to 20 MiB, limits analyzer output streams to 16 MiB each, allows at most two concurrent runs, and terminates a run after 180 seconds by default.
 
-The Node.js API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, and bounded source snippets. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Run metadata is stored in `history.json`; reports are separate JSON files. Existing history from the retired Python API remains in `history.sqlite3` and is not automatically imported. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
+The Node.js API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, bounded source snippets, runtime evidence, and the recorded Linux v6.6.87 evaluation summary. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Run metadata is stored in `history.json`; reports are separate JSON files. Existing history from the retired Python API remains in `history.sqlite3` and is not automatically imported. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
 
-The Overview is a graph-centered observability workspace with a finding inspector, real report metrics, lock API counts derived from lock-bearing analyzer events, recent runs, measured run-time history, and diagnostics/uncertainties from the saved report. Search filters files, functions, lock identities, and findings within the selected report. Graph nodes, edges and context/API filters use identities present in the analyzer JSON. Lock API types, analyzer build version, target kernel version, severity, and live process logs are not universally emitted and are shown as unavailable where unknown. History comparisons warn when report schema versions differ. Runtime Evidence now invokes only the bundled controlled userspace pthread scenarios and displays structured events, wait-for-cycle status, and explicit static/runtime comparisons. Benchmarks runs the harness's paired baseline/instrumented timing measurement. These pages remain unavailable until the Linux runtime demo has been built. The Linux kernel tree browser remains unavailable. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
+The Overview is a graph-centered observability workspace with a finding inspector, real report metrics, lock API counts derived from lock-bearing analyzer events, recent runs, measured run-time history, and diagnostics/uncertainties from the saved report. Search filters files, functions, lock identities, and findings within the selected report. Graph nodes, edges and context/API filters use identities present in the analyzer JSON. Lock API types, analyzer build version, target kernel version, severity, and live process logs are not universally emitted and are shown as unavailable where unknown. History comparisons warn when report schema versions differ. Runtime Evidence invokes the bundled controlled userspace pthread scenarios and displays structured events, wait-for-cycle status, and explicit static/runtime comparisons. Benchmarks runs the harness's paired baseline/instrumented timing measurement. These pages are unavailable until the Linux runtime demo is built. The Kernel evaluation page displays the saved, pinned five-file Phase 6 measurement; it is not a Linux source browser. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
 
 Run the GUI checks after installing backend and frontend dependencies:
 

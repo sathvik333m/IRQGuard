@@ -1,7 +1,7 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, BookOpen,
-  Braces, Check, ChevronDown, Clock3,
+  Braces, Check, ChevronDown, Clock3, Copy,
   Database, FileCode2, FileJson2, FileSearch, GitBranch, Gauge,
   HardDrive, History, Info, LayoutDashboard, LoaderCircle, LockKeyhole,
   Menu, Moon, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck,
@@ -13,7 +13,7 @@ import type { AnalysisMetadata, AnalysisReport, Finding, Health, KernelEvaluatio
 const LockGraph = lazy(() => import('./components/LockGraph').then((module) => ({ default: module.LockGraph })))
 const DurationChart = lazy(() => import('./components/DurationChart'))
 
-type Page = 'overview' | 'new' | 'history' | 'graph' | 'findings' | 'source' | 'kernel' | 'settings' | 'runtime' | 'benchmarks'
+type Page = 'overview' | 'new' | 'history' | 'graph' | 'findings' | 'source' | 'kernel' | 'cli' | 'settings' | 'runtime' | 'benchmarks'
 
 const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard; section: string; unavailable?: boolean }> = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, section: 'Workspace' },
@@ -25,6 +25,7 @@ const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard; s
   { id: 'kernel', label: 'Kernel evaluation', icon: HardDrive, section: 'Analysis' },
   { id: 'runtime', label: 'Runtime evidence', icon: Activity, section: 'Evidence' },
   { id: 'benchmarks', label: 'Benchmarks', icon: Gauge, section: 'Evidence' },
+  { id: 'cli', label: 'CLI & reports', icon: TerminalSquare, section: 'System' },
   { id: 'settings', label: 'Settings', icon: Settings2, section: 'System' },
 ]
 
@@ -278,6 +279,7 @@ export default function App() {
             onOpenSource={openSource}
           />}
           {page === 'settings' && <SettingsPage health={health} onRefresh={() => void bootstrap()} />}
+          {page === 'cli' && <CliGuidePage />}
           {page === 'kernel' && <KernelEvaluationPage evaluation={kernelEvaluation} loading={kernelEvaluationLoading} error={kernelEvaluationError} />}
           {(page === 'runtime' || page === 'benchmarks') && <RuntimeEvidencePage mode={page} health={health} history={history} activeAnalysis={active} />}
         </main>
@@ -738,6 +740,39 @@ function RuntimeEvidencePage({ mode, health, history, activeAnalysis }: { mode: 
         {mode === 'runtime' && comparison && <section className="panel runtime-result"><div className="panel-heading"><div><div className="eyebrow">COMPARISON</div><h2>Static findings against selected traces</h2></div></div><div className="comparison-findings">{(comparison.findings ?? []).map((finding: any) => <div className="comparison-row" key={finding.finding_id}><span>{finding.finding_id}</span><strong>{String(finding.runtime_status).replaceAll('_', ' ')}</strong><p>{finding.explanation}</p></div>)}</div><p className="runtime-caveat">{comparison.interpretation}</p></section>}
       </section>
       <aside className="panel runtime-history"><div className="panel-heading"><div><div className="eyebrow">LOCAL RECORDS</div><h2>Recent evidence</h2></div><button className="icon-button" aria-label="Refresh runtime records" onClick={() => void refresh()}><RefreshCw size={14} /></button></div><div className="runtime-run-list">{runs.filter((run) => mode === 'runtime' ? run.kind !== 'benchmark' : run.kind === 'benchmark').map((run) => <button key={run.id} className={`runtime-run-item ${selected?.run.id === run.id ? 'selected' : ''}`} onClick={() => void openRun(run)}><span className={`status-dot status-${statusTone(run.status)}`} /><span><strong>{run.kind === 'scenario' ? run.scenario : run.kind}</strong><small>{new Date(run.created_at).toLocaleString()}</small></span><span className={`status-pill ${statusTone(run.status)}`}>{run.status}</span></button>)}{!runs.some((run) => mode === 'runtime' ? run.kind !== 'benchmark' : run.kind === 'benchmark') && <div className="panel-empty">No {mode === 'runtime' ? 'runtime runs' : 'benchmark runs'} yet.</div>}</div>{selected?.run.error && <div className="runtime-error"><AlertCircle size={14} />{selected.run.error}</div>}</aside>
+    </div>
+  </>
+}
+
+function CliGuidePage() {
+  const [copied, setCopied] = useState('')
+  const [copyError, setCopyError] = useState('')
+  const commands = [
+    { title: 'Analyze C source', detail: 'Parse real C with Clang and print the readable report.', command: './irqguard analyze --source examples/basic.c' },
+    { title: 'Export JSON', detail: 'Write schema-v3 facts, dependency edges, locations, and findings.', command: './irqguard analyze --source examples/basic.c --format json --output /tmp/basic.json' },
+    { title: 'Export Graphviz', detail: 'Generate a dependency graph that can be opened with Graphviz.', command: './irqguard graph --source tests/fixtures/interrupts.c --output /tmp/interrupts.dot' },
+    { title: 'Validate API registry', detail: 'Check custom API names, event kinds, and argument indexes.', command: './irqguard api-registry validate --config config/apis.example.json' },
+    { title: 'Run runtime evidence', detail: 'Run a controlled userspace scenario; this does not emulate kernel IRQs.', command: './irqguard runtime run --scenario deadlock --timeout 1.5 --trace /tmp/deadlock.jsonl' },
+    { title: 'Measure runtime overhead', detail: 'Compare the wrapped pthread loop with its uninstrumented baseline.', command: './irqguard benchmark runtime --iterations 1000 --repeats 5 --output /tmp/overhead.json' },
+    { title: 'Evaluate pinned kernel source', detail: 'Reproduce the selected Linux v6.6.87 e1000e evaluation.', command: './irqguard benchmark kernel --kernel /tmp/linux-v6.6.87 --output evaluation/results/linux-v6.6.87' },
+  ]
+  const copyCommand = async (title: string, command: string) => {
+    setCopyError('')
+    try { await navigator.clipboard.writeText(command); setCopied(title) }
+    catch { setCopyError('Clipboard access is unavailable here. Select and copy the command text instead.') }
+  }
+  return <>
+    <PageHeading eyebrow="PHASE 7 / INTEGRATED WORKFLOW" title="CLI & report guide" subtitle="The command line is the primary interface. The GUI is an optional view over analysis and evidence." />
+    <div className="cli-guide-layout">
+      <section className="cli-command-list" aria-label="IRQGuard commands">
+        {commands.map((item) => <article className="cli-command" key={item.title}><div className="cli-command-heading"><div><h2>{item.title}</h2><p>{item.detail}</p></div><button className="icon-button cli-copy" onClick={() => void copyCommand(item.title, item.command)} aria-label={`Copy ${item.title} command`}>{copied === item.title ? <Check size={15} /> : <Copy size={15} />}</button></div><pre><code>{item.command}</code></pre></article>)}
+        {copyError && <p className="cli-copy-error" role="status">{copyError}</p>}
+      </section>
+      <aside className="cli-guide-aside">
+        <section className="cli-note"><span className="eyebrow">REPORT CONTRACT</span><strong>Schema version 3</strong><p>JSON includes extracted functions, calls, lock operations, dependencies, IRQ contexts, findings, source locations, uncertainty, and diagnostics.</p></section>
+        <section className="cli-note"><span className="eyebrow">FINDING CATEGORIES</span><dl><dt>Lock-order candidate</dt><dd>Process-context dependency cycle.</dd><dt>Interrupt-aware candidate</dt><dd>Cycle involving modeled hardirq preemption.</dd><dt>Rejected candidate</dt><dd>Modeled IRQ state rejects the cycle shape.</dd><dt>Inconclusive</dt><dd>Analysis lacks enough information to decide feasibility.</dd></dl></section>
+        <section className="cli-caveat"><AlertCircle size={15} /><p>A candidate is not a confirmed deadlock. No severity score is reported. The pinned kernel run missed some `spin_lock_irqsave` acquisitions, so zero findings do not prove absence of bugs.</p></section>
+      </aside>
     </div>
   </>
 }

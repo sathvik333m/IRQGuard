@@ -118,6 +118,13 @@ if(BUILD_TESTING)
                     ${CMAKE_CURRENT_SOURCE_DIR}
         )
         set_tests_properties(runtime_lock_evidence PROPERTIES TIMEOUT 40)
+        add_test(NAME unified_cli_integration
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cli.py
+                    ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        set_tests_properties(unified_cli_integration PROPERTIES TIMEOUT 40
+            ENVIRONMENT "IRQGUARD_ANALYZER=$<TARGET_FILE:deadlock-analyzer>;IRQGUARD_RUNTIME_DEMO=$<TARGET_FILE:irqguard-runtime-demo>"
+        )
     endif()
 endif()
 

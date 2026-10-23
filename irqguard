@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""Unified command line for the IRQGuard analysis and evidence tools."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parent
+ANALYZER = Path(os.environ.get("IRQGUARD_ANALYZER", ROOT / "build/deadlock-analyzer"))
+RUNTIME_TOOL = ROOT / "runtime/runtime_evidence.py"
+RUNTIME_DEMO = Path(os.environ.get("IRQGUARD_RUNTIME_DEMO", ROOT / "build/irqguard-runtime-demo"))
+KERNEL_EVALUATOR = ROOT / "evaluation/run_kernel_eval.py"
+
+
+def add_analysis_arguments(parser: argparse.ArgumentParser, *, graph: bool = False) -> None:
+    parser.add_argument("--source", required=True, help="C translation unit to analyze")
+    parser.add_argument("--compile-commands", help="build directory containing compile_commands.json")
+    parser.add_argument("--api-config", help="JSON lock/interrupt API registry")
+    parser.add_argument("--clang-arg", action="append", default=[], help="one Clang argument (repeatable; direct mode only)")
+    if graph:
+        parser.add_argument("--output", help="write Graphviz DOT to this path (default: stdout)")
+    else:
+        parser.add_argument("--format", choices=("text", "json", "dot"), default="text")
+        parser.add_argument("--output", help="write report to this path (default: stdout)")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="irqguard",
+        description="Analyze C lock behavior and orchestrate controlled runtime and kernel evaluation tools.",
+        epilog="Static candidates are not confirmed deadlocks. Runtime evidence covers controlled userspace pthread programs only.",
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    analyze = commands.add_parser("analyze", help="analyze one C translation unit")
+    add_analysis_arguments(analyze)
+
+    graph = commands.add_parser("graph", help="analyze a C translation unit and export a Graphviz dependency graph")
+    add_analysis_arguments(graph, graph=True)
+
+    registry = commands.add_parser("api-registry", help="inspect custom API registry files")
+    registry_commands = registry.add_subparsers(dest="registry_command", required=True)
+    validate = registry_commands.add_parser("validate", help="validate the registry JSON structure and argument indexes")
+    validate.add_argument("--config", required=True)
+
+    runtime = commands.add_parser("runtime", help="run or summarize controlled userspace lock traces")
+    runtime_commands = runtime.add_subparsers(dest="runtime_command", required=True)
+    run = runtime_commands.add_parser("run", help="run one allowlisted harness scenario")
+    run.add_argument("--scenario", choices=("safe", "reverse-only", "opposite-order", "contention", "deadlock", "static-only"), required=True)
+    run.add_argument("--trace", type=Path, required=True)
+    run.add_argument("--summary", type=Path)
+    run.add_argument("--timeout", type=float, default=3.0)
+    summarize = runtime_commands.add_parser("summarize", help="summarize a JSONL trace")
+    summarize.add_argument("--trace", type=Path, required=True)
+    summarize.add_argument("--termination", choices=("unknown", "completed", "watchdog_timeout"), default="unknown")
+    summarize.add_argument("--output", type=Path)
+
+    compare = commands.add_parser("compare", help="compare static candidates against runtime traces or summaries")
+    compare.add_argument("--static-report", type=Path, required=True)
+    compare.add_argument("--lock-map", type=Path, required=True)
+    compare_input = compare.add_mutually_exclusive_group(required=True)
+    compare_input.add_argument("--trace", type=Path, action="append", help="JSONL trace; may be repeated")
+    compare_input.add_argument("--summary", type=Path, action="append", help="runtime summary JSON; may be repeated")
+    compare.add_argument("--termination", choices=("unknown", "completed", "watchdog_timeout"), default="unknown",
+                         help="termination state applied to each supplied trace")
+    compare.add_argument("--output", type=Path)
+
+    benchmark = commands.add_parser("benchmark", help="run a controlled benchmark or the pinned kernel evaluation")
+    benchmark_commands = benchmark.add_subparsers(dest="benchmark_command", required=True)
+    runtime_bench = benchmark_commands.add_parser("runtime", help="measure wrapper overhead against a pthread baseline")
+    runtime_bench.add_argument("--iterations", type=int, default=1000)
+    runtime_bench.add_argument("--repeats", type=int, default=5)
+    runtime_bench.add_argument("--timeout", type=float, default=30.0)
+    runtime_bench.add_argument("--output", type=Path)
+    kernel_bench = benchmark_commands.add_parser("kernel", help="build and analyze the pinned Linux e1000e selection")
+    kernel_bench.add_argument("--kernel", type=Path, required=True, help="clean Linux v6.6.87 checkout at the pinned commit")
+    kernel_bench.add_argument("--output", type=Path, default=Path("evaluation/results/linux-v6.6.87"))
+    kernel_bench.add_argument("--llvm", type=Path, default=Path("/usr/lib/llvm-20/bin"))
+    kernel_bench.add_argument("--jobs", type=int, default=2)
+    kernel_bench.add_argument("--timeout", type=int, default=120)
+    return parser
+
+
+def run(command: list[str]) -> int:
+    try:
+        return subprocess.run(command, check=False).returncode
+    except OSError as error:
+        print(f"irqguard: error: could not start {command[0]}: {error}", file=sys.stderr)
+        return 127
+
+
+def analysis_command(args: argparse.Namespace, *, graph: bool = False) -> int:
+    if not ANALYZER.is_file():
+        print(f"irqguard: error: analyzer not found at {ANALYZER}; build it with `cmake --build build`", file=sys.stderr)
+        return 127
+    command = [str(ANALYZER), "analyze", "--source", args.source]
+    if args.compile_commands:
+        command += ["--compile-commands", args.compile_commands]
+    if args.api_config:
+        command += ["--api-config", args.api_config]
+    for argument in args.clang_arg:
+        command += ["--clang-arg", argument]
+    command += ["--format", "dot" if graph else args.format]
+    if args.output:
+        command += ["--output", str(args.output)]
+    return run(command)
+
+
+def validate_registry(config: str) -> int:
+    path = Path(config)
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        print(f"irqguard: error: cannot read API registry {path}: {error}", file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as error:
+        print(f"irqguard: error: invalid API registry JSON at line {error.lineno}, column {error.colno}: {error.msg}", file=sys.stderr)
+        return 2
+    if not isinstance(document, dict) or not isinstance(document.get("apis"), list):
+        print("irqguard: error: API registry must be an object containing an 'apis' array", file=sys.stderr)
+        return 2
+    for index, entry in enumerate(document["apis"]):
+        label = f"apis[{index}]"
+        if not isinstance(entry, dict) or not isinstance(entry.get("name"), str) or not entry["name"].strip() or not isinstance(entry.get("kind"), str) or not entry["kind"].strip():
+            print(f"irqguard: error: {label} needs non-empty string 'name' and 'kind' fields", file=sys.stderr)
+            return 2
+        for key in ("lock_argument", "state_argument", "handler_argument"):
+            if key in entry and (isinstance(entry[key], bool) or not isinstance(entry[key], int) or not 0 <= entry[key] <= 1024):
+                print(f"irqguard: error: {label}.{key} must be an integer from 0 through 1024", file=sys.stderr)
+                return 2
+    print(f"Valid API registry: {path} ({len(document['apis'])} custom entries)")
+    return 0
+
+
+def invoke_runtime(arguments: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_TOOL), *arguments])
+
+
+def compare_traces(args: argparse.Namespace) -> int:
+    if args.summary:
+        summaries = [str(path) for path in args.summary]
+        return invoke_runtime(["compare", "--static-report", str(args.static_report), "--lock-map", str(args.lock_map),
+                               *[part for summary in summaries for part in ("--summary", summary)],
+                               *(["--output", str(args.output)] if args.output else [])])
+    with tempfile.TemporaryDirectory(prefix="irqguard-compare-") as temp:
+        summaries: list[str] = []
+        for index, trace in enumerate(args.trace):
+            summary_path = Path(temp) / f"trace-{index}.summary.json"
+            command = [sys.executable, str(RUNTIME_TOOL), "analyze", "--trace", str(trace), "--termination", args.termination]
+            try:
+                result = subprocess.run(command, capture_output=True, text=True, check=False)
+            except OSError as error:
+                print(f"irqguard: error: could not summarize trace {trace}: {error}", file=sys.stderr)
+                return 127
+            if result.returncode:
+                sys.stderr.write(result.stderr)
+                return result.returncode
+            try:
+                json.loads(result.stdout)
+            except json.JSONDecodeError as error:
+                print(f"irqguard: error: runtime tool returned invalid summary JSON: {error}", file=sys.stderr)
+                return 2
+            summary_path.write_text(result.stdout, encoding="utf-8")
+            summaries.append(str(summary_path))
+        command = ["compare", "--static-report", str(args.static_report), "--lock-map", str(args.lock_map)]
+        command += [part for summary in summaries for part in ("--summary", summary)]
+        if args.output:
+            command += ["--output", str(args.output)]
+        return invoke_runtime(command)
+
+
+def main() -> int:
+    parser = build_parser()
+    raw_arguments = sys.argv[1:]
+    # argparse normally treats a dash-prefixed value as another option. Keep
+    # the documented repeatable `--clang-arg -Ipath` form usable by rewriting
+    # only that pair to argparse's explicit `--option=value` spelling.
+    normalized: list[str] = []
+    index = 0
+    while index < len(raw_arguments):
+        if raw_arguments[index] == "--clang-arg" and index + 1 < len(raw_arguments) and raw_arguments[index + 1].startswith("-"):
+            normalized.append(f"--clang-arg={raw_arguments[index + 1]}")
+            index += 2
+        else:
+            normalized.append(raw_arguments[index])
+            index += 1
+    args = parser.parse_args(normalized)
+    if args.command == "analyze":
+        return analysis_command(args)
+    if args.command == "graph":
+        return analysis_command(args, graph=True)
+    if args.command == "api-registry":
+        return validate_registry(args.config)
+    if args.command == "runtime":
+        if not RUNTIME_DEMO.is_file():
+            print(f"irqguard: error: runtime harness not found at {RUNTIME_DEMO}; build it with `cmake --build build`", file=sys.stderr)
+            return 127
+        if args.runtime_command == "run":
+            command = ["run", "--program", str(RUNTIME_DEMO), "--scenario", args.scenario,
+                       "--trace", str(args.trace), "--timeout", str(args.timeout)]
+            if args.summary:
+                command += ["--summary", str(args.summary)]
+            return invoke_runtime(command)
+        command = ["analyze", "--trace", str(args.trace), "--termination", args.termination]
+        if args.output:
+            command += ["--output", str(args.output)]
+        return invoke_runtime(command)
+    if args.command == "compare":
+        return compare_traces(args)
+    if args.command == "benchmark":
+        if args.benchmark_command == "runtime":
+            if not RUNTIME_DEMO.is_file():
+                print(f"irqguard: error: runtime harness not found at {RUNTIME_DEMO}; build it with `cmake --build build`", file=sys.stderr)
+                return 127
+            command = ["benchmark", "--program", str(RUNTIME_DEMO), "--iterations", str(args.iterations),
+                       "--repeats", str(args.repeats), "--timeout", str(args.timeout)]
+            if args.output:
+                command += ["--output", str(args.output)]
+            return invoke_runtime(command)
+        command = [sys.executable, str(KERNEL_EVALUATOR), "--kernel", str(args.kernel),
+                   "--analyzer", str(ANALYZER), "--output", str(args.output), "--llvm", str(args.llvm),
+                   "--jobs", str(args.jobs), "--timeout", str(args.timeout)]
+        return run(command)
+    parser.error(f"unsupported command: {args.command}")
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
