@@ -11,8 +11,23 @@ ApiRegistry::ApiRegistry() {
         {"mutex_unlock", "lock_release", 0, -1, -1},
         {"spin_lock", "lock_acquire", 0, -1, -1},
         {"spin_unlock", "lock_release", 0, -1, -1},
+        // Linux spinlock headers commonly expand public macros to these
+        // implementation entry points. The return-flags form of irqsave has
+        // no flags argument in the CallExpr, so its IRQ state remains unknown.
+        {"raw_spin_lock", "lock_acquire", 0, -1, -1},
+        {"raw_spin_unlock", "lock_release", 0, -1, -1},
+        {"_raw_spin_lock", "lock_acquire", 0, -1, -1},
+        {"_raw_spin_unlock", "lock_release", 0, -1, -1},
+        {"__raw_spin_lock", "lock_acquire", 0, -1, -1},
+        {"__raw_spin_unlock", "lock_release", 0, -1, -1},
         {"spin_lock_irqsave", "lock_acquire_irqsave", 0, 1, -1},
         {"spin_unlock_irqrestore", "lock_release_irqrestore", 0, 1, -1},
+        {"raw_spin_lock_irqsave", "lock_acquire_irqsave", 0, 1, -1},
+        {"raw_spin_unlock_irqrestore", "lock_release_irqrestore", 0, 1, -1},
+        {"_raw_spin_lock_irqsave", "lock_acquire_irqsave", 0, 1, -1},
+        {"_raw_spin_unlock_irqrestore", "lock_release_irqrestore", 0, 1, -1},
+        {"__raw_spin_lock_irqsave", "lock_acquire_irqsave", 0, 1, -1},
+        {"__raw_spin_unlock_irqrestore", "lock_release_irqrestore", 0, 1, -1},
         {"local_irq_disable", "irq_disable", -1, -1, -1},
         {"local_irq_enable", "irq_enable", -1, -1, -1},
         {"request_irq", "interrupt_register", -1, -1, 1},

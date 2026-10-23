@@ -26,11 +26,12 @@ Built-in semantic models:
 | `mutex_unlock`, `spin_unlock` | Release the configured lock identity. |
 | `spin_lock_irqsave(lock, flags)` | Save the current abstract IRQ state under the symbolic identity of `flags`, disable local hard IRQs, then record the acquisition snapshot. |
 | `spin_unlock_irqrestore(lock, flags)` | Release the lock and restore only the state saved under the matching symbolic `flags` identity. No match produces unknown state and an uncertainty. |
+| `raw_spin_lock*`, `_raw_spin_lock*`, `__raw_spin_lock*` selected helpers | Recognize common Linux macro expansion entry points. If the expanded `irqsave` helper returns flags rather than taking them as an argument, the lock acquisition is recorded but IRQ state remains unknown because the public macro's saved-flags lvalue is not recoverable from that helper call alone. |
 | `local_irq_disable`, `local_irq_enable` | Set local hard-IRQ state to disabled or enabled respectively. |
 | `request_irq(irq, handler, ...)` | Register a resolvable handler as a possible hardirq root. Direct function expressions and the Phase 1/2-supported local function-pointer assignments are recognized. |
 | `free_irq` | Recognized as teardown, but lifecycle timing is not modeled; an uncertainty is emitted and the handler remains a possible target. |
 
-The API registry supports `state_argument` and `handler_argument` indexes in addition to `lock_argument`. Unsupported calls whose AST callee names contain `lock` or `irq` are reported as possibly unsupported APIs; this name heuristic is only a warning aid and is not the parser.
+The API registry supports `state_argument` and `handler_argument` indexes in addition to `lock_argument`. For function-like macros, AST calls are matched using the immediate macro name when available; nested Linux expansions may instead match a configured raw helper. Unsupported calls whose AST callee names contain `lock` or `irq` are reported as possibly unsupported APIs; this name heuristic is only a warning aid and is not the parser.
 
 At process-context roots, local hard IRQs start enabled. At a registered hardirq handler and functions reachable from it through resolved calls, they start disabled. A function reachable in both ways is analyzed in both contexts. A hardirq cannot be preempted by another hardirq in this model, matching the usual Linux hardirq local-disable assumption. Softirq, NMI, threaded IRQ, tasklet, timer, cross-CPU scheduling, and lock-class/IRQ-line priority distinctions are outside this phase.
 

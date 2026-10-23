@@ -287,7 +287,19 @@ public:
 
         if (!direct)
             return true;
-        auto spec = registry_.find(direct->getNameAsString());
+        // Calls emitted from a function-like lock macro can have an internal
+        // helper as their AST callee. Match configured direct helpers first,
+        // then fall back to the immediate macro name for wrappers whose helper
+        // itself is not registered. `spinlock_check` is an argument validator,
+        // not the lock acquisition inside Linux spinlock macros.
+        std::optional<ApiSpec> spec = registry_.find(direct->getNameAsString());
+        if (!spec && call->getExprLoc().isMacroID() &&
+            direct->getNameAsString() != "spinlock_check") {
+            const auto macroName = clang::Lexer::getImmediateMacroName(
+                call->getExprLoc(), manager_, context_.getLangOpts());
+            if (!macroName.empty())
+                spec = registry_.find(macroName.str());
+        }
         if (!spec)
             return true;
         result_.calls.back().modeledApi = true;

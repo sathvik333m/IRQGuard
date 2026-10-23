@@ -3,33 +3,33 @@
 ## Result
 
 The analyzer parsed all five selected translation units with generated Kbuild
-compile commands. It extracted 396 function definitions and 10 configured lock
-operations in 6.992 seconds summed across separate processes. Peak RSS was
-192,272 KiB for the largest single-file run. No file was skipped or failed.
-It produced zero lock-dependency edges and zero cycles/findings in this
-selection. These are analyzer outputs, not evidence that the driver has no
-deadlocks.
+compile commands. It extracted 396 function definitions and 12 configured lock
+operations in 6.644 seconds summed across separate processes. Peak RSS was
+192,312 KiB for the largest single-file run. No file was skipped or failed.
+It produced six lock dependencies and three cycle reports; all three are
+`inconclusive_analysis` reports in `netdev.c` involving unresolved lock
+identities. They are not validated deadlocks.
 
-The result exposes a significant coverage limitation. Source inspection of the
-selected files shows lock sites that were not represented in the report. For
-example, `netdev.c` contains `spin_lock_irqsave` calls at lines 501 and 3935,
-but the report records the corresponding two `spin_unlock_irqrestore` calls and
-no matching acquisitions. Lock extraction therefore cannot support a negative
-bug conclusion for this subsystem. The tool also emitted 43,639 uncertainty
-entries and two CFG mapping diagnostics across the five reports. It resolved
-six `request_irq` calls in `netdev.c` and two in `ethtool.c`, but generated no
-interrupt graph edges or candidates.
+The macro-expanded `_raw_spin_lock_irqsave` acquisitions at `netdev.c:501` and
+`:3935` are now represented. Their lock expressions expand through
+`spinlock_check(...)` and remain unresolved; their saved-flags state also
+remains unknown because the helper returns flags rather than taking the flags
+lvalue as an argument. The corresponding `spin_unlock_irqrestore` calls are
+extracted at lines 503 and 3938. This closes the previous silent acquisition
+gap, but unresolved identity and state still limit conclusions. The tool
+emitted 43,705 uncertainty entries and two CFG mapping diagnostics across the
+five reports.
 
 | Translation unit | Functions | Lock operations | Dependencies | Findings | Time (s) | Peak RSS (KiB) | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `netdev.c` | 154 | 8 | 0 | 0 | 2.472 | 192272 | 2 |
-| `ethtool.c` | 51 | 0 | 0 | 0 | 1.068 | 131828 | 0 |
-| `ich8lan.c` | 98 | 2 | 0 | 0 | 1.268 | 133956 | 0 |
-| `phy.c` | 76 | 0 | 0 | 0 | 1.168 | 131688 | 0 |
-| `nvm.c` | 17 | 0 | 0 | 0 | 1.017 | 130564 | 0 |
-| **Sum / max** | **396** | **10** | **0** | **0** | **6.992** | **192272 max** | **2** |
+| `netdev.c` | 154 | 10 | 6 | 3 inconclusive | 2.723 | 192312 | 2 |
+| `ethtool.c` | 51 | 0 | 0 | 0 | 1.119 | 131840 | 0 |
+| `ich8lan.c` | 98 | 2 | 0 | 0 | 1.017 | 133452 | 0 |
+| `phy.c` | 76 | 0 | 0 | 0 | 0.969 | 131580 | 0 |
+| `nvm.c` | 17 | 0 | 0 | 0 | 0.817 | 130588 | 0 |
+| **Sum / max** | **396** | **12** | **6** | **3 inconclusive** | **6.644** | **192312 max** | **2** |
 
-The five independent reports contain 43,639 uncertainty entries in aggregate.
+The five independent reports contain 43,705 uncertainty entries in aggregate.
 Counts can repeat header-derived or inline facts across translation units.
 The lock graph summaries are projections of one analyzer pass; they are not
 separate basic, IRQ-disabled, and feasibility-refined executions. No precision
@@ -83,8 +83,15 @@ tracked kernel source, boot the kernel, or load a module.
 [`../../benchmark-set.json`](../../benchmark-set.json) describes controlled
 positive, negative, and inconclusive fixtures asserted by the Phase 3/4 test
 suites. These are analyzer self-tests, not independent Linux kernel labels.
-The report computes no kernel precision or recall. The observed missing
-`spin_lock_irqsave` acquisitions and zero graph edges mean the current result
-does not establish useful negative coverage for e1000e. Further kernel scope
-should wait until supported lock operations are extracted consistently and
-cross-function dependencies can be observed in this source.
+The report computes no kernel precision or recall. The unresolved lock
+identities and saved-flags state on the extracted irqsave helpers, together
+with the inconclusive cycles, prevent a useful negative or positive bug
+conclusion for e1000e. Further kernel scope should wait until macro arguments
+and saved flags can be modeled more precisely.
+
+The committed `raw-measurements.json` contains per-file counts, timings,
+resource measurements, tool versions, configuration hash, and executed
+commands. Full per-file JSON reports, stderr/time files, and `build.log` are
+generated under ignored output paths; reproduce them with the command above.
+The raw manifest records generated artifact paths relative to the evaluation
+output directory.

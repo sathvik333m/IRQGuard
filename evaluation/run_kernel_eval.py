@@ -215,8 +215,10 @@ def main() -> int:
             if peak is not None:
                 max_peak_kib = max(max_peak_kib, peak)
             item.update({"command": command, "exit_code": code, "elapsed_seconds": round(duration, 3),
-                         "peak_rss_kib": peak, "report_path": str(report_path),
-                         "stderr_path": str(stderr_path), "time_path": str(time_path)})
+                         "peak_rss_kib": peak,
+                         "report_path": str(report_path.relative_to(output)),
+                         "stderr_path": str(stderr_path.relative_to(output)),
+                         "time_path": str(time_path.relative_to(output))})
             if code == 0 and report_path.is_file():
                 try:
                     report = json.loads(report_path.read_text(encoding="utf-8"))

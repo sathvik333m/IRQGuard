@@ -1,4 +1,6 @@
 /build/
+/cmake-build-*/
+Testing/
 /CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
@@ -24,3 +26,4 @@ __pycache__/
 /evaluation/results/linux-v6.6.87/reports/
 /evaluation/results/linux-v6.6.87/build.log
 /evaluation/results/linux-v6.6.87/compile_commands.json
+# Keep REPORT.md and raw-measurements.json tracked; ignore only generated kernel artifacts.

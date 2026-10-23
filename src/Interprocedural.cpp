@@ -293,8 +293,6 @@ SummaryData summarizeFunction(
 
     auto addDependency = [&](const AcquisitionFact &from, const AcquisitionFact &to,
                              bool throughCall) {
-        if (from.lockIdentity == to.lockIdentity)
-            return;
         LockDependency dependency;
         dependency.fromLock = from.lockIdentity;
         dependency.toLock = to.lockIdentity;

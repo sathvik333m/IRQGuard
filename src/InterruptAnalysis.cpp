@@ -38,6 +38,26 @@ std::string chainKey(const std::vector<ProvenanceStep> &chain, bool truncated) {
     return result;
 }
 
+// Formal parameter identities are local to a function summary. Namespace them
+// when the summaries become graph nodes so unrelated `@param[n]` values do
+// not collapse into one symbolic lock.
+std::string graphIdentity(const std::string &identity, const std::string &function) {
+    std::string result;
+    for (std::size_t position = 0; position < identity.size();) {
+        if (identity.compare(position, 7, "@param[") == 0) {
+            const auto end = identity.find(']', position + 7);
+            if (end != std::string::npos) {
+                result += "@param[" + function + "#" +
+                    identity.substr(position + 7, end - position - 7) + "]";
+                position = end + 1;
+                continue;
+            }
+        }
+        result.push_back(identity[position++]);
+    }
+    return result;
+}
+
 ProvenanceStep makeStep(const CallInfo &call) {
     return {call.caller, call.callee, call.location};
 }
@@ -393,8 +413,14 @@ IRQSummary summarizeFunction(
                                                  sourceKey(call->location) + ": " + uncertainty);
                 firstTarget = false;
             }
-            if (!targetSummaries.empty()) state.irq = mergedIRQ;
+            if (!targetSummaries.empty())
+                state.irq = unknownTarget ? "unknown" : mergedIRQ;
             for (const auto &entry : mergedFlags) state.flags[entry.first] = entry.second;
+            // Known targets are only a subset of the possible behaviors when
+            // any indirect target is unresolved. Do not let their definite
+            // state/flag effects overwrite the unknown alternative above.
+            if (unknownTarget)
+                for (auto &flag : state.flags) flag.second = "unknown";
         }
         if (!(out[blockId] == state)) {
             out[blockId] = state;
@@ -463,7 +489,8 @@ void refineDirectDependencies(AnalysisResult &result) {
         const LockDependency *dependency = nullptr;
         for (const auto &candidate : result.lockDependencies) {
             if (candidate.origin == "direct" && candidate.throughCalls.empty() &&
-                candidate.fromLock == edge.fromLock && candidate.toLock == edge.toLock &&
+                graphIdentity(candidate.fromLock, candidate.reportingFunction) == edge.fromLock &&
+                graphIdentity(candidate.toLock, candidate.reportingFunction) == edge.toLock &&
                 sourceKey(candidate.fromAcquisition) == sourceKey(edge.fromLocation) &&
                 sourceKey(candidate.toAcquisition) == sourceKey(edge.toLocation)) {
                 dependency = &candidate;
@@ -551,7 +578,9 @@ void detectCycles(AnalysisResult &result) {
     auto record = [&](std::string classification, std::vector<std::size_t> indexes,
                       std::string explanation, bool) {
         auto nodes = cycleNodes(indexes, result.interruptLockEdges);
-        if (nodes.size() < 3) return;
+        // One-edge self-cycles matter for non-recursive Linux mutexes and
+        // spinlocks: reacquiring the same lock can deadlock.
+        if (nodes.size() < 2) return;
         const auto &cycleEdges = result.interruptLockEdges;
         // Canonicalize by rotation of the ordered (lock, context, edge-kind)
         // sequence. Reverse order remains distinct because it is a different acquisition order.
@@ -647,7 +676,7 @@ void detectCycles(AnalysisResult &result) {
             if (path.size() >= MaxCycleDepth) { depthTruncated = true; return; }
             for (auto edgeIndex : normalOutgoing[current]) {
                 const auto &edge = result.interruptLockEdges[edgeIndex];
-                if (edge.toLock == start && path.size() >= 1) {
+                if (edge.toLock == start && (path.size() >= 1 || edge.fromLock == start)) {
                     auto candidate = path;
                     candidate.push_back(edgeIndex);
                     record("normal_lock_cycle", std::move(candidate),
@@ -700,14 +729,14 @@ void detectCycles(AnalysisResult &result) {
     // an explicit rejected finding rather than silently omitting the shape.
     for (const auto &snapshot : result.interruptSnapshots) {
         if (snapshot.context != "process" || snapshot.irqState != "disabled") continue;
-        std::set<std::string> held{snapshot.lockIdentity};
+        std::set<std::string> held{graphIdentity(snapshot.lockIdentity, snapshot.sourceFunction)};
         for (const auto &dependency : result.lockDependencies) {
             if (dependency.reportingFunction == snapshot.sourceFunction &&
                 dependency.toLock == snapshot.lockIdentity &&
                 sourceKey(dependency.toAcquisition) == sourceKey(snapshot.location) &&
                 chainKey(dependency.throughCalls, dependency.provenanceTruncated) ==
                     chainKey(snapshot.throughCalls, snapshot.provenanceTruncated))
-                held.insert(dependency.fromLock);
+                held.insert(graphIdentity(dependency.fromLock, dependency.reportingFunction));
         }
         if (held.empty()) continue;
         for (const auto &registration : result.interruptRegistrations) {
@@ -908,8 +937,8 @@ void analyzeInterrupts(AnalysisResult &result) {
             auto handlerId = handlers.begin();
             for (std::size_t copy = 0; copy < count; ++copy) {
                 InterruptLockEdge edge;
-                edge.fromLock = dependency.fromLock;
-                edge.toLock = dependency.toLock;
+                edge.fromLock = graphIdentity(dependency.fromLock, dependency.reportingFunction);
+                edge.toLock = graphIdentity(dependency.toLock, dependency.reportingFunction);
                 edge.kind = "regular";
                 edge.fromContext = context;
                 edge.toContext = context;
@@ -946,7 +975,7 @@ void analyzeInterrupts(AnalysisResult &result) {
             break;
         }
         if (source.context != "process" || source.irqState == "disabled") continue;
-        std::set<std::string> held{source.lockIdentity};
+        std::set<std::string> held{graphIdentity(source.lockIdentity, source.sourceFunction)};
         for (const auto &dependency : result.lockDependencies) {
             if (dependency.reportingFunction != source.sourceFunction ||
                 dependency.toLock != source.lockIdentity ||
@@ -954,7 +983,7 @@ void analyzeInterrupts(AnalysisResult &result) {
                 chainKey(dependency.throughCalls, dependency.provenanceTruncated) !=
                     chainKey(source.throughCalls, source.provenanceTruncated))
                 continue;
-            held.insert(dependency.fromLock);
+            held.insert(graphIdentity(dependency.fromLock, dependency.reportingFunction));
         }
         for (const auto &registration : result.interruptRegistrations) {
             if (edgeLimitReached) break;
@@ -971,10 +1000,9 @@ void analyzeInterrupts(AnalysisResult &result) {
                             edgeLimitReached = true;
                             break;
                         }
-                        if (heldLock == target.lock) continue;
                         InterruptLockEdge edge;
                         edge.fromLock = heldLock;
-                        edge.toLock = target.lock;
+                        edge.toLock = graphIdentity(target.lock, handlerFunction->second->qualifiedName);
                         edge.kind = "interrupt_preemption";
                         edge.fromContext = "process";
                         edge.toContext = "hardirq";

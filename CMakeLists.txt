@@ -105,6 +105,11 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
     )
+    add_test(NAME analyzer_review_regressions
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_review_fixes.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/review_fixes.c
+    )
     add_test(NAME evaluation_summarizer
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_summarize.py
                 $<TARGET_FILE:deadlock-analyzer>

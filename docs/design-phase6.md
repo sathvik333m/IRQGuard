@@ -61,22 +61,23 @@ bug.
 
 ## Recorded execution and limitations
 
-The pinned run completed on the selected five translation units: 396 function
-definitions, 10 lock operations, 0 lock dependencies, 0 interrupt graph edges,
-and 0 findings. Separate analyzer processes took 6.992 seconds in total; the
-largest recorded peak RSS was 192,272 KiB. There were 43,639 uncertainty
-entries and two CFG mapping diagnostics. All five units parsed, with none
-skipped. See the raw per-file data and exact commands in
+The refreshed pinned run completed on all five translation units: 396 function
+definitions, 12 lock operations, 6 lock dependencies, and 6 interrupt graph
+edges. It emitted 3 inconclusive cycle reports, all in `netdev.c`, with
+unresolved lock identities. Separate analyzer processes took 6.644 seconds in
+total; the largest peak RSS was 192,312 KiB. There were 43,705 uncertainty
+entries and two CFG mapping diagnostics. The macro-expanded irqsave
+acquisitions at `netdev.c` lines 501 and 3935 are now extracted, but their lock
+expressions and saved-flags state remain unknown. All five units parsed, with
+none skipped. See the raw per-file data and exact commands in
 `evaluation/results/linux-v6.6.87/`.
 
 These results demonstrate parsing and resource use on a real kernel subsystem,
-but not sufficient lock-analysis coverage. A source spot-check found
-`spin_lock_irqsave` calls in `netdev.c` at lines 501 and 3935; the report
-contained their `spin_unlock_irqrestore` calls but missed those acquisitions.
-It also extracted IRQ registrations but emitted no interrupt graph edges.
-Consequently zero cycles cannot be read as evidence that the subsystem is
-deadlock-free. There is no independently labeled kernel ground truth, so
-precision, recall, false-positive rates, and missed-bug counts are unavailable.
+but not validated lock-analysis accuracy. The inconclusive cycles are not
+confirmed bugs, and unresolved lock identities prevent treating them as
+validated candidates. There is no independently labeled kernel ground truth,
+so precision, recall, false-positive rates, and missed-bug counts are
+unavailable.
 
 Kbuild object compilation succeeded with Clang 20 after skipping objtool
 validation via `CONFIG_OBJTOOL=` and `SKIP_STACK_VALIDATION=1`, because

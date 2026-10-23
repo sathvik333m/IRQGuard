@@ -121,10 +121,11 @@ mean:
 | `inconclusive_analysis` | A cycle path uses a state/edge whose feasibility is uncertain. |
 
 These are static analysis classifications, not confirmed deadlocks. No report
-field claims that a kernel bug has been validated. The saved Phase 6 e1000e
-selection currently has no cycles, but source review identified missed
-`spin_lock_irqsave` acquisitions; this empty result cannot establish absence of
-deadlocks.
+field claims that a kernel bug has been validated. The refreshed Phase 6 e1000e
+selection has three inconclusive cycle reports involving unresolved lock
+identities. Its macro-expanded irqsave acquisitions are now extracted, but
+lock identities and saved-flags state remain unknown. These findings are not
+validated bugs and cannot establish whether the driver is deadlock-free.
 
 ## Demonstration on ordinary source
 
@@ -170,17 +171,18 @@ Deadlocks in the Linux Kernel,” USENIX Security 2024, especially §§3–4:
 
 ## Validation, performance, and reproducibility
 
-The current CTest suite contains seven tests: extraction, interprocedural
-summaries, IRQ modeling, feasibility refinement, evaluation summarization,
-runtime evidence, and unified CLI integration. Frontend checks are separate:
+The current CTest suite contains eight tests: extraction, interprocedural
+summaries, IRQ modeling, feasibility refinement, review regressions, evaluation
+summarization, runtime evidence, and unified CLI integration. Frontend checks are separate:
 `cd web && npm test && npm run build`.
 
 Recorded measurements are machine- and scope-specific:
 
 - The Linux v6.6.87 e1000e evaluation analyzed five selected files: 396
-  function definitions, 10 lock operations, zero dependency edges, 43,639
-  uncertainty entries and two CFG diagnostics; elapsed analyzer time summed
-  to 6.992 seconds and maximum per-process peak RSS was 192,272 KiB. The
+  function definitions, 12 lock operations, 6 dependencies, 3 inconclusive
+  cycle reports, 43,705 uncertainty entries and two CFG diagnostics; elapsed
+  analyzer time summed to 6.644 seconds and maximum per-process peak RSS was
+  192,312 KiB. The
   complete per-file measurements and configuration hash are recorded in
   `evaluation/results/linux-v6.6.87/raw-measurements.json`.
 - The controlled interrupt fixture's recorded analysis and `/usr/bin/time -v`
