@@ -176,3 +176,47 @@ export interface SourceSnippet {
   requested_line: number
   lines: Array<{ line: number; text: string; highlighted: boolean }>
 }
+
+export interface KernelEvaluation {
+  status: string
+  kernel: { release_tag: string; commit: string; checkout_commit: string; git_describe: string }
+  configuration: {
+    architecture: string
+    compiler_mode: string
+    config_base: string
+    subsystem: string
+    build_limitations: string[]
+  }
+  aggregate: {
+    files_requested: number
+    files_analyzed: number
+    files_skipped_or_failed: number
+    functions: number
+    lock_operations: number
+    lock_dependencies: number
+    interrupt_graph_edges: number
+    interrupt_cycles: number
+    uncertainties: number
+    diagnostics: number
+    elapsed_seconds_sum: number | null
+    peak_rss_kib_max: number | null
+  }
+  translation_units: Array<{
+    file: string
+    status: string
+    skip_reason: string | null
+    elapsed_seconds: number | null
+    peak_rss_kib: number | null
+    counts: {
+      functions: number
+      lock_operations: number
+      lock_dependencies: number
+      interrupt_graph_edges: number
+      interrupt_cycles: number
+      uncertainties: number
+      diagnostics: number
+    }
+  }>
+  interpretation: string
+  precision_recall: Record<string, unknown> | null
+}

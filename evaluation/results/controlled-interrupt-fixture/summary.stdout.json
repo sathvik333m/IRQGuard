@@ -1,0 +1,38 @@
+{
+  "analysis_kind": "interrupt_aware_lock_analysis",
+  "schema_version": 3,
+  "counts": {
+    "functions": 22,
+    "lock_operations": 46,
+    "lock_dependencies": 13,
+    "interrupt_graph_edges": 224,
+    "interrupt_graph_nodes": 15,
+    "uncertainties": 14,
+    "diagnostics": 0
+  },
+  "basic_lock_cycle_view": {
+    "cyclic_scc_count": 4
+  },
+  "interrupt_aware_view": {
+    "candidate_lock_order_cycles": 1,
+    "interrupt_aware_candidates": 2,
+    "candidate_findings_total": 3
+  },
+  "feasibility_refined_view": {
+    "candidate_lock_order_cycle": 1,
+    "interrupt_aware_candidate": 2,
+    "rejected_candidate": 1,
+    "inconclusive_analysis": 1,
+    "finding_categories": {
+      "candidate_lock_order_cycle": 1,
+      "inconclusive_analysis": 1,
+      "interrupt_aware_candidate": 2,
+      "rejected_candidate": 1
+    }
+  },
+  "limits": [
+    "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+    "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+    "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+  ]
+}

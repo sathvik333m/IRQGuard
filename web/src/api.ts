@@ -1,4 +1,4 @@
-import type { AnalysisMetadata, AnalysisReport, Health, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
+import type { AnalysisMetadata, AnalysisReport, Health, KernelEvaluation, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
 
 export class ApiError extends Error {
   status: number
@@ -68,6 +68,8 @@ export function parseReport(value: unknown): AnalysisReport {
 }
 
 export const getHealth = () => request<Health>('/api/v1/health')
+
+export const getKernelEvaluation = () => request<KernelEvaluation>('/api/v1/evaluations/linux-v6.6.87')
 
 export async function getAnalyses(): Promise<AnalysisMetadata[]> {
   const result = await request<{ analyses: AnalysisMetadata[] }>('/api/v1/analyses')

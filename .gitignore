@@ -12,5 +12,15 @@ __pycache__/
 /web/node_modules/
 /web/dist/
 /web/tsconfig.tsbuildinfo
+/web/.env
+/web/.env.local
+/web/.env.*.local
+/backend/.env
+/backend/.env.local
+/backend/.env.*.local
 /.venv/
 *.sqlite3
+/evaluation/results/linux-v6.6.87/kbuild/
+/evaluation/results/linux-v6.6.87/reports/
+/evaluation/results/linux-v6.6.87/build.log
+/evaluation/results/linux-v6.6.87/compile_commands.json

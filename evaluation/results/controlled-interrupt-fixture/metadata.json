@@ -1,0 +1,21 @@
+{
+  "label": "controlled fixture only; not Linux kernel result",
+  "repository_commit": "03df8bc7c1d5f0c56dc18f78f3c6053a20277eae",
+  "command": "/usr/bin/time -v -o evaluation/results/controlled-interrupt-fixture/time.txt build/deadlock-analyzer analyze --source tests/fixtures/interrupts.c --format json --output evaluation/results/controlled-interrupt-fixture/report.json",
+  "source": "tests/fixtures/interrupts.c",
+  "schema_version": 3,
+  "counts": {
+    "functions": 22,
+    "lock_operations": 46,
+    "lock_dependencies": 13,
+    "interrupt_graph_edges": 224,
+    "interrupt_cycles": 5
+  },
+  "measurement": {
+    "elapsed_wall_seconds": 0.02,
+    "peak_rss_kib": 77648,
+    "exit_status": 0,
+    "tool": "/usr/bin/time -v",
+    "limitations": "Single run on a controlled fixture; not representative of kernel TU scalability or an independent ground-truth benchmark."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "description": "Small controlled regression set with expected outcomes asserted by the repository's tests. These are not independent Linux-kernel ground truth labels.",
+  "cases": [
+    {
+      "id": "controlled-normal-cycle",
+      "source": "tests/fixtures/interrupts.c",
+      "expected": "candidate_lock_order_cycle for the normal_a/normal_b lock sequence",
+      "basis": "tests/test_phase4.py asserts a normal candidate with source locations and a closed lock sequence",
+      "label_quality": "known controlled fixture"
+    },
+    {
+      "id": "controlled-interrupt-cycle",
+      "source": "tests/fixtures/interrupts.c",
+      "expected": "interrupt_aware_candidate for the cross_a/cross_b process-to-hardirq cycle",
+      "basis": "tests/test_phase4.py and tests/test_interrupts.py assert handler, context transition, provenance and locations",
+      "label_quality": "known controlled fixture"
+    },
+    {
+      "id": "controlled-irq-disabled-negative",
+      "source": "tests/fixtures/interrupts.c",
+      "expected": "blocked_a/blocked_b must not be an interrupt_aware_candidate; its hypothetical cycle is rejected as infeasible under the same-CPU hardirq model",
+      "basis": "tests/test_phase4.py checks rejected_candidate and the explicit interrupt_preemption_rejected edge",
+      "label_quality": "known controlled negative"
+    },
+    {
+      "id": "controlled-release-negative",
+      "source": "tests/fixtures/interrupts.c",
+      "expected": "release_before_next_acquire must not produce a state_a-to-state_b lock dependency",
+      "basis": "tests/test_phase4.py checks that the lock release ends the dependency",
+      "label_quality": "known controlled negative"
+    },
+    {
+      "id": "controlled-path-state-inconclusive",
+      "source": "tests/fixtures/interrupts.c",
+      "expected": "ambiguous_a/ambiguous_b remains inconclusive when CFG join merges enabled and disabled IRQ states",
+      "basis": "tests/test_phase4.py asserts an inconclusive finding rather than candidate or rejected",
+      "label_quality": "known controlled fixture"
+    }
+  ],
+  "real_kernel_ground_truth": []
+}

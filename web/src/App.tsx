@@ -7,8 +7,8 @@ import {
   Menu, Moon, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck,
   Sun, TerminalSquare, X, Timer, ListChecks,
 } from 'lucide-react'
-import { compareRuntimeEvidence, getAnalyses, getAnalysis, getHealth, getReport, getRuntimeEvidence, getRuntimeRuns, getSource, startAnalysis, startRuntimeBenchmark, startRuntimeScenario } from './api'
-import type { AnalysisMetadata, AnalysisReport, Finding, Health, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
+import { compareRuntimeEvidence, getAnalyses, getAnalysis, getHealth, getKernelEvaluation, getReport, getRuntimeEvidence, getRuntimeRuns, getSource, startAnalysis, startRuntimeBenchmark, startRuntimeScenario } from './api'
+import type { AnalysisMetadata, AnalysisReport, Finding, Health, KernelEvaluation, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
 
 const LockGraph = lazy(() => import('./components/LockGraph').then((module) => ({ default: module.LockGraph })))
 const DurationChart = lazy(() => import('./components/DurationChart'))
@@ -22,7 +22,7 @@ const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard; s
   { id: 'graph', label: 'Lock graph', icon: GitBranch, section: 'Analysis' },
   { id: 'findings', label: 'Findings', icon: ShieldAlert, section: 'Analysis' },
   { id: 'source', label: 'Source explorer', icon: FileSearch, section: 'Analysis' },
-  { id: 'kernel', label: 'Linux kernel source', icon: HardDrive, section: 'Analysis', unavailable: true },
+  { id: 'kernel', label: 'Kernel evaluation', icon: HardDrive, section: 'Analysis' },
   { id: 'runtime', label: 'Runtime evidence', icon: Activity, section: 'Evidence' },
   { id: 'benchmarks', label: 'Benchmarks', icon: Gauge, section: 'Evidence' },
   { id: 'settings', label: 'Settings', icon: Settings2, section: 'System' },
@@ -101,6 +101,9 @@ export default function App() {
   const [sourceError, setSourceError] = useState('')
   const [sourceLoading, setSourceLoading] = useState(false)
   const [compareIds, setCompareIds] = useState<string[]>([])
+  const [kernelEvaluation, setKernelEvaluation] = useState<KernelEvaluation | null>(null)
+  const [kernelEvaluationError, setKernelEvaluationError] = useState('')
+  const [kernelEvaluationLoading, setKernelEvaluationLoading] = useState(false)
   const findings = report?.interrupt_cycles ?? []
   const selectedFinding = selectedFindingIndex == null ? null : findings[selectedFindingIndex] ?? null
 
@@ -148,6 +151,13 @@ export default function App() {
     localStorage.setItem('irqguard-theme', theme)
   }, [theme])
   useEffect(() => { localStorage.setItem('irqguard-sidebar-collapsed', String(sidebarCollapsed)) }, [sidebarCollapsed])
+  useEffect(() => {
+    if (page !== 'kernel' || kernelEvaluation) return
+    setKernelEvaluationLoading(true)
+    getKernelEvaluation().then((result) => { setKernelEvaluation(result); setKernelEvaluationError('') })
+      .catch((error) => setKernelEvaluationError(error instanceof Error ? error.message : 'Could not load the saved kernel evaluation.'))
+      .finally(() => setKernelEvaluationLoading(false))
+  }, [page, kernelEvaluation])
 
   const navigate = (next: Page) => {
     setPage(next)
@@ -268,7 +278,7 @@ export default function App() {
             onOpenSource={openSource}
           />}
           {page === 'settings' && <SettingsPage health={health} onRefresh={() => void bootstrap()} />}
-          {page === 'kernel' && <UnavailablePage title="Linux kernel source" icon={<HardDrive size={19} />} detail="Kernel source browsing is not part of this analyzer yet. Analyze a selected C translation unit from an explicitly allowed workspace; this interface does not imply full kernel tree or build-system coverage." />}
+          {page === 'kernel' && <KernelEvaluationPage evaluation={kernelEvaluation} loading={kernelEvaluationLoading} error={kernelEvaluationError} />}
           {(page === 'runtime' || page === 'benchmarks') && <RuntimeEvidencePage mode={page} health={health} history={history} activeAnalysis={active} />}
         </main>
         <footer className="app-footer"><span>IRQGuard · local analysis workspace</span><span>Static candidates are evidence for review, not confirmed deadlocks.</span></footer>
@@ -732,8 +742,31 @@ function RuntimeEvidencePage({ mode, health, history, activeAnalysis }: { mode: 
   </>
 }
 
-function UnavailablePage({ title, icon, detail }: { title: string; icon: ReactNode; detail: string }) {
-  return <><PageHeading eyebrow="CAPABILITY STATUS" title={title} subtitle="This area is not represented as implemented functionality." /><div className="unavailable-panel"><div className="unavailable-icon">{icon}</div><div><div className="eyebrow">NOT IMPLEMENTED YET</div><h2>{title} data is not available</h2><p>{detail}</p><div className="required-contract"><strong>Required backend contract</strong><code>{title === 'Runtime evidence' ? 'runtime_events[] · observed_lock_orders[]' : 'benchmark_runs[] · measured_duration · peak_memory'}</code></div></div></div></>
+function KernelEvaluationPage({ evaluation, loading, error }: { evaluation: KernelEvaluation | null; loading: boolean; error: string }) {
+  if (loading) return <div className="kernel-eval-state"><LoaderCircle className="spin" size={17} />Loading the recorded Linux evaluation…</div>
+  if (!evaluation) return <><PageHeading eyebrow="PHASE 6 / REAL SOURCE EVALUATION" title="Linux kernel evaluation" subtitle="Recorded analysis of a pinned Linux kernel driver selection." /><div className="alert alert-error" role="alert"><AlertCircle size={16} /><span>{error || 'Evaluation data is unavailable.'}</span></div></>
+  const { aggregate, kernel, configuration } = evaluation
+  const metrics = [
+    ['Files parsed', `${aggregate.files_analyzed} / ${aggregate.files_requested}`],
+    ['Functions', aggregate.functions.toLocaleString()],
+    ['Lock operations', aggregate.lock_operations.toLocaleString()],
+    ['Dependencies', aggregate.lock_dependencies.toLocaleString()],
+    ['Total analysis', `${aggregate.elapsed_seconds_sum?.toFixed(3) ?? '—'} s`],
+    ['Peak memory', aggregate.peak_rss_kib_max == null ? '—' : `${(aggregate.peak_rss_kib_max / 1024).toFixed(1)} MiB`],
+  ]
+  return <>
+    <PageHeading eyebrow="PHASE 6 / REAL SOURCE EVALUATION" title={`Linux ${kernel.release_tag}`} subtitle={`${configuration.subsystem} · pinned kernel revision ${kernel.commit}`} action={<span className={`status-pill ${evaluation.status === 'completed' ? 'good' : 'muted'}`}>{evaluation.status}</span>} />
+    <div className="kernel-eval-warning" role="note"><AlertCircle size={17} /><div><strong>Coverage limitation</strong><p>{evaluation.interpretation}</p></div></div>
+    <section className="kernel-eval-metrics" aria-label="Kernel evaluation measurements">
+      {metrics.map(([label, value]) => <div className="kernel-eval-metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}
+    </section>
+    <section className="panel kernel-eval-panel"><div className="panel-heading"><div><div className="eyebrow">PER TRANSLATION UNIT</div><h2>Selected e1000e source files</h2></div><span className="runtime-scope">{aggregate.files_skipped_or_failed} skipped or failed</span></div>
+      <div className="runtime-table-wrap"><table className="data-table kernel-eval-table"><thead><tr><th>Source file</th><th>Status</th><th>Functions</th><th>Lock ops</th><th>Dependencies</th><th>Time</th><th>Peak RSS</th></tr></thead><tbody>{evaluation.translation_units.map((unit) => <tr key={unit.file}><td><code>{unit.file}</code></td><td><span className={`status-pill ${statusTone(unit.status)}`}>{unit.status}</span></td><td>{unit.counts.functions}</td><td>{unit.counts.lock_operations}</td><td>{unit.counts.lock_dependencies}</td><td>{unit.elapsed_seconds?.toFixed(3) ?? '—'} s</td><td>{unit.peak_rss_kib == null ? '—' : `${(unit.peak_rss_kib / 1024).toFixed(1)} MiB`}</td></tr>)}</tbody></table></div>
+    </section>
+    <section className="kernel-eval-details"><div><span className="eyebrow">ANALYSIS SIGNALS</span><dl><dt>Interrupt graph edges</dt><dd>{aggregate.interrupt_graph_edges}</dd><dt>Candidate cycles</dt><dd>{aggregate.interrupt_cycles}</dd><dt>Uncertainties</dt><dd>{aggregate.uncertainties.toLocaleString()}</dd><dt>Parser diagnostics</dt><dd>{aggregate.diagnostics}</dd></dl></div><div><span className="eyebrow">BUILD CONFIGURATION</span><dl><dt>Architecture</dt><dd>{configuration.architecture}</dd><dt>Base config</dt><dd>{configuration.config_base}</dd><dt>Compiler</dt><dd>{configuration.compiler_mode}</dd><dt>Revision</dt><dd><code>{kernel.commit}</code></dd></dl></div></section>
+    {!!configuration.build_limitations.length && <section className="kernel-eval-build-note"><Info size={15} /><div><strong>Build limitation</strong>{configuration.build_limitations.map((item) => <p key={item}>{item}</p>)}</div></section>}
+    <p className="kernel-eval-footnote">Results cover these five translation units only. They are measurements of this run, not a whole-kernel evaluation. No precision or recall is available without independently labeled kernel ground truth.</p>
+  </>
 }
 
 function AnalysisEmpty() {

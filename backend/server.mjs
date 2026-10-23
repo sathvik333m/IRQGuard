@@ -437,6 +437,61 @@ async function route(request, response) {
       data_directory: dataDir, runtime_evidence_available: runtimeAvailable, benchmarks_available: runtimeAvailable,
     }); return
   }
+  if (request.method === 'GET' && pathname === '/api/v1/evaluations/linux-v6.6.87') {
+    const measurementPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/raw-measurements.json')
+    let measurement
+    try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
+    catch (error) {
+      if (error.code === 'ENOENT') throw new HttpError(404, 'The recorded Linux v6.6.87 evaluation is not available in this checkout')
+      throw new HttpError(500, `Could not read the recorded kernel evaluation: ${error.message}`)
+    }
+    const aggregate = measurement.aggregate ?? {}
+    const counts = aggregate.counts_sum_across_translation_units ?? {}
+    json(response, 200, {
+      api_version: apiVersion,
+      status: measurement.status,
+      kernel: measurement.kernel,
+      configuration: {
+        architecture: measurement.configuration?.architecture,
+        compiler_mode: measurement.configuration?.compiler_mode,
+        config_base: measurement.configuration?.config_base,
+        subsystem: measurement.configuration?.subsystem,
+        build_limitations: measurement.configuration?.build_limitations ?? [],
+      },
+      aggregate: {
+        files_requested: aggregate.files_requested ?? 0,
+        files_analyzed: aggregate.files_analyzed ?? 0,
+        files_skipped_or_failed: aggregate.files_skipped_or_failed ?? 0,
+        functions: counts.functions ?? 0,
+        lock_operations: counts.lock_operations ?? 0,
+        lock_dependencies: counts.lock_dependencies ?? 0,
+        interrupt_graph_edges: counts.interrupt_graph_edges ?? 0,
+        interrupt_cycles: counts.interrupt_cycles ?? 0,
+        uncertainties: counts.uncertainties ?? 0,
+        diagnostics: counts.diagnostics ?? 0,
+        elapsed_seconds_sum: aggregate.analysis_elapsed_seconds_sum ?? null,
+        peak_rss_kib_max: aggregate.peak_rss_kib_max_across_separate_runs ?? null,
+      },
+      translation_units: (measurement.translation_units ?? []).map((unit) => ({
+        file: path.basename(unit.file ?? ''),
+        status: unit.status,
+        skip_reason: unit.skip_reason ?? null,
+        elapsed_seconds: unit.elapsed_seconds ?? null,
+        peak_rss_kib: unit.peak_rss_kib ?? null,
+        counts: {
+          functions: unit.counts?.functions ?? 0,
+          lock_operations: unit.counts?.lock_operations ?? 0,
+          lock_dependencies: unit.counts?.lock_dependencies ?? 0,
+          interrupt_graph_edges: unit.counts?.interrupt_graph_edges ?? 0,
+          interrupt_cycles: unit.counts?.interrupt_cycles ?? 0,
+          uncertainties: unit.counts?.uncertainties ?? 0,
+          diagnostics: unit.counts?.diagnostics ?? 0,
+        },
+      })),
+      interpretation: 'No reported cycles does not establish that the analyzed driver is deadlock-free. Source review found spin_lock_irqsave acquisitions missed by the current lock extractor.',
+      precision_recall: measurement.precision_recall ?? null,
+    }); return
+  }
   if (request.method === 'GET' && pathname === '/api/v1/runtime/runs') {
     json(response, 200, { api_version: apiVersion, runs: [...runtimeRuns].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 50).map(runtimeMetadata) }); return
   }

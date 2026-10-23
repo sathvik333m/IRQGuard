@@ -105,6 +105,11 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
     )
+    add_test(NAME evaluation_summarizer
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_summarize.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
+    )
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_test(NAME runtime_lock_evidence
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/runtime/test_runtime_evidence.py

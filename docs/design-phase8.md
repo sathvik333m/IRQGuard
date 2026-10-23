@@ -21,6 +21,7 @@ The graph uses the report's lock identities and graph edges. Candidate edges are
 All routes are under `/api/v1`:
 
 - `GET /health`: analyzer path/availability, allowed roots, report schema and explicit availability of runtime and benchmark capabilities.
+- `GET /evaluations/linux-v6.6.87`: read-only summary of the pinned Phase 6 result from `evaluation/results/linux-v6.6.87/raw-measurements.json`; exposes aggregate and per-translation-unit measurements and the recorded build limitations.
 - `GET /analyses?limit=N`: most recent run metadata.
 - `POST /analyses`: queue a run using `source_path` and optional compilation database/API registry paths.
 - `GET /analyses/{id}`: poll run state and metadata.
@@ -44,7 +45,7 @@ The service binds to `127.0.0.1` in the documented command and allows only the l
 - Static findings remain candidates/inconclusive results according to analyzer categories, not confirmed deadlocks.
 - Runtime instrumentation/evidence comparison is not implemented. Benchmark runs, peak-memory collection, and accuracy/scalability result dashboards are not implemented. The UI reports these as unavailable rather than fabricating values.
 - History comparison shows saved metadata and warns about schema differences; it does not normalize or semantically compare finding sets.
-- This GUI does not broaden the C++ analyzer's supported language, build configurations, or kernel coverage.
+- The Kernel evaluation page displays one pinned five-file Linux `v6.6.87` evaluation snapshot. It is not a kernel source browser and does not broaden the C++ analyzer's supported language, build configurations, or kernel coverage.
 
 ## Development commands
 
