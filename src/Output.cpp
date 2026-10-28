@@ -210,6 +210,9 @@ std::string toJson(const AnalysisResult &result) {
         out << "\n    {\"api\":" << quote(item.api) << ",\"kind\":" << quote(item.kind)
             << ",\"caller\":" << quote(item.caller) << ",\"call_index\":" << item.callIndex
             << ",\"state_argument\":" << item.stateArgument
+            << ",\"state_expression\":" << quote(item.stateExpression)
+            << ",\"state_identity\":" << quote(item.stateIdentity)
+            << ",\"state_identity_status\":" << quote(item.stateIdentityStatus)
             << ",\"handler_argument\":" << item.handlerArgument
             << ",\"handler_resolution\":" << quote(item.handlerResolution)
             << ",\"arguments\":";
@@ -352,6 +355,9 @@ std::string toText(const AnalysisResult &result) {
         if (operation.lock)
             out << " lock=" << operation.lock->text << " (" << operation.lock->syntax
                 << ", identity=" << operation.lock->identityTemplate << ')';
+        if (!operation.stateExpression.empty())
+            out << " saved-state=" << operation.stateExpression << " (" <<
+                operation.stateIdentityStatus << ", identity=" << operation.stateIdentity << ')';
         out << " at " << operation.location.expansion.file << ':'
             << operation.location.expansion.line << ':' << operation.location.expansion.column
             << (operation.location.isMacro ? " [macro]" : "") << '\n';

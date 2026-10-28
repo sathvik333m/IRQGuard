@@ -90,8 +90,26 @@ std::string instantiateIdentity(const std::string &identity,
                 resolved = false;
                 return "unknown-identity";
             }
-            output += arguments[index];
             position = end + 1;
+            const std::string addressPrefix = "unary(&,";
+            const std::string dereferencePrefix = "unary(*,";
+            const std::string &argument = arguments[index];
+            // A wrapper commonly passes `*flags` to an API while its caller
+            // supplies `&flags`. Preserve that single pointer indirection by
+            // reducing *(&object) to the caller's object identity.
+            if (output.size() >= dereferencePrefix.size() &&
+                output.compare(output.size() - dereferencePrefix.size(),
+                               dereferencePrefix.size(), dereferencePrefix) == 0 &&
+                argument.compare(0, addressPrefix.size(), addressPrefix) == 0 &&
+                argument.size() > addressPrefix.size() && argument.back() == ')' &&
+                position < identity.size() && identity[position] == ')') {
+                output.resize(output.size() - dereferencePrefix.size());
+                output += argument.substr(addressPrefix.size(),
+                                          argument.size() - addressPrefix.size() - 1);
+                ++position; // consume the closing parenthesis of unary(*, ...)
+            } else {
+                output += argument;
+            }
         } else {
             output.push_back(identity[position++]);
         }
@@ -202,6 +220,14 @@ std::string instantiateTerm(const std::string &term, const std::string &irq,
     for (std::size_t i = 0; i < arguments.size(); ++i) {
         const std::string marker = "$in_flag[" + std::to_string(i) + "]";
         auto found = flags.find(arguments[i]);
+        const std::string addressPrefix = "unary(&,";
+        if (found == flags.end() &&
+            arguments[i].compare(0, addressPrefix.size(), addressPrefix) == 0 &&
+            arguments[i].size() > addressPrefix.size() && arguments[i].back() == ')') {
+            const std::string pointee = arguments[i].substr(
+                addressPrefix.size(), arguments[i].size() - addressPrefix.size() - 1);
+            found = flags.find(pointee);
+        }
         output = replaceAll(std::move(output), marker,
                             found == flags.end() ? "unknown" : found->second);
     }
@@ -213,9 +239,9 @@ std::string evaluateEntryTerm(const std::string &term, const std::string &entryI
     return term.find("$in_flag[") == std::string::npos ? term : "unknown";
 }
 
-std::string callArgument(const CallInfo &call, int index) {
-    return index >= 0 && static_cast<std::size_t>(index) < call.argumentIdentities.size()
-        ? call.argumentIdentities[static_cast<std::size_t>(index)] : std::string{};
+std::string savedStateIdentity(const ApiOperation &api, const CallInfo *call) {
+    (void)call;
+    return api.stateIdentityStatus == "symbolic" ? api.stateIdentity : std::string{};
 }
 
 void mergeSnapshot(std::map<std::string, LockSnapshot> &snapshots,
@@ -265,9 +291,10 @@ IRQSummary summarizeFunction(
         auto call = calls.find(callIndex);
         if (api == apis.end() || call == calls.end() ||
             call->second->callerId != function.id ||
-            api->second->kind != "lock_release_irqrestore")
+            (api->second->kind != "lock_release_irqrestore" &&
+             api->second->kind != "irq_restore"))
             continue;
-        const std::string flagExpression = callArgument(*call->second, api->second->stateArgument);
+        const std::string flagExpression = savedStateIdentity(*api->second, call->second);
         for (std::size_t parameter = 0; parameter < function.parameters.size(); ++parameter) {
             const std::string marker = "@param[" + std::to_string(parameter) + "]";
             if (flagExpression.find(marker) != std::string::npos)
@@ -297,10 +324,12 @@ IRQSummary summarizeFunction(
             if (apiIt != apis.end()) {
                 const ApiOperation &api = *apiIt->second;
                 const bool recognizedKind = api.kind == "lock_acquire" ||
-                    api.kind == "lock_release" || api.kind == "lock_acquire_irqsave" ||
+                    api.kind == "lock_release" || api.kind == "lock_acquire_irq" ||
+                    api.kind == "lock_release_irq" || api.kind == "lock_acquire_irqsave" ||
                     api.kind == "lock_release_irqrestore" ||
                     api.kind == "lock_acquire_softirq_disable" || api.kind == "irq_disable" ||
-                    api.kind == "irq_enable" || api.kind == "interrupt_register" ||
+                    api.kind == "irq_enable" || api.kind == "irq_save" ||
+                    api.kind == "irq_restore" || api.kind == "interrupt_register" ||
                     api.kind == "interrupt_unregister";
                 if (!recognizedKind) {
                     state.irq = "unknown";
@@ -312,8 +341,33 @@ IRQSummary summarizeFunction(
                     state.irq = "disabled";
                 } else if (api.kind == "irq_enable") {
                     state.irq = "enabled";
+                } else if (api.kind == "lock_acquire_irq") {
+                    state.irq = "disabled";
+                } else if (api.kind == "lock_release_irq") {
+                    state.irq = "enabled";
+                } else if (api.kind == "irq_save") {
+                    const std::string flag = savedStateIdentity(api, call);
+                    if (flag.empty()) {
+                        state.irq = "unknown";
+                        summary.uncertainties.insert("local_irq_save flags expression unresolved at " +
+                                                     sourceKey(api.location));
+                    } else {
+                        state.flags[flag] = state.irq;
+                        state.irq = "disabled";
+                    }
+                } else if (api.kind == "irq_restore") {
+                    const std::string flag = savedStateIdentity(api, call);
+                    auto saved = state.flags.find(flag);
+                    if (flag.empty() || saved == state.flags.end()) {
+                        state.irq = "unknown";
+                        summary.uncertainties.insert("local_irq_restore has no matching saved state for flags '" +
+                            (flag.empty() ? std::string("<unresolved>") : flag) + "' at " +
+                            sourceKey(api.location));
+                    } else {
+                        state.irq = saved->second;
+                    }
                 } else if (api.kind == "lock_acquire_irqsave") {
-                    const std::string flag = call ? callArgument(*call, api.stateArgument) : "";
+                    const std::string flag = savedStateIdentity(api, call);
                     if (flag.empty()) {
                         state.irq = "unknown";
                         summary.uncertainties.insert("irqsave flags argument unresolved at " + sourceKey(api.location));
@@ -322,7 +376,7 @@ IRQSummary summarizeFunction(
                         state.irq = "disabled";
                     }
                 } else if (api.kind == "lock_release_irqrestore") {
-                    const std::string flag = call ? callArgument(*call, api.stateArgument) : "";
+                    const std::string flag = savedStateIdentity(api, call);
                     auto saved = state.flags.find(flag);
                     if (flag.empty() || saved == state.flags.end()) {
                         state.irq = "unknown";
@@ -336,7 +390,8 @@ IRQSummary summarizeFunction(
                         "' is not modeled at " + sourceKey(api.location) +
                         "; registered handlers remain possible targets");
                 }
-                if ((api.kind == "lock_acquire" || api.kind == "lock_acquire_irqsave" ||
+                if ((api.kind == "lock_acquire" || api.kind == "lock_acquire_irq" ||
+                     api.kind == "lock_acquire_irqsave" ||
                      api.kind == "lock_acquire_softirq_disable") && api.lock) {
                     LockSnapshot snapshot;
                     snapshot.lock = api.lock->identityTemplate;
@@ -538,7 +593,8 @@ void refineDirectDependencies(AnalysisResult &result) {
                 if (callIndex == toCall) { reachable = true; break; }
                 const auto *api = apiAt(callIndex);
                 if (api && api->lock && api->lock->identityTemplate == dependency->fromLock &&
-                    (api->kind == "lock_release" || api->kind == "lock_release_irqrestore")) {
+                    (api->kind == "lock_release" || api->kind == "lock_release_irq" ||
+                     api->kind == "lock_release_irqrestore")) {
                     held = false;
                     break;
                 }
@@ -1031,6 +1087,8 @@ void analyzeInterrupts(AnalysisResult &result) {
 
     for (const auto &call : result.calls) {
         if (call.modeledApi) continue;
+        if (call.resolution == "direct" || call.resolution == "resolved_indirect")
+            continue;
         std::string lowered = call.callee;
         std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
             return static_cast<char>(std::tolower(c));

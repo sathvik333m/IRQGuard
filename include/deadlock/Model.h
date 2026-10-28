@@ -71,6 +71,11 @@ struct ApiOperation {
     std::string caller;
     LocatedSource location;
     int stateArgument = -1;
+    // Resolved flags lvalue identity when it is an ordinary API argument or
+    // recoverable from an irqsave macro's assignment AST.
+    std::string stateIdentity;
+    std::string stateExpression;
+    std::string stateIdentityStatus = "not_applicable";
     int handlerArgument = -1;
     std::string handlerResolution;
     std::vector<std::string> handlerTargetIds;

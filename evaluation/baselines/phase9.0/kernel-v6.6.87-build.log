@@ -1,0 +1,28 @@
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild x86_64_defconfig
+make[1]: Entering directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+  GEN     Makefile
+#
+# configuration written to .config
+#
+make[1]: Leaving directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+$ /tmp/linux-v6.6.87/scripts/config --file /home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild/.config --module E1000E
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild olddefconfig
+make[1]: Entering directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+  GEN     Makefile
+#
+# No change to .config
+#
+make[1]: Leaving directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld CONFIG_OBJTOOL= O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild prepare0
+make[1]: Entering directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+  SYNC    include/config/auto.conf.cmd
+  GEN     Makefile
+  GEN     Makefile
+  CALL    /tmp/linux-v6.6.87/scripts/checksyscalls.sh
+make[1]: Leaving directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld CONFIG_OBJTOOL= SKIP_STACK_VALIDATION=1 O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild -j2 drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make[1]: Entering directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+  GEN     Makefile
+  CALL    /tmp/linux-v6.6.87/scripts/checksyscalls.sh
+make[1]: Leaving directory '/home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild'
+$ /usr/bin/python3 /tmp/linux-v6.6.87/scripts/clang-tools/gen_compile_commands.py -d /home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild -o /home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild/compile_commands.json /home/sathvik/os_project/evaluation/results/linux-v6.6.87/kbuild/drivers/net/ethernet/intel/e1000e

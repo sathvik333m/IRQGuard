@@ -334,7 +334,8 @@ SummaryData summarizeFunction(
                     if (!api.lock || api.lock->identityTemplate.empty())
                         continue;
                     const std::string identity = api.lock->identityTemplate;
-                    if (api.kind == "lock_acquire" || api.kind == "lock_acquire_irqsave" ||
+                    if (api.kind == "lock_acquire" || api.kind == "lock_acquire_irq" ||
+                        api.kind == "lock_acquire_irqsave" ||
                         api.kind == "lock_acquire_softirq_disable") {
                         AcquisitionFact fact{identity, api.lock->identityStatus,
                                              function.qualifiedName, api.lock->location, {}, false};
@@ -350,7 +351,7 @@ SummaryData summarizeFunction(
                         state.mustReleased.erase(identity);
                         if (api.lock->identityStatus == "unresolved")
                             summary.uncertainties.insert("lock identity unresolved at " + sourceKey(api.location));
-                    } else if (api.kind == "lock_release" ||
+                    } else if (api.kind == "lock_release" || api.kind == "lock_release_irq" ||
                                api.kind == "lock_release_irqrestore") {
                         ReleaseFact release{identity, api.lock->identityStatus,
                                             function.qualifiedName, api.lock->location, {}, false};

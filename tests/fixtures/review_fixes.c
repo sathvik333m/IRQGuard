@@ -5,14 +5,18 @@ extern void mutex_unlock(lock_t *lock);
 extern void local_irq_disable(void);
 extern int request_irq(unsigned int irq, void (*handler)(void), unsigned long flags,
                        const char *name, void *device);
-extern unsigned long raw_take(lock_t *lock);
-extern void raw_drop(lock_t *lock, unsigned long flags);
 extern unsigned long _raw_spin_lock_irqsave(lock_t *lock);
 extern void _raw_spin_unlock_irqrestore(lock_t *lock, unsigned long flags);
 extern void opaque_callback(lock_t *lock);
 
-#define spin_lock_irqsave(lock, flags) ((flags) = raw_take(lock))
-#define spin_unlock_irqrestore(lock, flags) raw_drop(lock, flags)
+/* Kernel v6.6.87-shaped expansion: the public lock is checked, and the raw
+ * irqsave helper returns flags into the macro's source lvalue. */
+static lock_t *spinlock_check(lock_t *lock) { return lock; }
+#define raw_spin_lock_irqsave(lock, flags) do { (flags) = _raw_spin_lock_irqsave(lock); } while (0)
+#define spin_lock_irqsave(lock, flags) \
+    do { raw_spin_lock_irqsave(spinlock_check(lock), flags); } while (0)
+#define spin_unlock_irqrestore(lock, flags) \
+    _raw_spin_unlock_irqrestore(spinlock_check(lock), flags)
 
 void macro_lock_pair(lock_t *lock) {
     unsigned long flags;

@@ -107,9 +107,12 @@ unmatched = selected("unmatched_irqrestore_case", "state_b")
 assert unmatched and all(item["irq_state"] == "unknown" for item in unmatched)
 assert any("irqrestore has no matching saved state" in u for u in report["uncertainties"])
 
-# Unsupported lock API names and unknown lock expressions are reported.
-assert any("possibly unsupported lock/IRQ API 'spin_lock_irq'" in u
-           for u in report["uncertainties"])
+# spin_lock_irq is modeled as an IRQ-disabling acquisition, not reported as
+# unsupported. Unknown lock expressions and unmodeled external calls remain visible.
+irq_api = [a for a in report["api_operations"] if a["api"] == "spin_lock_irq"]
+assert irq_api and all(a["kind"] == "lock_acquire_irq" for a in irq_api)
+assert not any("possibly unsupported lock/IRQ API 'spin_lock_irq'" in u
+               for u in report["uncertainties"])
 assert any(api["api"] == "spin_lock" and api["lock"] is not None
            and api["lock"]["identity_status"] == "unresolved"
            for api in report["api_operations"])

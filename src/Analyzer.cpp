@@ -5,6 +5,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/ParentMapContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Analysis/CFG.h"
 #include "clang/Frontend/ASTConsumers.h"
@@ -67,8 +68,19 @@ std::string expressionText(const clang::Expr *expression,
     return printed;
 }
 
-std::string expressionSyntax(const clang::Expr *expression) {
+const clang::Expr *identityOperand(const clang::Expr *expression) {
     expression = expression ? expression->IgnoreParenImpCasts() : nullptr;
+    while (const auto *call = llvm::dyn_cast_or_null<clang::CallExpr>(expression)) {
+        const auto *callee = call->getDirectCallee();
+        if (!callee || callee->getNameAsString() != "spinlock_check" || call->getNumArgs() != 1)
+            break;
+        expression = call->getArg(0)->IgnoreParenImpCasts();
+    }
+    return expression;
+}
+
+std::string expressionSyntax(const clang::Expr *expression) {
+    expression = identityOperand(expression);
     if (llvm::isa_and_nonnull<clang::DeclRefExpr>(expression)) return "decl_ref";
     if (llvm::isa_and_nonnull<clang::MemberExpr>(expression)) return "member";
     if (llvm::isa_and_nonnull<clang::ArraySubscriptExpr>(expression)) return "array_subscript";
@@ -107,7 +119,7 @@ std::string canonicalExpression(const clang::Expr *expression,
         resolved = false;
         return "unknown@missing";
     }
-    expression = expression->IgnoreParenImpCasts();
+    expression = identityOperand(expression);
     if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(expression)) {
         const auto *value = llvm::dyn_cast<clang::ValueDecl>(reference->getDecl());
         if (const auto *parameter = llvm::dyn_cast_or_null<clang::ParmVarDecl>(value)) {
@@ -293,12 +305,20 @@ public:
         // itself is not registered. `spinlock_check` is an argument validator,
         // not the lock acquisition inside Linux spinlock macros.
         std::optional<ApiSpec> spec = registry_.find(direct->getNameAsString());
-        if (!spec && call->getExprLoc().isMacroID() &&
-            direct->getNameAsString() != "spinlock_check") {
-            const auto macroName = clang::Lexer::getImmediateMacroName(
-                call->getExprLoc(), manager_, context_.getLangOpts());
-            if (!macroName.empty())
-                spec = registry_.find(macroName.str());
+        if (call->getExprLoc().isMacroID() && direct->getNameAsString() != "spinlock_check") {
+            // The expansion location points back to the public invocation in
+            // the source file. Read that one Clang token instead of guessing
+            // from helper-name substrings or macro spelling locations.
+            clang::Token invocation;
+            const auto expansion = manager_.getExpansionLoc(call->getExprLoc());
+            if (!clang::Lexer::getRawToken(expansion, invocation, manager_,
+                                           context_.getLangOpts(), true)) {
+                const std::string publicName = clang::Lexer::getSpelling(
+                    invocation, manager_, context_.getLangOpts());
+                auto publicSpec = registry_.find(publicName);
+                if (publicSpec && (!spec || publicSpec->kind == spec->kind))
+                    spec = std::move(publicSpec);
+            }
         }
         if (!spec)
             return true;
@@ -310,11 +330,17 @@ public:
         operation.caller = currentFunction_;
         operation.location = makeLocated(call->getExprLoc(), manager_);
         operation.stateArgument = spec->stateArgument;
+        const bool hasSavedState = spec->stateArgument >= 0 ||
+            spec->kind == "lock_acquire_irqsave" ||
+            spec->kind == "lock_release_irqrestore" ||
+            spec->kind == "irq_save" || spec->kind == "irq_restore";
+        if (hasSavedState)
+            operation.stateIdentityStatus = "unresolved";
         for (const auto *argument : call->arguments())
             operation.arguments.push_back(expressionText(argument, context_));
         if (spec->lockArgument >= 0) {
             if (static_cast<unsigned>(spec->lockArgument) < call->getNumArgs()) {
-                const auto *argument = call->getArg(spec->lockArgument);
+                const auto *argument = identityOperand(call->getArg(spec->lockArgument));
                 LockExpression lock;
                 lock.text = expressionText(argument, context_);
                 lock.syntax = expressionSyntax(argument);
@@ -329,6 +355,23 @@ public:
                     " has no configured lock argument at index " +
                     std::to_string(spec->lockArgument));
             }
+        }
+        const clang::Expr *stateExpression = nullptr;
+        if (spec->stateArgument >= 0 &&
+            static_cast<unsigned>(spec->stateArgument) < call->getNumArgs()) {
+            stateExpression = call->getArg(spec->stateArgument);
+        } else if (spec->kind == "lock_acquire_irqsave" || spec->kind == "irq_save") {
+            // Linux's raw irqsave helper returns saved flags. Public macros
+            // assign that value to the source flags lvalue; recover it from
+            // the enclosing assignment expression when Clang exposes it.
+            stateExpression = assignedStateLValue(call);
+        }
+        if (stateExpression) {
+            operation.stateExpression = expressionText(stateExpression, context_);
+            bool stateResolved = true;
+            operation.stateIdentity = canonicalExpression(
+                stateExpression, context_, currentFunctionDecl_, stateResolved);
+            operation.stateIdentityStatus = stateResolved ? "symbolic" : "unresolved";
         }
         if (spec->handlerArgument >= 0) {
             operation.handlerArgument = spec->handlerArgument;
@@ -353,7 +396,23 @@ public:
                     "' has no configured handler argument at " + locationString(operation.location.expansion));
             }
         }
-        result_.apiOperations.push_back(std::move(operation));
+        // Nested macro ASTs can expose both the expansion's helper call and a
+        // synthesized call node at the same public invocation. Keep one
+        // semantic API event per public source location. Prefer the node with
+        // actual arguments/lock identity over an empty synthesized node.
+        auto duplicate = std::find_if(result_.apiOperations.begin(), result_.apiOperations.end(),
+            [&](const ApiOperation &existing) {
+                const auto &left = existing.location.expansion;
+                const auto &right = operation.location.expansion;
+                return existing.api == operation.api && left.valid && right.valid &&
+                    left.file == right.file && left.line == right.line &&
+                    left.column == right.column;
+            });
+        if (duplicate == result_.apiOperations.end()) {
+            result_.apiOperations.push_back(std::move(operation));
+        } else if (!duplicate->lock && operation.lock) {
+            *duplicate = std::move(operation);
+        }
         return true;
     }
 
@@ -465,6 +524,30 @@ public:
     bool VisitConditionalOperator(clang::ConditionalOperator *expression) { return addControl("conditional_operator", expression->getCond(), expression->getQuestionLoc()); }
 
 private:
+    const clang::Expr *assignedStateLValue(const clang::CallExpr *call) const {
+        const clang::Stmt *current = call;
+        for (unsigned depth = 0; depth < 8 && current; ++depth) {
+            const auto parents = context_.getParents(*current);
+            if (parents.empty()) break;
+            const clang::Stmt *next = nullptr;
+            for (const auto &parent : parents) {
+                if (const auto *assignment = parent.get<clang::BinaryOperator>()) {
+                    const auto *rhs = assignment->getRHS()->IgnoreParenImpCasts();
+                    if (assignment->isAssignmentOp() && rhs == call)
+                        return assignment->getLHS();
+                    next = assignment;
+                    break;
+                }
+                if (const auto *statement = parent.get<clang::Stmt>()) {
+                    next = statement;
+                    break;
+                }
+            }
+            current = next;
+        }
+        return nullptr;
+    }
+
     static std::string functionId(const clang::FunctionDecl *function,
                                   const clang::SourceManager &manager) {
         return function->getQualifiedNameAsString() + "@" +
