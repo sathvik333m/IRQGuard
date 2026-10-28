@@ -91,16 +91,15 @@ validated candidates. There is no independently labeled kernel ground truth,
 so precision, recall, false-positive rates, and missed-bug counts are
 unavailable.
 
-The earlier Phase 6 run compiled the five source objects but explicitly set
-`CONFIG_OBJTOOL=`; its saved build log does not show objtool invocations. Its
-`SKIP_STACK_VALIDATION=1` argument had no effect because that variable is not
-recognized by this kernel revision. Phase 12 reran the default validation
-path: `prepare` reached objtool but failed compiling it because `libelf.h` and
-`gelf.h` were unavailable. A second, explicit `--skip-objtool` run compiled
-all five objects and analyzed all five source files; objtool and ORC metadata
-generation were skipped. `CONFIG_STACK_VALIDATION` was not selected. See
-[`phase12-report.md`](../evaluation/results/linux-v6.6.87/phase12-report.md)
-for exact environment, command outcomes, and installation constraints.
+The earlier Phase 6 run compiled five source objects but explicitly set
+`CONFIG_OBJTOOL=`; `SKIP_STACK_VALIDATION=1` was not recognized. After
+`libelf-dev` was installed, Phase 12 built objtool and the composite e1000e
+object, ran deferred objtool checks, and verified ORC sections. It did not link
+the final module or build a full kernel, and `CONFIG_STACK_VALIDATION` was not
+selected. See [`phase12-report.md`](../evaluation/results/linux-v6.6.87/phase12-report.md)
+for exact stage outcomes and the
+[`Phase 13 report`](../evaluation/results/linux-v6.6.87/phase13-report.md)
+for the before/after comparison and regression results.
 
 ## Reproduction
 

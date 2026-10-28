@@ -60,6 +60,11 @@ describe('IRQGuard workspace states', () => {
         source_only: { status: 'completed_with_validation_skips', validation: { kernel_object_compilation: 'succeeded', source_analysis: 'completed', objtool_build: 'skipped_by_request', objtool_object_checks: 'skipped_by_request', unwinder_orc_configured: true, stack_validation: 'not_configured_by_defconfig' }, aggregate: { files_requested: 5, files_analyzed: 5, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, interrupt_cycles: 0 } } },
         build_limitations: ['Final .ko link and full kernel build were not attempted.'],
       },
+      phase13_comparison: {
+        before: { functions: 396, lock_acquisitions: 6, lock_releases: 6, lock_dependencies: 6, interrupt_graph_edges: 6, candidate_cycles: 3, uncertainty_events: 43705, unique_uncertainty_records: 4872 },
+        after: { functions: 396, lock_acquisitions: 6, lock_releases: 6, lock_dependencies: 0, interrupt_graph_edges: 0, candidate_cycles: 0, uncertainty_events: 43514, unique_uncertainty_records: 4833 },
+        metrics_warning: 'Counts are not accuracy metrics.',
+      },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
       ? jsonResponse(health)
@@ -72,6 +77,9 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByText(/U-1 lock_identity/)).toBeInTheDocument()
     expect(screen.getByText(/Fresh source-only analysis found no current cycles/)).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Kernel validation stages' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Post-fix comparison' })).toBeInTheDocument()
+    expect(screen.getAllByText('43,705')).toHaveLength(2)
+    expect(screen.getByText('43,514')).toBeInTheDocument()
     expect(screen.getByText(/Earlier pre-install attempt/)).toBeInTheDocument()
     expect(screen.getByText(/missing libelf headers/)).toBeInTheDocument()
     expect(screen.getByText(/C object compilation/)).toBeInTheDocument()

@@ -154,3 +154,13 @@ commands. Full per-file JSON reports, stderr/time files, and `build.log` are
 generated under ignored output paths; reproduce them with the command above.
 The raw manifest records generated artifact paths relative to the evaluation
 output directory.
+
+## Post-fix comparison and regression results
+
+The Phase 13 comparison uses the preserved Phase 9.0 baseline and the post-fix
+Phase 12 run on the same kernel commit, five source files, Clang version, and
+configuration hash. It records the change from two unresolved lock identities
+to 12 symbolic identities, 3 inconclusive cycles to no reported cycles, and
+uncertainty counts with their counting rules. These changes are not accuracy
+metrics. See the [Phase 13 report](phase13-report.md) and
+[machine-readable comparison](phase13-before-after.json).

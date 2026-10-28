@@ -279,6 +279,11 @@ export interface KernelEvaluation {
       manual_validation: string[]
     }>
   } | null
+  phase13_comparison?: {
+    before: Record<string, any>
+    after: Record<string, any>
+    metrics_warning: string
+  } | null
   phase12_validation?: {
     full_validation: {
       status: string

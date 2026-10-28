@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "comparison": "saved Phase 9.0 baseline versus post-fix Phase 12 evaluation",
+  "comparable_setup": {
+    "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "source_files": [
+      "netdev.c",
+      "ethtool.c",
+      "ich8lan.c",
+      "phy.c",
+      "nvm.c"
+    ],
+    "kernel_config_sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1",
+    "clang_version_before": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "clang_version_after": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "compilation_database_note": "The source set and config hash match; the original five-command compilation database was not preserved, so byte-for-byte compiler-flag equivalence cannot be checked. Current database has 11 commands because the composite module object was added for deferred objtool validation."
+  },
+  "repository": {
+    "baseline_revision": "23f602b2f725ea385cff4d3715e8e1906a52dfee",
+    "current_revision": "2545d6a85b103ee5b2c5d0f1555d7c860f943be9",
+    "current_worktree_dirty": true,
+    "baseline_analyzer_sha256": "dd9221162839ada581675aa4edc5c06a3f7b6e1989d840d6680306e862f7d34b",
+    "post_analyzer_sha256": "c9d2b43cd2cf1abfb1680cc5e4adc9c6a9df65316ad6a958e0bb8ad5fa858332"
+  },
+  "before": {
+    "files": 5,
+    "functions": 396,
+    "lock_acquisitions": 6,
+    "lock_releases": 6,
+    "lock_operation_kinds": {
+      "lock_acquire": 4,
+      "lock_acquire_irqsave": 2,
+      "lock_release": 4,
+      "lock_release_irqrestore": 2
+    },
+    "lock_identity_statuses": {
+      "symbolic": 10,
+      "unresolved": 2
+    },
+    "lock_dependencies": 6,
+    "interrupt_graph_edges": 6,
+    "candidate_cycles": 3,
+    "candidate_classifications": {
+      "inconclusive_analysis": 3
+    },
+    "uncertainty_events": 43705,
+    "unique_uncertainty_records": 4872,
+    "parser_or_analysis_diagnostics": 2,
+    "analysis_elapsed_seconds_sum": 6.644,
+    "peak_rss_kib_max_across_separate_runs": 192312,
+    "validation": {
+      "objtool": "disabled using CONFIG_OBJTOOL= override (saved legacy schema has no stage fields)",
+      "stack_validation": "not run; SKIP_STACK_VALIDATION was passed but is unsupported"
+    }
+  },
+  "after": {
+    "files": 5,
+    "functions": 396,
+    "lock_acquisitions": 6,
+    "lock_releases": 6,
+    "lock_operation_kinds": {
+      "lock_acquire": 4,
+      "lock_acquire_irqsave": 2,
+      "lock_release": 4,
+      "lock_release_irqrestore": 2
+    },
+    "lock_identity_statuses": {
+      "symbolic": 12
+    },
+    "lock_dependencies": 0,
+    "interrupt_graph_edges": 0,
+    "candidate_cycles": 0,
+    "candidate_classifications": {},
+    "uncertainty_events": 43514,
+    "unique_uncertainty_records": 4833,
+    "parser_or_analysis_diagnostics": 2,
+    "analysis_elapsed_seconds_sum": 5.79,
+    "peak_rss_kib_max_across_separate_runs": 192848,
+    "validation": {
+      "objtool_mode": "enabled",
+      "objtool_build": "succeeded",
+      "objtool_object_checks": "succeeded",
+      "kernel_object_compilation": "succeeded",
+      "source_analysis": "completed",
+      "unwinder_orc_configured": true,
+      "stack_validation_configured": false,
+      "stack_validation": "not_configured_by_defconfig",
+      "skip_stack_validation_variable_supported_by_kernel": false,
+      "objtool_deferred_to_composite": true,
+      "objtool_invocations": 1,
+      "objtool_command": "/usr/bin/ld -m elf_x86_64 -z noexecstack --no-warn-rwx-segments   -r -o drivers/net/ethernet/intel/e1000e/e1000e.o @drivers/net/ethernet/intel/e1000e/e1000e.mod  ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --ibt --orc --retpoline --rethunk --static-call --uaccess --prefix=16  --link  --module drivers/net/ethernet/intel/e1000e/e1000e.o",
+      "objtool_options": [
+        "--orc",
+        "--retpoline",
+        "--ibt",
+        "--module",
+        "--link"
+      ],
+      "kernel_module_link": "not_attempted; composite object target only",
+      "orc_sections_present": true
+    }
+  },
+  "metrics_warning": "This is one saved run per version, not a statistical benchmark. Lower cycle and uncertainty counts do not alone prove better correctness. No labeled real-kernel ground truth supports precision or recall."
+}
