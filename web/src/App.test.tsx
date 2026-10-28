@@ -23,12 +23,28 @@ describe('IRQGuard workspace states', () => {
     expect(await screen.findByRole('heading', { name: 'Start with a C source file' })).toBeInTheDocument()
     expect(screen.queryByText(/candidate lock-order cycles/i)).not.toBeInTheDocument()
     expect(screen.getByText(/absolute linux path inside an allowed workspace/i)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Project guide' }))
+    expect(await screen.findByRole('heading', { name: /Find the lock paths that cross interrupt boundaries/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /One source file becomes a traceable lock model/ })).toBeInTheDocument()
+    expect(screen.getByText(/does not reproduce Archerfish/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /See measurements and build limits/ })).toBeInTheDocument()
   })
 
   it('shows a useful error when the local API cannot be reached', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')))
     render(<App />)
     expect(await screen.findByRole('alert')).toHaveTextContent(/local irqguard api is unavailable/i)
+  })
+
+  it('shows current irqsave extraction status in the CLI guide caveat', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
+      ? jsonResponse(health) : jsonResponse({ analyses: [] })))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'CLI & reports' }))
+    expect(await screen.findByText(/extracted both `spin_lock_irqsave` acquisitions/)).toBeInTheDocument()
+    expect(screen.getByText(/does not prove the driver is free of deadlocks/)).toBeInTheDocument()
+    expect(screen.queryByText(/pinned kernel run missed some/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Schema v4 · archived v3 supported/)).toBeInTheDocument()
   })
 
   it('shows the archived kernel cycle classifications and linked evidence from the review response', async () => {

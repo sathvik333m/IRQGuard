@@ -13,9 +13,10 @@ import type { AnalysisMetadata, AnalysisReport, Finding, Health, KernelEvaluatio
 const LockGraph = lazy(() => import('./components/LockGraph').then((module) => ({ default: module.LockGraph })))
 const DurationChart = lazy(() => import('./components/DurationChart'))
 
-type Page = 'overview' | 'new' | 'history' | 'graph' | 'findings' | 'source' | 'kernel' | 'cli' | 'settings' | 'runtime' | 'benchmarks'
+type Page = 'guide' | 'overview' | 'new' | 'history' | 'graph' | 'findings' | 'source' | 'kernel' | 'cli' | 'settings' | 'runtime' | 'benchmarks'
 
 const navItems: Array<{ id: Page; label: string; icon: typeof LayoutDashboard; section: string; unavailable?: boolean }> = [
+  { id: 'guide', label: 'Project guide', icon: BookOpen, section: 'Project' },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, section: 'Workspace' },
   { id: 'new', label: 'New analysis', icon: Play, section: 'Workspace' },
   { id: 'history', label: 'Analysis history', icon: History, section: 'Workspace' },
@@ -153,7 +154,7 @@ export default function App() {
   }, [theme])
   useEffect(() => { localStorage.setItem('irqguard-sidebar-collapsed', String(sidebarCollapsed)) }, [sidebarCollapsed])
   useEffect(() => {
-    if (page !== 'kernel' || kernelEvaluation) return
+    if ((page !== 'kernel' && page !== 'guide') || kernelEvaluation) return
     setKernelEvaluationLoading(true)
     getKernelEvaluation().then((result) => { setKernelEvaluation(result); setKernelEvaluationError('') })
       .catch((error) => setKernelEvaluationError(error instanceof Error ? error.message : 'Could not load the saved kernel evaluation.'))
@@ -223,9 +224,10 @@ export default function App() {
         <main className="main-content" key={page}>
           {backendError && <div className="alert alert-error" role="alert"><AlertCircle size={17} /><span>{backendError}</span><button className="icon-button alert-close" aria-label="Dismiss error" onClick={() => setBackendError('')}><X size={15} /></button></div>}
 
+          {page === 'guide' && <ProjectGuidePage latestRun={kernelEvaluation?.phase13_latest_rerun ?? null} onOpenWorkspace={() => navigate('overview')} onNew={() => navigate('new')} onKernel={() => navigate('kernel')} onRuntime={() => navigate('runtime')} onCli={() => navigate('cli')} />}
           {page === 'overview' && <OverviewPage
             active={active} report={report} history={history} health={health} loading={loadingReport}
-            onNew={() => navigate('new')} onOpenHistory={() => navigate('history')}
+            onNew={() => navigate('new')} onOpenHistory={() => navigate('history')} onOpenGuide={() => navigate('guide')}
             onOpenFinding={(index) => { setSelectedFindingIndex(index); navigate('findings') }}
             onOpenGraph={() => navigate('graph')}
             onSelectAnalysis={openAnalysis}
@@ -290,7 +292,7 @@ export default function App() {
 }
 
 function Sidebar({ page, navigate, mobileOpen, closeMobile, collapsed, health, active }: { page: Page; navigate: (page: Page) => void; mobileOpen: boolean; closeMobile: () => void; collapsed: boolean; health: Health | null; active: AnalysisMetadata | null }) {
-  const sections = ['Workspace', 'Analysis', 'Evidence', 'System']
+  const sections = ['Project', 'Workspace', 'Analysis', 'Evidence', 'System']
   return <>
     {mobileOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={closeMobile} />}
     <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-narrow' : ''}`}>
@@ -348,9 +350,34 @@ function WorkspaceSearch({ report, onOpenSource, onOpenFinding, onOpenGraph }: {
   return <div className="workspace-search"><Search size={14} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search files, functions, locks…" aria-label="Search current analysis" aria-expanded={!!query} />{query && <button className="search-clear" aria-label="Clear search" onClick={() => setQuery('')}><X size={13} /></button>}{query && <div className="search-results" role="listbox" aria-label="Search results">{matches.length ? matches.map((item, index) => <button role="option" aria-selected="false" key={`${item.kind}-${item.label}-${index}`} onClick={() => { setQuery(''); item.action() }}><span className="search-result-kind">{item.kind}</span><span><strong>{item.label}</strong><small>{item.detail}</small></span><ArrowUpRight size={13} /></button>) : <div className="search-no-results">No matches in the selected report.</div>}</div>}</div>
 }
 
-function OverviewPage({ active, report, history, health, loading, onNew, onOpenHistory, onOpenFinding, onOpenGraph, onSelectAnalysis, selectedFinding, onSelectFinding, onOpenSource }: {
+function ProjectGuidePage({ latestRun, onOpenWorkspace, onNew, onKernel, onRuntime, onCli }: {
+  latestRun: NonNullable<KernelEvaluation['phase13_latest_rerun']> | null
+  onOpenWorkspace: () => void; onNew: () => void; onKernel: () => void; onRuntime: () => void; onCli: () => void
+}) {
+  const counts = latestRun?.aggregate.counts_sum_across_translation_units ?? {}
+  return <div className="project-guide">
+    <section className="guide-hero">
+      <div className="guide-hero-copy"><span className="eyebrow">IRQGUARD · OPERATING SYSTEMS RESEARCH PROJECT</span><h1>Find the lock paths that cross interrupt boundaries.</h1><p>IRQGuard reads real C source with Clang, traces lock use across functions, and checks whether normal execution and modeled hard interrupts can form a dangerous dependency cycle.</p><div className="guide-actions"><button className="button button-primary" onClick={onNew}><Play size={14} />Analyze C source</button><button className="button button-secondary" onClick={onOpenWorkspace}>Open workspace <ArrowRight size={14} /></button></div><div className="guide-hero-meta"><span>C++17 analyzer</span><i /><span>Clang AST + CFG</span><i /><span>Linux-style lock APIs</span></div></div>
+      <div className="guide-flow-art" aria-label="IRQGuard analysis stages"><div className="guide-flow-orbit" /><div className="guide-flow-caption"><span>FROM SOURCE</span><strong>TO EVIDENCE</strong></div>{[['01', 'Parse C', 'AST · macros · locations'], ['02', 'Trace locks', 'calls · summaries · state'], ['03', 'Review paths', 'cycles · uncertainty']].map(([number, title, detail]) => <div className="guide-flow-step" key={number}><b>{number}</b><span><strong>{title}</strong><small>{detail}</small></span><ArrowRight size={14} /></div>)}</div>
+    </section>
+    <div className="guide-research-note"><BookOpen size={16} /><p><strong>Research grounding.</strong> Inspired by ideas in Archerfish (USENIX Security 2024), IRQGuard is an independently built, deliberately scoped analyzer. It does not reproduce Archerfish or claim equivalent coverage.</p></div>
+    <section className="guide-research-map" aria-label="Research implementation scope"><div><span>ADOPTED IDEAS</span><p>Context-labelled lock dependencies, interrupt-state tracking, and cycle discovery with source evidence.</p></div><div><span>SIMPLIFIED HERE</span><p>A manually configured Linux API subset, lock snapshots, bounded summaries, and conservative CFG state joins.</p></div><div><span>OUT OF SCOPE</span><p>Whole-kernel coverage, softirq/NMI modeling, generated handler specifications, and full SMT path validation.</p></div></section>
+
+    <section className="guide-section"><div className="guide-section-heading"><span className="eyebrow">ANALYSIS PIPELINE</span><h2>One source file becomes a traceable lock model.</h2><p>Every step keeps the source evidence needed to review how the analyzer reached a result.</p></div><div className="guide-pipeline">
+      {[['01', 'Parse the program', 'Clang extracts function definitions, calls, conditionals, loops, macros, and source locations from the requested C translation unit. Parser failures are surfaced instead of reported as successful runs.'], ['02', 'Resolve lock events', 'A configurable API registry identifies supported acquire, release, IRQ-state, and handler-registration calls. Lock expressions keep symbolic identity and macro spelling/expansion locations.'], ['03', 'Follow calls', 'Interprocedural summaries propagate lock events through direct calls and supported function-pointer patterns. Recursion uses a bounded fixed point; unresolved targets remain explicit.'], ['04', 'Model execution context', 'The scoped Linux model links statically resolved request_irq handlers to hard-IRQ context and tracks selected local IRQ and irqsave/restore transitions. irqrestore restores saved state; it is not treated as unconditional enable.'], ['05', 'Explain candidates', 'Dependencies form a context-aware graph. Cycle and bounded feasibility checks attach paths, functions, locations, assumptions, and uncertainties. A candidate is not a confirmed deadlock.']].map(([number, title, description]) => <article className="guide-pipeline-row" key={number}><span className="guide-step-number">{number}</span><h3>{title}</h3><p>{description}</p></article>)}
+    </div></section>
+
+    <section className="guide-scope-section"><div className="guide-section-heading"><span className="eyebrow">MODELED SCOPE</span><h2>Useful evidence, with boundaries made visible.</h2></div><div className="guide-scope-columns"><div><h3><Check size={16} />Currently modeled</h3><ul><li>Selected mutex and spinlock APIs, including irqsave/irqrestore variants</li><li>Resolvable request_irq/free_irq registration evidence</li><li>Normal process and hard-IRQ contexts</li><li>Interprocedural dependencies and selected indirect-call patterns</li><li>Structured JSON, terminal output, and Graphviz export</li></ul></div><div><h3><Info size={16} />Known limitations</h3><ul><li>One requested translation unit at a time; not a whole-kernel analyzer</li><li>Softirq, NMI, arbitrary aliases, and general Boolean path solving are outside the modeled subset</li><li>Unknown calls, identities, and state transitions can affect conclusions</li><li>Zero reported cycles is not proof of absence of deadlocks</li><li>Kernel candidates require manual validation and independent evidence</li></ul></div></div></section>
+
+    <section className="guide-evidence-section"><div className="guide-section-heading"><span className="eyebrow">EVIDENCE, NOT CLAIMS</span><h2>Static analysis and runtime experiments answer different questions.</h2></div><div className="guide-evidence-columns"><article><Activity size={18} /><h3>Controlled userspace traces</h3><p>Instrumented pthread examples record lock attempts, acquisitions, releases, ordering, and timeouts. A watchdog safely ends the intentional deadlock fixture. Traces do not emulate hardware interrupts.</p><button className="text-button" onClick={onRuntime}>Explore runtime evidence <ArrowRight size={14} /></button></article><article><HardDrive size={18} /><h3>Selected Linux source</h3><p>Linux v6.6.87 e1000e evaluation analyzed five pinned files. The latest run processed {latestRun ? `${latestRun.aggregate.files_analyzed}/${latestRun.aggregate.files_requested} files, ${counts.functions} functions, and ${counts.lock_operations} lock operations` : 'five files from a pinned revision'}; objtool and ORC checks ran on the composite object.</p><button className="text-button" onClick={onKernel}>See measurements and build limits <ArrowRight size={14} /></button></article></div>{latestRun && <div className="guide-current-result"><span className="status-dot online" /><strong>Latest recorded kernel run</strong><span>{counts.lock_dependencies} dependencies · {counts.interrupt_cycles} candidate cycles · {Number(counts.uncertainties ?? 0).toLocaleString()} uncertainty events</span><small>Bounded subsystem result only; no full kernel or final module build.</small></div>}</section>
+
+    <section className="guide-close"><div><span className="eyebrow">START HERE</span><h2>Try the full workflow on a small C example.</h2><p>Build the analyzer, run the command line, inspect JSON or a graph, then compare controlled runtime evidence.</p></div><div className="guide-actions"><button className="button button-primary" onClick={onCli}><TerminalSquare size={14} />Commands and reports</button><button className="button button-secondary" onClick={onOpenWorkspace}>Open analysis workspace</button></div></section>
+  </div>
+}
+
+function OverviewPage({ active, report, history, health, loading, onNew, onOpenHistory, onOpenGuide, onOpenFinding, onOpenGraph, onSelectAnalysis, selectedFinding, onSelectFinding, onOpenSource }: {
   active: AnalysisMetadata | null; report: AnalysisReport | null; history: AnalysisMetadata[]; health: Health | null; loading: boolean;
-  onNew: () => void; onOpenHistory: () => void; onOpenFinding: (index: number) => void; onOpenGraph: () => void; onSelectAnalysis: (item: AnalysisMetadata) => void;
+  onNew: () => void; onOpenHistory: () => void; onOpenGuide: () => void; onOpenFinding: (index: number) => void; onOpenGraph: () => void; onSelectAnalysis: (item: AnalysisMetadata) => void;
   selectedFinding: Finding | null; onSelectFinding: (finding: Finding | null) => void; onOpenSource: (file: string, line: number) => void;
 }) {
   const summary = active?.summary
@@ -367,6 +394,7 @@ function OverviewPage({ active, report, history, health, loading, onNew, onOpenH
   const graphSize = report?.interrupt_lock_graph.edges.length ?? 0
   const durationRuns = history.filter((item) => item.status === 'completed' && item.duration_ms != null).slice(0, 8).reverse().map((item) => ({ name: basename(item.source_path), duration: item.duration_ms! }))
   return <>
+    <div className="overview-project-strip"><div><span className="eyebrow">INTERRUPT-AWARE STATIC ANALYSIS</span><p>IRQGuard traces lock operations from C source into interprocedural dependencies and checks them against a scoped hard-IRQ model.</p></div><button className="text-button" onClick={onOpenGuide}>How the project works <ArrowRight size={14} /></button></div>
     <div className="observatory-heading"><div><div className="eyebrow">IRQGUARD / LOCAL WORKSPACE</div><h1>Kernel lock observatory</h1><p>{active ? active.source_path : 'Analyze a C translation unit to explore lock dependencies and interrupt contexts.'}</p></div><div className="observatory-heading-actions"><span className={`status-pill ${statusTone(active?.status)}`}><i className={`status-dot status-${statusTone(active?.status)}`} />{active?.status ?? 'No run selected'}</span><button className="button button-primary" onClick={onNew}><Play size={14} />New analysis</button></div></div>
     {!health?.analyzer_available && <div className="inline-notice"><AlertCircle size={16} /><span>The local analyzer executable is unavailable. Build it with CMake, then refresh this page.</span></div>}
     {active?.status === 'failed' && <div className="alert alert-error" role="alert"><AlertCircle size={16} /><span>{active.error ?? 'The analyzer did not produce a report.'}</span></div>}
@@ -777,9 +805,9 @@ function CliGuidePage() {
         {copyError && <p className="cli-copy-error" role="status">{copyError}</p>}
       </section>
       <aside className="cli-guide-aside">
-        <section className="cli-note"><span className="eyebrow">REPORT CONTRACT</span><strong>Schema version 3</strong><p>JSON includes extracted functions, calls, lock operations, dependencies, IRQ contexts, findings, source locations, uncertainty, and diagnostics.</p></section>
+        <section className="cli-note"><span className="eyebrow">REPORT CONTRACT</span><strong>Schema v4 · archived v3 supported</strong><p>JSON includes extracted functions, calls, lock operations, dependencies, IRQ contexts, findings, source locations, uncertainty, and diagnostics.</p></section>
         <section className="cli-note"><span className="eyebrow">FINDING CATEGORIES</span><dl><dt>Lock-order candidate</dt><dd>Process-context dependency cycle.</dd><dt>Interrupt-aware candidate</dt><dd>Cycle involving modeled hardirq preemption.</dd><dt>Rejected candidate</dt><dd>Modeled IRQ state rejects the cycle shape.</dd><dt>Inconclusive</dt><dd>Analysis lacks enough information to decide feasibility.</dd></dl></section>
-        <section className="cli-caveat"><AlertCircle size={15} /><p>A candidate is not a confirmed deadlock. No severity score is reported. The pinned kernel run missed some `spin_lock_irqsave` acquisitions, so zero findings do not prove absence of bugs.</p></section>
+        <section className="cli-caveat"><AlertCircle size={15} /><p>A candidate is not a confirmed deadlock, and IRQGuard does not report a severity score. The pinned Linux v6.6.87 e1000e run extracted both `spin_lock_irqsave` acquisitions and resolved their lock identities symbolically. It still found no dependency edges or cycles in the selected files; that limited result does not prove the driver is free of deadlocks. The run did not build the full kernel or final module.</p></section>
       </aside>
     </div>
   </>
