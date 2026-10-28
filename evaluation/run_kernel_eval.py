@@ -43,6 +43,13 @@ def output_of(command: list[str], cwd: Path) -> str:
     return subprocess.check_output(command, cwd=cwd, text=True, stderr=subprocess.STDOUT).strip()
 
 
+def optional_output(command: list[str], cwd: Path) -> str:
+    try:
+        return output_of(command, cwd).splitlines()[0]
+    except (OSError, subprocess.CalledProcessError):
+        return "unavailable"
+
+
 def parse_peak_kib(text: str) -> int | None:
     match = re.search(r"Maximum resident set size \(kbytes\):\s*(\d+)", text)
     return int(match.group(1)) if match else None
@@ -75,6 +82,8 @@ def main() -> int:
     parser.add_argument("--llvm", type=Path, default=Path("/usr/lib/llvm-20/bin"), help="LLVM tool directory passed to Kbuild")
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=300, help="per-translation-unit analyzer timeout")
+    parser.add_argument("--skip-objtool", action="store_true",
+                        help="compile selected C objects without objtool; reports this as source-only validation")
     args = parser.parse_args()
 
     kernel = args.kernel.resolve()
@@ -94,9 +103,17 @@ def main() -> int:
         "configuration": {
             "architecture": "x86_64", "compiler_mode": "Clang via Kbuild LLVM=",
             "config_base": "x86_64_defconfig", "driver_config": "CONFIG_E1000E=m",
-            "kbuild_variables": {"ARCH": "x86_64", "LLVM": str(args.llvm.resolve()) + "/", "LD": "/usr/bin/ld"},
-            "build_limitations": ["The selected object build overrides CONFIG_OBJTOOL and SKIP_STACK_VALIDATION=1 because lld-20 and libelf-dev are absent; Clang source compilation and Kbuild flags remain enabled, while objtool validation is skipped."],
+            "kbuild_variables": {"ARCH": "x86_64", "LLVM": str(args.llvm.resolve()) + "/", "LD": "/usr/bin/ld", "HOSTLD": "/usr/bin/ld"},
+            "build_limitations": [],
             "subsystem": str(SUBSYSTEM), "requested_files": [str(SUBSYSTEM / item) for item in SOURCE_FILES],
+        },
+        "validation": {
+            "objtool_mode": "explicitly_skipped" if args.skip_objtool else "enabled",
+            "objtool_build": "not_started", "objtool_object_checks": "not_started",
+            "kernel_object_compilation": "not_started", "source_analysis": "not_started",
+            "unwinder_orc_configured": None, "stack_validation_configured": None,
+            "stack_validation": "not_started",
+            "skip_stack_validation_variable_supported_by_kernel": False,
         },
         "setup_steps": [], "translation_units": [],
         "aggregate": {"files_requested": len(SOURCE_FILES), "files_analyzed": 0, "files_skipped_or_failed": 0},
@@ -116,6 +133,9 @@ def main() -> int:
             "make": output_of(["make", "--version"], kernel).splitlines()[0],
             "time": output_of(["/usr/bin/time", "--version"], kernel).splitlines()[0],
             "cmake": output_of(["cmake", "--version"], kernel).splitlines()[0],
+            "host_linker": output_of(["/usr/bin/ld", "--version"], kernel).splitlines()[0],
+            "lld": optional_output([str(args.llvm / "ld.lld"), "--version"], kernel),
+            "libelf_dev_package": optional_output(["dpkg-query", "-W", "-f=${Version}", "libelf-dev"], kernel),
             "analyzer_sha256": hashlib.sha256(analyzer.read_bytes()).hexdigest() if analyzer.is_file() else None,
         }
     except (OSError, subprocess.CalledProcessError) as error:
@@ -139,21 +159,86 @@ def main() -> int:
         return 2
 
     env = os.environ.copy()
-    make_vars = ["ARCH=x86_64", f"LLVM={args.llvm.resolve()}/", "LD=/usr/bin/ld"]
+    make_vars = ["ARCH=x86_64", f"LLVM={args.llvm.resolve()}/", "LD=/usr/bin/ld", "HOSTLD=/usr/bin/ld"]
     selected_objects = [f"{SUBSYSTEM}/{Path(name).stem}.o" for name in SOURCE_FILES]
+    # With CONFIG_X86_KERNEL_IBT or CONFIG_LTO_CLANG, v6.6 Kbuild delays
+    # objtool from individual objects until the composite module object.
+    # Building the final .ko would additionally require a full kernel symbol
+    # table for modpost, which this bounded source evaluation does not build.
+    composite_object = f"{SUBSYSTEM}/e1000e.o"
+    objtool_override = ["CONFIG_OBJTOOL="] if args.skip_objtool else []
+    if args.skip_objtool:
+        result["configuration"]["build_limitations"].append(
+            "Objtool was explicitly disabled with --skip-objtool. Selected source files can be compiled and analyzed, but objtool checks and ORC metadata generation are skipped.")
     steps = [
-        ["make", *make_vars, f"O={build}", "x86_64_defconfig"],
-        [str(kernel / "scripts/config"), "--file", str(build / ".config"), "--module", "E1000E"],
-        ["make", *make_vars, f"O={build}", "olddefconfig"],
-        ["make", *make_vars, "CONFIG_OBJTOOL=", f"O={build}", "prepare0"],
-        ["make", *make_vars, "CONFIG_OBJTOOL=", "SKIP_STACK_VALIDATION=1", f"O={build}", "-j" + str(args.jobs), *selected_objects],
+        ("x86_64_defconfig", ["make", *make_vars, f"O={build}", "x86_64_defconfig"]),
+        ("enable_e1000e", [str(kernel / "scripts/config"), "--file", str(build / ".config"), "--module", "E1000E"]),
+        ("olddefconfig", ["make", *make_vars, f"O={build}", "olddefconfig"]),
+        ("prepare", ["make", *make_vars, *objtool_override, f"O={build}", "prepare"]),
     ]
-    for command in steps:
+    build_targets = selected_objects.copy()
+    if not args.skip_objtool:
+        build_targets.append(composite_object)
+    steps.append(("selected_objects", ["make", *make_vars, *objtool_override, f"O={build}", "V=1", "-j" + str(args.jobs), *build_targets]))
+    for stage, command in steps:
         code, elapsed = run(command, kernel, log, env=env)
-        result["setup_steps"].append({"command": command, "exit_code": code, "elapsed_seconds": round(elapsed, 3)})
+        result["setup_steps"].append({"stage": stage, "command": command, "exit_code": code, "elapsed_seconds": round(elapsed, 3)})
+        if stage == "olddefconfig" and code == 0:
+            config_text = (build / ".config").read_text(encoding="utf-8", errors="replace")
+            result["configuration"]["config_sha256"] = hashlib.sha256((build / ".config").read_bytes()).hexdigest()
+            result["validation"]["unwinder_orc_configured"] = "CONFIG_UNWINDER_ORC=y" in config_text
+            result["validation"]["stack_validation_configured"] = "CONFIG_STACK_VALIDATION=y" in config_text
+            result["validation"]["stack_validation"] = "configured" if result["validation"]["stack_validation_configured"] else "not_configured_by_defconfig"
+            result["validation"]["objtool_deferred_to_composite"] = (
+                "CONFIG_X86_KERNEL_IBT=y" in config_text or "CONFIG_LTO_CLANG=y" in config_text
+            )
+        if stage == "prepare":
+            result["validation"]["objtool_build"] = ("skipped_by_request" if args.skip_objtool
+                                                        else "succeeded" if code == 0 else "failed")
+            if code == 0 and not args.skip_objtool:
+                result["validation"]["objtool_build"] = "succeeded" if (build / "tools/objtool/objtool").is_file() else "not_requested_by_config"
+        if stage == "selected_objects" and code == 0:
+            result["validation"]["kernel_object_compilation"] = "succeeded"
+            if not args.skip_objtool:
+                # Kbuild's saved .cmd file is the authoritative expanded
+                # command even when V=1 does not echo the post-link tool call.
+                composite_cmd = build / SUBSYSTEM / ".e1000e.o.cmd"
+                saved_command = composite_cmd.read_text(encoding="utf-8", errors="replace").lower() if composite_cmd.is_file() else ""
+                has_objtool = "objtool" in saved_command and composite_object.lower() in saved_command
+                result["validation"]["objtool_invocations"] = 1 if has_objtool else 0
+                result["validation"]["objtool_command"] = saved_command.splitlines()[0].split(":=", 1)[-1].strip() if has_objtool and saved_command.splitlines() else None
+                result["validation"]["objtool_object_checks"] = "succeeded" if has_objtool and (build / composite_object).is_file() else "not_detected"
+                result["validation"]["objtool_options"] = [option for option in ("--orc", "--stackval", "--retpoline", "--ibt", "--module", "--link") if option in saved_command]
+                result["validation"]["kernel_module_link"] = "not_attempted; composite object target only"
+                if has_objtool and "--orc" in saved_command:
+                    try:
+                        sections = output_of(["readelf", "-S", str(build / composite_object)], kernel).lower()
+                        result["validation"]["orc_sections_present"] = ".orc_unwind" in sections and ".orc_unwind_ip" in sections
+                    except (OSError, subprocess.CalledProcessError):
+                        result["validation"]["orc_sections_present"] = False
+                if result["validation"]["stack_validation_configured"]:
+                    result["validation"]["stack_validation"] = "succeeded" if "--stackval" in saved_command else "configured_but_not_detected"
+            else:
+                result["validation"]["objtool_object_checks"] = "skipped_by_request"
         if code:
-            result["status"] = "kernel_setup_failed"
-            result["blocker"] = f"Kernel setup command failed ({code}); see {log}"
+            result["status"] = "kernel_build_failed"
+            result["validation"]["kernel_object_compilation"] = "not_run" if stage != "selected_objects" else "failed"
+            if stage == "selected_objects" and not args.skip_objtool:
+                result["validation"]["objtool_object_checks"] = "failed_during_object_build"
+            if not args.skip_objtool and stage == "prepare":
+                result["configuration"]["build_limitations"].append(
+                    "Objtool preparation failed; selected object compilation and analysis were not run. See build.log for the exact missing dependency or tool.")
+            result["blocker"] = f"Kernel build stage '{stage}' failed ({code}); see {log}"
+            result["aggregate"].update({
+                "files_requested": len(SOURCE_FILES),
+                "files_analyzed": 0,
+                "files_skipped_or_failed": len(SOURCE_FILES),
+            })
+            result["translation_units"] = [
+                {"file": str(SUBSYSTEM / name), "status": "skipped",
+                 "skip_reason": f"kernel build stage '{stage}' failed before source analysis"}
+                for name in SOURCE_FILES
+            ]
             summary_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
             print(result["blocker"], file=sys.stderr)
             return 1
@@ -182,6 +267,7 @@ def main() -> int:
         summary_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         return 1
     result["configuration"]["compile_commands_count"] = len(commands)
+    result["validation"]["kernel_object_compilation"] = "succeeded"
     config_bytes = (build / ".config").read_bytes()
     result["configuration"]["config_sha256"] = hashlib.sha256(config_bytes).hexdigest()
 
@@ -225,6 +311,7 @@ def main() -> int:
                     if report.get("schema_version") not in (3, 4):
                         raise ValueError(f"unexpected report schema {report.get('schema_version')}")
                     item["status"] = "analyzed"
+                    result["validation"]["source_analysis"] = "completed"
                     item["counts"] = report_counts(report)
                     from summarize import summarize
                     item["mode_views"] = summarize(report)
@@ -251,7 +338,13 @@ def main() -> int:
     for item in analyzed:
         for category, count in item["counts"]["finding_categories"].items():
             result["aggregate"]["finding_category_counts_sum"][category] = result["aggregate"]["finding_category_counts_sum"].get(category, 0) + count
-    result["status"] = "completed_with_skips" if len(analyzed) < len(SOURCE_FILES) else "completed"
+    if len(analyzed) < len(SOURCE_FILES):
+        result["status"] = "completed_with_skips"
+    elif args.skip_objtool:
+        result["status"] = "completed_with_validation_skips"
+    else:
+        result["status"] = "completed"
+    result["validation"]["source_analysis"] = "completed" if len(analyzed) == len(SOURCE_FILES) else "partial" if analyzed else "failed_or_not_run"
     summary_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result["aggregate"], indent=2))
     return 0 if analyzed else 1

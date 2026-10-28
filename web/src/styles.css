@@ -729,6 +729,19 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .kernel-eval-details dd { min-width: 0; margin: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
 .kernel-eval-details dd code { font-size: 10px; }
 .kernel-eval-build-note { margin-top: 14px; }
+.phase12-validation { margin-top: 15px; padding: 0 14px 13px; }
+.phase12-validation > .panel-heading { padding: 12px 0 10px; }
+.phase12-validation .panel-heading h2 { margin: 3px 0 0; font-size: 15px; }
+.phase12-attempt, .phase12-source-result { display: flex; flex-direction: column; gap: 6px; padding: 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.phase12-attempt strong, .phase12-source-result strong { color: var(--text); font-size: 12px; }
+.phase12-attempt p { margin: 0; color: var(--amber); font-size: 11px; line-height: 1.5; }
+.phase12-attempt small, .phase12-source-result > span { color: var(--text-secondary); font-size: 10px; line-height: 1.5; }
+.phase12-source-result { margin-top: 8px; }
+.phase12-source-result table { width: 100%; border-collapse: collapse; }
+.phase12-source-result th, .phase12-source-result td { padding: 5px 2px; border-top: 1px solid var(--line-soft); text-align: left; font-size: 10px; }
+.phase12-source-result th { width: 58%; color: var(--text-dim); font-weight: 500; }
+.phase12-source-result td { color: var(--text-secondary); overflow-wrap: anywhere; }
+.phase12-validation-note { margin: 8px 0 0; color: var(--text-dim); font-size: 10px; line-height: 1.5; }
 .kernel-eval-footnote { margin: 13px 0 0; color: var(--text-dim); font-size: 11px; line-height: 1.55; }
 .kernel-cycle-review { margin-top: 16px; padding: 0 14px 14px; }
 .kernel-cycle-review > .panel-heading { padding: 12px 0 10px; }

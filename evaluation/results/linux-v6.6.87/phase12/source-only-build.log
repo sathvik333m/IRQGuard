@@ -1,0 +1,176 @@
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld O=/tmp/irqguard-phase12-skip-final/kbuild x86_64_defconfig
+make[1]: Entering directory '/tmp/irqguard-phase12-skip-final/kbuild'
+  GEN     Makefile
+  HOSTCC  scripts/basic/fixdep
+  HOSTCC  scripts/kconfig/conf.o
+  HOSTCC  scripts/kconfig/confdata.o
+  HOSTCC  scripts/kconfig/expr.o
+  LEX     scripts/kconfig/lexer.lex.c
+  YACC    scripts/kconfig/parser.tab.[ch]
+  HOSTCC  scripts/kconfig/lexer.lex.o
+  HOSTCC  scripts/kconfig/menu.o
+  HOSTCC  scripts/kconfig/parser.tab.o
+  HOSTCC  scripts/kconfig/preprocess.o
+  HOSTCC  scripts/kconfig/symbol.o
+  HOSTCC  scripts/kconfig/util.o
+  HOSTLD  scripts/kconfig/conf
+#
+# configuration written to .config
+#
+make[1]: Leaving directory '/tmp/irqguard-phase12-skip-final/kbuild'
+$ /tmp/linux-v6.6.87/scripts/config --file /tmp/irqguard-phase12-skip-final/kbuild/.config --module E1000E
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld O=/tmp/irqguard-phase12-skip-final/kbuild olddefconfig
+make[1]: Entering directory '/tmp/irqguard-phase12-skip-final/kbuild'
+  GEN     Makefile
+#
+# No change to .config
+#
+make[1]: Leaving directory '/tmp/irqguard-phase12-skip-final/kbuild'
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld CONFIG_OBJTOOL= O=/tmp/irqguard-phase12-skip-final/kbuild prepare
+make[1]: Entering directory '/tmp/irqguard-phase12-skip-final/kbuild'
+  SYNC    include/config/auto.conf.cmd
+  GEN     Makefile
+  GEN     Makefile
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_32.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_64.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_x32.h
+  SYSTBL  arch/x86/include/generated/asm/syscalls_32.h
+  SYSHDR  arch/x86/include/generated/asm/unistd_32_ia32.h
+  SYSHDR  arch/x86/include/generated/asm/unistd_64_x32.h
+  SYSTBL  arch/x86/include/generated/asm/syscalls_64.h
+  HOSTCC  arch/x86/tools/relocs_32.o
+  HOSTCC  arch/x86/tools/relocs_64.o
+  HOSTCC  arch/x86/tools/relocs_common.o
+  HOSTLD  arch/x86/tools/relocs
+  HOSTCC  scripts/selinux/genheaders/genheaders
+  HOSTCC  scripts/selinux/mdp/mdp
+  HOSTCC  scripts/kallsyms
+  HOSTCC  scripts/sorttable
+  HOSTCC  scripts/asn1_compiler
+  WRAP    arch/x86/include/generated/uapi/asm/bpf_perf_event.h
+  WRAP    arch/x86/include/generated/uapi/asm/errno.h
+  WRAP    arch/x86/include/generated/uapi/asm/fcntl.h
+  WRAP    arch/x86/include/generated/uapi/asm/ioctl.h
+  WRAP    arch/x86/include/generated/uapi/asm/ioctls.h
+  WRAP    arch/x86/include/generated/uapi/asm/ipcbuf.h
+  WRAP    arch/x86/include/generated/uapi/asm/param.h
+  WRAP    arch/x86/include/generated/uapi/asm/poll.h
+  WRAP    arch/x86/include/generated/uapi/asm/resource.h
+  WRAP    arch/x86/include/generated/uapi/asm/socket.h
+  WRAP    arch/x86/include/generated/uapi/asm/sockios.h
+  WRAP    arch/x86/include/generated/uapi/asm/termbits.h
+  WRAP    arch/x86/include/generated/uapi/asm/termios.h
+  WRAP    arch/x86/include/generated/uapi/asm/types.h
+  WRAP    arch/x86/include/generated/asm/early_ioremap.h
+  WRAP    arch/x86/include/generated/asm/export.h
+  WRAP    arch/x86/include/generated/asm/mcs_spinlock.h
+  WRAP    arch/x86/include/generated/asm/irq_regs.h
+  WRAP    arch/x86/include/generated/asm/kmap_size.h
+  WRAP    arch/x86/include/generated/asm/local64.h
+  WRAP    arch/x86/include/generated/asm/mmiowb.h
+  WRAP    arch/x86/include/generated/asm/module.lds.h
+  WRAP    arch/x86/include/generated/asm/rwonce.h
+  WRAP    arch/x86/include/generated/asm/unaligned.h
+  GEN     arch/x86/include/generated/asm/orc_hash.h
+  UPD     include/config/kernel.release
+  UPD     include/generated/uapi/linux/version.h
+  UPD     include/generated/utsrelease.h
+  UPD     include/generated/compile.h
+  CC      scripts/mod/empty.o
+  HOSTCC  scripts/mod/mk_elfconfig
+  MKELF   scripts/mod/elfconfig.h
+  HOSTCC  scripts/mod/modpost.o
+  CC      scripts/mod/devicetable-offsets.s
+  UPD     scripts/mod/devicetable-offsets.h
+  HOSTCC  scripts/mod/file2alias.o
+  HOSTCC  scripts/mod/sumversion.o
+  HOSTCC  scripts/mod/symsearch.o
+  HOSTLD  scripts/mod/modpost
+  UPD     include/generated/timeconst.h
+  CC      kernel/bounds.s
+  UPD     include/generated/bounds.h
+  CC      arch/x86/kernel/asm-offsets.s
+  UPD     include/generated/asm-offsets.h
+  CALL    /tmp/linux-v6.6.87/scripts/checksyscalls.sh
+  CHKSHA1 /tmp/linux-v6.6.87/include/linux/atomic/atomic-arch-fallback.h
+  CHKSHA1 /tmp/linux-v6.6.87/include/linux/atomic/atomic-instrumented.h
+  CHKSHA1 /tmp/linux-v6.6.87/include/linux/atomic/atomic-long.h
+make[1]: Leaving directory '/tmp/irqguard-phase12-skip-final/kbuild'
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld CONFIG_OBJTOOL= O=/tmp/irqguard-phase12-skip-final/kbuild V=1 -j2 drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make  -C /tmp/irqguard-phase12-skip-final/kbuild \
+-f /tmp/linux-v6.6.87/Makefile drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make[1]: Entering directory '/tmp/irqguard-phase12-skip-final/kbuild'
+make --no-print-directory -C /tmp/irqguard-phase12-skip-final/kbuild \
+-f /tmp/linux-v6.6.87/Makefile drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=arch/x86/entry/syscalls all
+ln -fsn /tmp/linux-v6.6.87 source
+# GEN     Makefile
+  { echo "# Automatically generated by /tmp/linux-v6.6.87/Makefile: don't edit"; echo "include /tmp/linux-v6.6.87/Makefile"; } > Makefile
+test -e .gitignore || \
+{ echo "# this is build directory, ignore it"; echo "*"; } > .gitignore
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts/basic
+set -e; mkdir -p include/config/; trap "rm -f include/config/.tmp_kernel.release" EXIT; { /tmp/linux-v6.6.87/scripts/setlocalversion /tmp/linux-v6.6.87; } > include/config/.tmp_kernel.release; if [ ! -r include/config/kernel.release ] || ! cmp -s include/config/kernel.release include/config/.tmp_kernel.release; then : '  UPD     include/config/kernel.release'; mv -f include/config/.tmp_kernel.release include/config/kernel.release; fi
+make -f /tmp/linux-v6.6.87/scripts/Makefile.asm-generic obj=arch/x86/include/generated/uapi/asm \
+generic=include/uapi/asm-generic
+set -e; mkdir -p include/generated/uapi/linux/; trap "rm -f include/generated/uapi/linux/.tmp_version.h" EXIT; { 	if [ 87 -gt 255 ]; then echo \#define LINUX_VERSION_CODE 395007; else echo \#define LINUX_VERSION_CODE 394839; fi; echo '#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + ((c) > 255 ? 255 : (c)))'; echo \#define LINUX_VERSION_MAJOR 6; echo \#define LINUX_VERSION_PATCHLEVEL 6; echo \#define LINUX_VERSION_SUBLEVEL 87; } > include/generated/uapi/linux/.tmp_version.h; if [ ! -r include/generated/uapi/linux/version.h ] || ! cmp -s include/generated/uapi/linux/version.h include/generated/uapi/linux/.tmp_version.h; then : '  UPD     include/generated/uapi/linux/version.h'; mv -f include/generated/uapi/linux/.tmp_version.h include/generated/uapi/linux/version.h; fi
+set -e; mkdir -p include/generated/; trap "rm -f include/generated/.tmp_utsrelease.h" EXIT; { 	if [ `echo -n "6.6.87" | wc -c ` -gt 64 ]; then echo '"6.6.87" exceeds 64 characters' >&2; exit 1; fi; echo \#define UTS_RELEASE \"6.6.87\"; } > include/generated/.tmp_utsrelease.h; if [ ! -r include/generated/utsrelease.h ] || ! cmp -s include/generated/utsrelease.h include/generated/.tmp_utsrelease.h; then : '  UPD     include/generated/utsrelease.h'; mv -f include/generated/.tmp_utsrelease.h include/generated/utsrelease.h; fi
+set -e; mkdir -p include/generated/; trap "rm -f include/generated/.tmp_compile.h" EXIT; { /tmp/linux-v6.6.87/scripts/mkcompile_h "x86_64" "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)" "/usr/bin/ld"; } > include/generated/.tmp_compile.h; if [ ! -r include/generated/compile.h ] || ! cmp -s include/generated/compile.h include/generated/.tmp_compile.h; then : '  UPD     include/generated/compile.h'; mv -f include/generated/.tmp_compile.h include/generated/compile.h; fi
+/tmp/linux-v6.6.87/scripts/remove-stale-files
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=arch/x86/tools relocs
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts/dtc
+make -f /tmp/linux-v6.6.87/scripts/Makefile.asm-generic obj=arch/x86/include/generated/asm \
+generic=include/asm-generic
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts/selinux \
+need-builtin= \
+need-modorder= \
+
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts/selinux/genheaders \
+need-builtin= \
+need-modorder= \
+
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts/selinux/mdp \
+need-builtin= \
+need-modorder= \
+
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=scripts/mod
+set -e; mkdir -p scripts/mod/; trap "rm -f scripts/mod/.tmp_devicetable-offsets.h" EXIT; { 	 echo "#ifndef __DEVICETABLE_OFFSETS_H__"; echo "#define __DEVICETABLE_OFFSETS_H__"; echo "/*"; echo " * DO NOT MODIFY."; echo " *"; echo " * This file was generated by Kbuild"; echo " */"; echo ""; sed -ne 	's:^[[:space:]]*\.ascii[[:space:]]*"\(.*\)".*:\1:; /^->/{s:->#\(.*\):/* \1 */:; s:^->\([^ ]*\) [\$#]*\([^ ]*\) \(.*\):#define \1 \2 /* \3 */:; s:->::; p;}' < scripts/mod/devicetable-offsets.s; echo ""; echo "#endif"; } > scripts/mod/.tmp_devicetable-offsets.h; if [ ! -r scripts/mod/devicetable-offsets.h ] || ! cmp -s scripts/mod/devicetable-offsets.h scripts/mod/.tmp_devicetable-offsets.h; then : '  UPD     scripts/mod/devicetable-offsets.h'; mv -f scripts/mod/.tmp_devicetable-offsets.h scripts/mod/devicetable-offsets.h; fi
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=. prepare
+set -e; mkdir -p include/generated/; trap "rm -f include/generated/.tmp_timeconst.h" EXIT; { echo 1000 | bc -q /tmp/linux-v6.6.87/kernel/time/timeconst.bc; } > include/generated/.tmp_timeconst.h; if [ ! -r include/generated/timeconst.h ] || ! cmp -s include/generated/timeconst.h include/generated/.tmp_timeconst.h; then : '  UPD     include/generated/timeconst.h'; mv -f include/generated/.tmp_timeconst.h include/generated/timeconst.h; fi
+set -e; mkdir -p include/generated/; trap "rm -f include/generated/.tmp_bounds.h" EXIT; { 	 echo "#ifndef __LINUX_BOUNDS_H__"; echo "#define __LINUX_BOUNDS_H__"; echo "/*"; echo " * DO NOT MODIFY."; echo " *"; echo " * This file was generated by Kbuild"; echo " */"; echo ""; sed -ne 	's:^[[:space:]]*\.ascii[[:space:]]*"\(.*\)".*:\1:; /^->/{s:->#\(.*\):/* \1 */:; s:^->\([^ ]*\) [\$#]*\([^ ]*\) \(.*\):#define \1 \2 /* \3 */:; s:->::; p;}' < kernel/bounds.s; echo ""; echo "#endif"; } > include/generated/.tmp_bounds.h; if [ ! -r include/generated/bounds.h ] || ! cmp -s include/generated/bounds.h include/generated/.tmp_bounds.h; then : '  UPD     include/generated/bounds.h'; mv -f include/generated/.tmp_bounds.h include/generated/bounds.h; fi
+set -e; mkdir -p include/generated/; trap "rm -f include/generated/.tmp_asm-offsets.h" EXIT; { 	 echo "#ifndef __ASM_OFFSETS_H__"; echo "#define __ASM_OFFSETS_H__"; echo "/*"; echo " * DO NOT MODIFY."; echo " *"; echo " * This file was generated by Kbuild"; echo " */"; echo ""; sed -ne 	's:^[[:space:]]*\.ascii[[:space:]]*"\(.*\)".*:\1:; /^->/{s:->#\(.*\):/* \1 */:; s:^->\([^ ]*\) [\$#]*\([^ ]*\) \(.*\):#define \1 \2 /* \3 */:; s:->::; p;}' < arch/x86/kernel/asm-offsets.s; echo ""; echo "#endif"; } > include/generated/.tmp_asm-offsets.h; if [ ! -r include/generated/asm-offsets.h ] || ! cmp -s include/generated/asm-offsets.h include/generated/.tmp_asm-offsets.h; then : '  UPD     include/generated/asm-offsets.h'; mv -f include/generated/.tmp_asm-offsets.h include/generated/asm-offsets.h; fi
+# CALL    /tmp/linux-v6.6.87/scripts/checksyscalls.sh
+  sh /tmp/linux-v6.6.87/scripts/checksyscalls.sh /usr/lib/llvm-20/bin/clang -Wp,-MMD,./.missing-syscalls.d -nostdinc -I/tmp/linux-v6.6.87/arch/x86/include -I./arch/x86/include/generated -I/tmp/linux-v6.6.87/include -I./include -I/tmp/linux-v6.6.87/arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I/tmp/linux-v6.6.87/include/uapi -I./include/generated/uapi -include /tmp/linux-v6.6.87/include/linux/compiler-version.h -include /tmp/linux-v6.6.87/include/linux/kconfig.h -include /tmp/linux-v6.6.87/include/linux/compiler_types.h -D__KERNEL__ --target=x86_64-linux-gnu -fintegrated-as -Werror=unknown-warning-option -Werror=ignored-optimization-argument -Werror=option-ignored -Werror=unused-command-line-argument -fmacro-prefix-map=/tmp/linux-v6.6.87/= -Werror -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch -fno-jump-tables -m64 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mstack-alignment=8 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mretpoline-external-thunk -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fomit-frame-pointer -ftrivial-auto-var-init=zero -fno-stack-clash-protection -falign-functions=16 -fstrict-flex-arrays=3 -fno-strict-overflow -fno-stack-check -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-gnu -Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla -Wno-pointer-sign -Wcast-function-type -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-format-overflow -Wno-format-truncation -Wno-pointer-to-enum-cast -Wno-tautological-constant-out-of-range-compare -Wno-unaligned-access -Wno-cast-function-type-strict -Wno-enum-compare-conditional -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-enum-enum-conversion -Wno-initializer-overrides -Wno-sign-compare -I /tmp/linux-v6.6.87/. -I ./.    -DKBUILD_MODFILE='"./missing-syscalls"' -DKBUILD_BASENAME='"missing_syscalls"' -DKBUILD_MODNAME='"missing_syscalls"' -D__KBUILD_MODNAME=kmod_missing_syscalls 
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=. need-builtin=1 need-modorder=1 ./drivers/net/ethernet/intel/e1000e/netdev.o ./drivers/net/ethernet/intel/e1000e/ethtool.o ./drivers/net/ethernet/intel/e1000e/ich8lan.o ./drivers/net/ethernet/intel/e1000e/phy.o ./drivers/net/ethernet/intel/e1000e/nvm.o
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=drivers \
+need-builtin=1 \
+need-modorder=1 \
+drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=drivers/net \
+need-builtin=1 \
+need-modorder=1 \
+drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=drivers/net/ethernet \
+need-builtin=1 \
+need-modorder=1 \
+drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=drivers/net/ethernet/intel \
+need-builtin=1 \
+need-modorder=1 \
+drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+make -f /tmp/linux-v6.6.87/scripts/Makefile.build obj=drivers/net/ethernet/intel/e1000e \
+need-builtin= \
+need-modorder=1 \
+drivers/net/ethernet/intel/e1000e/netdev.o drivers/net/ethernet/intel/e1000e/ethtool.o drivers/net/ethernet/intel/e1000e/ich8lan.o drivers/net/ethernet/intel/e1000e/phy.o drivers/net/ethernet/intel/e1000e/nvm.o
+# CC [M]  drivers/net/ethernet/intel/e1000e/netdev.o
+  /usr/lib/llvm-20/bin/clang -Wp,-MMD,drivers/net/ethernet/intel/e1000e/.netdev.o.d -nostdinc -I/tmp/linux-v6.6.87/arch/x86/include -I./arch/x86/include/generated -I/tmp/linux-v6.6.87/include -I./include -I/tmp/linux-v6.6.87/arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I/tmp/linux-v6.6.87/include/uapi -I./include/generated/uapi -include /tmp/linux-v6.6.87/include/linux/compiler-version.h -include /tmp/linux-v6.6.87/include/linux/kconfig.h -include /tmp/linux-v6.6.87/include/linux/compiler_types.h -D__KERNEL__ --target=x86_64-linux-gnu -fintegrated-as -Werror=unknown-warning-option -Werror=ignored-optimization-argument -Werror=option-ignored -Werror=unused-command-line-argument -fmacro-prefix-map=/tmp/linux-v6.6.87/= -Werror -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch -fno-jump-tables -m64 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mstack-alignment=8 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mretpoline-external-thunk -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fomit-frame-pointer -ftrivial-auto-var-init=zero -fno-stack-clash-protection -falign-functions=16 -fstrict-flex-arrays=3 -fno-strict-overflow -fno-stack-check -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-gnu -Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla -Wno-pointer-sign -Wcast-function-type -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-format-overflow -Wno-format-truncation -Wno-pointer-to-enum-cast -Wno-tautological-constant-out-of-range-compare -Wno-unaligned-access -Wno-cast-function-type-strict -Wno-enum-compare-conditional -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-enum-enum-conversion -Wno-initializer-overrides -Wno-sign-compare -Idrivers/net/ethernet/intel/e1000e -Idrivers/net/ethernet/intel/e1000e -I /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e -I ./drivers/net/ethernet/intel/e1000e  -DMODULE  -DKBUILD_BASENAME='"netdev"' -DKBUILD_MODNAME='"e1000e"' -D__KBUILD_MODNAME=kmod_e1000e -c -o drivers/net/ethernet/intel/e1000e/netdev.o /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c  
+# CC [M]  drivers/net/ethernet/intel/e1000e/ethtool.o
+  /usr/lib/llvm-20/bin/clang -Wp,-MMD,drivers/net/ethernet/intel/e1000e/.ethtool.o.d -nostdinc -I/tmp/linux-v6.6.87/arch/x86/include -I./arch/x86/include/generated -I/tmp/linux-v6.6.87/include -I./include -I/tmp/linux-v6.6.87/arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I/tmp/linux-v6.6.87/include/uapi -I./include/generated/uapi -include /tmp/linux-v6.6.87/include/linux/compiler-version.h -include /tmp/linux-v6.6.87/include/linux/kconfig.h -include /tmp/linux-v6.6.87/include/linux/compiler_types.h -D__KERNEL__ --target=x86_64-linux-gnu -fintegrated-as -Werror=unknown-warning-option -Werror=ignored-optimization-argument -Werror=option-ignored -Werror=unused-command-line-argument -fmacro-prefix-map=/tmp/linux-v6.6.87/= -Werror -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch -fno-jump-tables -m64 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mstack-alignment=8 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mretpoline-external-thunk -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fomit-frame-pointer -ftrivial-auto-var-init=zero -fno-stack-clash-protection -falign-functions=16 -fstrict-flex-arrays=3 -fno-strict-overflow -fno-stack-check -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-gnu -Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla -Wno-pointer-sign -Wcast-function-type -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-format-overflow -Wno-format-truncation -Wno-pointer-to-enum-cast -Wno-tautological-constant-out-of-range-compare -Wno-unaligned-access -Wno-cast-function-type-strict -Wno-enum-compare-conditional -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-enum-enum-conversion -Wno-initializer-overrides -Wno-sign-compare -Idrivers/net/ethernet/intel/e1000e -Idrivers/net/ethernet/intel/e1000e -I /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e -I ./drivers/net/ethernet/intel/e1000e  -DMODULE  -DKBUILD_BASENAME='"ethtool"' -DKBUILD_MODNAME='"e1000e"' -D__KBUILD_MODNAME=kmod_e1000e -c -o drivers/net/ethernet/intel/e1000e/ethtool.o /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ethtool.c  
+# CC [M]  drivers/net/ethernet/intel/e1000e/ich8lan.o
+  /usr/lib/llvm-20/bin/clang -Wp,-MMD,drivers/net/ethernet/intel/e1000e/.ich8lan.o.d -nostdinc -I/tmp/linux-v6.6.87/arch/x86/include -I./arch/x86/include/generated -I/tmp/linux-v6.6.87/include -I./include -I/tmp/linux-v6.6.87/arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I/tmp/linux-v6.6.87/include/uapi -I./include/generated/uapi -include /tmp/linux-v6.6.87/include/linux/compiler-version.h -include /tmp/linux-v6.6.87/include/linux/kconfig.h -include /tmp/linux-v6.6.87/include/linux/compiler_types.h -D__KERNEL__ --target=x86_64-linux-gnu -fintegrated-as -Werror=unknown-warning-option -Werror=ignored-optimization-argument -Werror=option-ignored -Werror=unused-command-line-argument -fmacro-prefix-map=/tmp/linux-v6.6.87/= -Werror -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch -fno-jump-tables -m64 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mstack-alignment=8 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mretpoline-external-thunk -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fomit-frame-pointer -ftrivial-auto-var-init=zero -fno-stack-clash-protection -falign-functions=16 -fstrict-flex-arrays=3 -fno-strict-overflow -fno-stack-check -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-gnu -Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla -Wno-pointer-sign -Wcast-function-type -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-format-overflow -Wno-format-truncation -Wno-pointer-to-enum-cast -Wno-tautological-constant-out-of-range-compare -Wno-unaligned-access -Wno-cast-function-type-strict -Wno-enum-compare-conditional -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-enum-enum-conversion -Wno-initializer-overrides -Wno-sign-compare -Idrivers/net/ethernet/intel/e1000e -Idrivers/net/ethernet/intel/e1000e -I /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e -I ./drivers/net/ethernet/intel/e1000e  -DMODULE  -DKBUILD_BASENAME='"ich8lan"' -DKBUILD_MODNAME='"e1000e"' -D__KBUILD_MODNAME=kmod_e1000e -c -o drivers/net/ethernet/intel/e1000e/ich8lan.o /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c  
+# CC [M]  drivers/net/ethernet/intel/e1000e/phy.o
+  /usr/lib/llvm-20/bin/clang -Wp,-MMD,drivers/net/ethernet/intel/e1000e/.phy.o.d -nostdinc -I/tmp/linux-v6.6.87/arch/x86/include -I./arch/x86/include/generated -I/tmp/linux-v6.6.87/include -I./include -I/tmp/linux-v6.6.87/arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I/tmp/linux-v6.6.87/include/uapi -I./include/generated/uapi -include /tmp/linux-v6.6.87/include/linux/compiler-version.h -include /tmp/linux-v6.6.87/include/linux/kconfig.h -include /tmp/linux-v6.6.87/include/linux/compiler_types.h -D__KERNEL__ --target=x86_64-linux-gnu -fintegrated-as -Werror=unknown-warning-option -Werror=ignored-optimization-argument -Werror=option-ignored -Werror=unused-command-line-argument -fmacro-prefix-map=/tmp/linux-v6.6.87/= -Werror -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch -fno-jump-tables -m64 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mstack-alignment=8 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mretpoline-external-thunk -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fomit-frame-pointer -ftrivial-auto-var-init=zero -fno-stack-clash-protection -falign-functions=16 -fstrict-flex-arrays=3 -fno-strict-overflow -fno-stack-check -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-gnu -Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla -Wno-pointer-sign -Wcast-function-type -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-format-overflow -Wno-format-truncation -Wno-pointer-to-enum-cast -Wno-tautological-constant-out-of-range-compare -Wno-unaligned-access -Wno-cast-function-type-strict -Wno-enum-compare-conditional -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-enum-enum-conversion -Wno-initializer-overrides -Wno-sign-compare -Idrivers/net/ethernet/intel/e1000e -Idrivers/net/ethernet/intel/e1000e -I /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e -I ./drivers/net/ethernet/intel/e1000e  -DMODULE  -DKBUILD_BASENAME='"phy"' -DKBUILD_MODNAME='"e1000e"' -D__KBUILD_MODNAME=kmod_e1000e -c -o drivers/net/ethernet/intel/e1000e/phy.o /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/phy.c  
+# CC [M]  drivers/net/ethernet/intel/e1000e/nvm.o
+  /usr/lib/llvm-20/bin/clang -Wp,-MMD,drivers/net/ethernet/intel/e1000e/.nvm.o.d -nostdinc -I/tmp/linux-v6.6.87/arch/x86/include -I./arch/x86/include/generated -I/tmp/linux-v6.6.87/include -I./include -I/tmp/linux-v6.6.87/arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I/tmp/linux-v6.6.87/include/uapi -I./include/generated/uapi -include /tmp/linux-v6.6.87/include/linux/compiler-version.h -include /tmp/linux-v6.6.87/include/linux/kconfig.h -include /tmp/linux-v6.6.87/include/linux/compiler_types.h -D__KERNEL__ --target=x86_64-linux-gnu -fintegrated-as -Werror=unknown-warning-option -Werror=ignored-optimization-argument -Werror=option-ignored -Werror=unused-command-line-argument -fmacro-prefix-map=/tmp/linux-v6.6.87/= -Werror -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch -fno-jump-tables -m64 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mstack-alignment=8 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mretpoline-external-thunk -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fstack-protector-strong -fomit-frame-pointer -ftrivial-auto-var-init=zero -fno-stack-clash-protection -falign-functions=16 -fstrict-flex-arrays=3 -fno-strict-overflow -fno-stack-check -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-gnu -Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla -Wno-pointer-sign -Wcast-function-type -Wimplicit-fallthrough -Werror=date-time -Werror=incompatible-pointer-types -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-format-overflow -Wno-format-truncation -Wno-pointer-to-enum-cast -Wno-tautological-constant-out-of-range-compare -Wno-unaligned-access -Wno-cast-function-type-strict -Wno-enum-compare-conditional -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-enum-enum-conversion -Wno-initializer-overrides -Wno-sign-compare -Idrivers/net/ethernet/intel/e1000e -Idrivers/net/ethernet/intel/e1000e -I /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e -I ./drivers/net/ethernet/intel/e1000e  -DMODULE  -DKBUILD_BASENAME='"nvm"' -DKBUILD_MODNAME='"e1000e"' -D__KBUILD_MODNAME=kmod_e1000e -c -o drivers/net/ethernet/intel/e1000e/nvm.o /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/nvm.c  
+make[1]: Leaving directory '/tmp/irqguard-phase12-skip-final/kbuild'
+$ /usr/bin/python3 /tmp/linux-v6.6.87/scripts/clang-tools/gen_compile_commands.py -d /tmp/irqguard-phase12-skip-final/kbuild -o /tmp/irqguard-phase12-skip-final/kbuild/compile_commands.json /tmp/irqguard-phase12-skip-final/kbuild/drivers/net/ethernet/intel/e1000e

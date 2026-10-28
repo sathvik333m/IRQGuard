@@ -1,0 +1,45 @@
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld O=/tmp/irqguard-phase12-default-final/kbuild x86_64_defconfig
+make[1]: Entering directory '/tmp/irqguard-phase12-default-final/kbuild'
+  GEN     Makefile
+#
+# configuration written to .config
+#
+make[1]: Leaving directory '/tmp/irqguard-phase12-default-final/kbuild'
+$ /tmp/linux-v6.6.87/scripts/config --file /tmp/irqguard-phase12-default-final/kbuild/.config --module E1000E
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld O=/tmp/irqguard-phase12-default-final/kbuild olddefconfig
+make[1]: Entering directory '/tmp/irqguard-phase12-default-final/kbuild'
+  GEN     Makefile
+#
+# No change to .config
+#
+make[1]: Leaving directory '/tmp/irqguard-phase12-default-final/kbuild'
+$ make ARCH=x86_64 LLVM=/usr/lib/llvm-20/bin/ LD=/usr/bin/ld HOSTLD=/usr/bin/ld O=/tmp/irqguard-phase12-default-final/kbuild prepare
+make[1]: Entering directory '/tmp/irqguard-phase12-default-final/kbuild'
+  SYNC    include/config/auto.conf.cmd
+  GEN     Makefile
+  GEN     Makefile
+  CALL    /tmp/linux-v6.6.87/scripts/checksyscalls.sh
+  DESCEND objtool
+<stdin>:1:10: fatal error: 'libelf.h' file not found
+    1 | #include <libelf.h>
+      |          ^~~~~~~~~~
+1 error generated.
+  INSTALL libsubcmd_headers
+  CC      /tmp/irqguard-phase12-default-final/kbuild/tools/objtool/arch/x86/special.o
+In file included from arch/x86/special.c:4:
+In file included from /tmp/linux-v6.6.87/tools/objtool/include/objtool/special.h:10:
+In file included from /tmp/linux-v6.6.87/tools/objtool/include/objtool/check.h:11:
+In file included from /tmp/linux-v6.6.87/tools/objtool/include/objtool/arch.h:11:
+In file included from /tmp/linux-v6.6.87/tools/objtool/include/objtool/objtool.h:13:
+/tmp/linux-v6.6.87/tools/objtool/include/objtool/elf.h:10:10: fatal error: 'gelf.h' file not found
+   10 | #include <gelf.h>
+      |          ^~~~~~~~
+1 error generated.
+make[6]: *** [/tmp/linux-v6.6.87/tools/build/Makefile.build:98: /tmp/irqguard-phase12-default-final/kbuild/tools/objtool/arch/x86/special.o] Error 1
+make[5]: *** [/tmp/linux-v6.6.87/tools/build/Makefile.build:150: arch/x86] Error 2
+make[4]: *** [Makefile:66: /tmp/irqguard-phase12-default-final/kbuild/tools/objtool/objtool-in.o] Error 2
+make[3]: *** [Makefile:73: objtool] Error 2
+make[2]: *** [/tmp/linux-v6.6.87/Makefile:1362: tools/objtool] Error 2
+make[1]: *** [/tmp/linux-v6.6.87/Makefile:234: __sub-make] Error 2
+make[1]: Leaving directory '/tmp/irqguard-phase12-default-final/kbuild'
+make: *** [Makefile:234: __sub-make] Error 2

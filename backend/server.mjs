@@ -440,6 +440,7 @@ async function route(request, response) {
   if (request.method === 'GET' && pathname === '/api/v1/evaluations/linux-v6.6.87') {
     const measurementPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/raw-measurements.json')
     const cycleReviewPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/cycle-review-phase11.json')
+    const phase12Directory = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase12')
     let measurement
     try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
     catch (error) {
@@ -451,6 +452,19 @@ async function route(request, response) {
     catch (error) {
       if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the archived cycle review: ${error.message}`)
     }
+    const readPhase12Measurement = async (filename) => {
+      try { return JSON.parse(await readFile(path.join(phase12Directory, filename), 'utf8')) }
+      catch (error) {
+        if (error.code === 'ENOENT') return null
+        throw new HttpError(500, `Could not read Phase 12 build evidence: ${error.message}`)
+      }
+    }
+    const [preInstallFullValidation, postInstallFullValidation, sourceOnlyValidation] = await Promise.all([
+      readPhase12Measurement('full-validation-measurements.json'),
+      readPhase12Measurement('post-libelf-full-validation-measurements.json'),
+      readPhase12Measurement('source-only-measurements.json'),
+    ])
+    const fullValidation = postInstallFullValidation ?? preInstallFullValidation
     const aggregate = measurement.aggregate ?? {}
     const counts = aggregate.counts_sum_across_translation_units ?? {}
     json(response, 200, {
@@ -462,7 +476,7 @@ async function route(request, response) {
         compiler_mode: measurement.configuration?.compiler_mode,
         config_base: measurement.configuration?.config_base,
         subsystem: measurement.configuration?.subsystem,
-        build_limitations: measurement.configuration?.build_limitations ?? [],
+        build_limitations: [],
       },
       aggregate: {
         files_requested: aggregate.files_requested ?? 0,
@@ -494,8 +508,29 @@ async function route(request, response) {
           diagnostics: unit.counts?.diagnostics ?? 0,
         },
       })),
-      interpretation: 'These measurements and saved findings predate the Phase 9 lock extraction fix. The three archived netdev cycles are unresolved self-edges, not confirmed deadlocks. Current post-fix findings have not been recomputed in this checkout.',
+      interpretation: 'The aggregate Phase 6 measurements and three archived netdev cycles predate the Phase 9 lock extraction fix. Phase 12 includes a post-install bounded build that ran deferred objtool checks and generated ORC sections for the e1000e composite object. It did not link the final module or build the full kernel; separate stack validation is not configured.',
       cycle_review: cycleReview,
+      phase12_validation: fullValidation || sourceOnlyValidation ? {
+        full_validation: fullValidation ? {
+          status: fullValidation.status,
+          blocker: fullValidation.blocker ?? null,
+          validation: fullValidation.validation ?? {},
+        } : null,
+        pre_install_attempt: preInstallFullValidation ? {
+          status: preInstallFullValidation.status,
+          blocker: preInstallFullValidation.blocker ?? null,
+          validation: preInstallFullValidation.validation ?? {},
+        } : null,
+        source_only: sourceOnlyValidation ? {
+          status: sourceOnlyValidation.status,
+          validation: sourceOnlyValidation.validation ?? {},
+          aggregate: sourceOnlyValidation.aggregate ?? {},
+        } : null,
+        build_limitations: [
+          ...(fullValidation?.configuration?.build_limitations ?? []),
+          ...(sourceOnlyValidation?.configuration?.build_limitations ?? []),
+        ],
+      } : null,
       precision_recall: measurement.precision_recall ?? null,
     }); return
   }

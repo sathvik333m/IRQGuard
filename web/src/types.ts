@@ -279,5 +279,23 @@ export interface KernelEvaluation {
       manual_validation: string[]
     }>
   } | null
+  phase12_validation?: {
+    full_validation: {
+      status: string
+      blocker: string | null
+      validation: Record<string, unknown>
+    } | null
+    pre_install_attempt?: {
+      status: string
+      blocker: string | null
+      validation: Record<string, unknown>
+    } | null
+    source_only: {
+      status: string
+      validation: Record<string, unknown>
+      aggregate: Record<string, any>
+    } | null
+    build_limitations: string[]
+  } | null
   precision_recall: Record<string, unknown> | null
 }

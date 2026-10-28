@@ -10,20 +10,32 @@ locking operations, giving the analyzer relevant kernel constructs without
 attempting a whole-tree parse. The initial translation-unit list is `netdev.c`,
 `ethtool.c`, `ich8lan.c`, `phy.c`, and `nvm.c`.
 
-The script uses x86_64 `x86_64_defconfig`, enables `CONFIG_E1000E=m`, runs
-`olddefconfig` and `prepare0`, then compiles only the five selected object files
-with Clang through Kbuild's `LLVM=` setting. The host lacks both `ld.lld` and
-`libelf-dev`; therefore the object compile explicitly overrides
-`CONFIG_OBJTOOL=` and `SKIP_STACK_VALIDATION=1`. This bypasses objtool's host
-build and validation pass but retains the selected source's Kbuild compiler
-arguments and generated kernel headers/macros. It is not a complete module
-build. GNU `/usr/bin/ld` is recorded for any remaining link operations. It invokes the
-pinned kernel's `scripts/clang-tools/gen_compile_commands.py` on the selected
-output directory containing only the requested object `.cmd` files to produce
-a small, justified compilation database. This
-preserves generated-header, macro, architecture, and Kbuild flags without
-building every configured kernel translation unit. Build artifacts go into an
-out-of-tree output directory; source files are not edited.
+The runner uses x86_64 `x86_64_defconfig`, enables `CONFIG_E1000E=m`, and builds
+only the five selected object files. Full validation is the default: `make
+prepare` builds objtool, then Kbuild runs it on the selected objects. The runner
+uses Clang 20 from `LLVM=/usr/lib/llvm-20/bin/`, with GNU `/usr/bin/ld` for
+kernel and host linking. This supported override avoids requiring `ld.lld-20`.
+Objtool requires the `libelf-dev` headers and library. The optional
+`--skip-objtool` mode explicitly disables objtool so users can still validate
+source compilation and analyzer parsing; its result must not be described as a
+fully validated object build.
+
+The selected `x86_64_defconfig` sets `CONFIG_OBJTOOL=y` and
+`CONFIG_UNWINDER_ORC=y`. Objtool is required to generate ORC unwind metadata.
+The separate `CONFIG_STACK_VALIDATION` Kconfig feature is not enabled by this
+defconfig (it depends on a frame-pointer unwinder). The make variable
+`SKIP_STACK_VALIDATION=1` does not occur in this pinned kernel's Kbuild files
+and is ignored. Reports distinguish objtool/ORC processing from the separate
+stack-validation option instead of using “stack validation” as a synonym for
+all objtool work.
+
+The runner invokes the pinned kernel's
+`scripts/clang-tools/gen_compile_commands.py` on the selected output directory
+containing only the requested object `.cmd` files to produce a small,
+justified compilation database. This preserves generated-header, macro,
+architecture, and Kbuild flags without building every configured kernel
+translation unit. Build artifacts go into an out-of-tree output directory;
+source files are not edited.
 
 The runner records exact commands, tool versions, Kconfig SHA-256, build logs,
 and per-TU analyzer wall time, peak RSS, return status, parse diagnostics, raw
@@ -79,11 +91,16 @@ validated candidates. There is no independently labeled kernel ground truth,
 so precision, recall, false-positive rates, and missed-bug counts are
 unavailable.
 
-Kbuild object compilation succeeded with Clang 20 after skipping objtool
-validation via `CONFIG_OBJTOOL=` and `SKIP_STACK_VALIDATION=1`, because
-`ld.lld` and `libelf-dev` are absent. This is not a complete module build.
-The full measurement, including this setup limitation, is recorded in
-`evaluation/results/linux-v6.6.87/REPORT.md`.
+The earlier Phase 6 run compiled the five source objects but explicitly set
+`CONFIG_OBJTOOL=`; its saved build log does not show objtool invocations. Its
+`SKIP_STACK_VALIDATION=1` argument had no effect because that variable is not
+recognized by this kernel revision. Phase 12 reran the default validation
+path: `prepare` reached objtool but failed compiling it because `libelf.h` and
+`gelf.h` were unavailable. A second, explicit `--skip-objtool` run compiled
+all five objects and analyzed all five source files; objtool and ORC metadata
+generation were skipped. `CONFIG_STACK_VALIDATION` was not selected. See
+[`phase12-report.md`](../evaluation/results/linux-v6.6.87/phase12-report.md)
+for exact environment, command outcomes, and installation constraints.
 
 ## Reproduction
 

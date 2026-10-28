@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "review_kind": "retrospective_archived_cycle_review",
-  "status": "current_analysis_not_recomputed",
+  "status": "archived_review_with_current_source_scan",
   "kernel": {
     "release_tag": "v6.6.87",
     "commit": "814637ca257f4faf57a73fd4e38888cce88b5911"
@@ -13,8 +13,38 @@
     "uncertainty_ledger": "evaluation/results/linux-v6.6.87/uncertainty-summary-phase10.json"
   },
   "current_analysis": {
-    "status": "unavailable",
-    "reason": "The pinned Linux source checkout is not present in the current environment; archived findings predate the Phase 9 extraction fix."
+    "status": "completed_with_validation_skips",
+    "reason": "A fresh source-only analysis of the pinned tree completed after Phase 9. It emitted no current lock-dependency edges or cycles. Objtool and ORC generation were explicitly skipped, so this result is not evidence that the driver is deadlock-free.",
+    "validation": {
+      "objtool_mode": "explicitly_skipped",
+      "objtool_build": "skipped_by_request",
+      "objtool_object_checks": "skipped_by_request",
+      "kernel_object_compilation": "succeeded",
+      "source_analysis": "completed",
+      "unwinder_orc_configured": true,
+      "stack_validation_configured": false,
+      "stack_validation": "not_configured_by_defconfig",
+      "skip_stack_validation_variable_supported_by_kernel": false
+    },
+    "aggregate": {
+      "files_requested": 5,
+      "files_analyzed": 5,
+      "files_skipped_or_failed": 0,
+      "analysis_elapsed_seconds_sum": 6.997,
+      "peak_rss_kib_max_across_separate_runs": 192964,
+      "counts_sum_across_translation_units": {
+        "functions": 396,
+        "lock_operations": 12,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "uncertainties": 43514,
+        "diagnostics": 2
+      },
+      "finding_category_counts_sum": {}
+    },
+    "measurements": "evaluation/results/linux-v6.6.87/phase12/source-only-measurements.json"
   },
   "classification_definitions": {
     "candidate": "A modeled cycle exists, but feasibility has not been assessed enough to support a stronger conclusion.",

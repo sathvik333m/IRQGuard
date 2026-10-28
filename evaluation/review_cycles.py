@@ -19,6 +19,10 @@ def run(report_path: Path, uncertainty_path: Path, output_path: Path):
     report_bytes = report_path.read_bytes()
     report = json.loads(report_bytes)
     uncertainty = json.loads(uncertainty_path.read_text(encoding="utf-8"))
+    current_path = report_path.parents[1] / "phase12" / "source-only-measurements.json"
+    current = None
+    if current_path.is_file():
+        current = json.loads(current_path.read_text(encoding="utf-8"))
     cycle_records = []
     uncertainty_records = [item for item in uncertainty["records"]
                            if item.get("associated_findings")]
@@ -94,15 +98,31 @@ def run(report_path: Path, uncertainty_path: Path, output_path: Path):
             "archived_edge_is_self_edge": self_edge,
         })
 
+    if current and current.get("kernel", {}).get("checkout_commit") == "814637ca257f4faf57a73fd4e38888cce88b5911":
+        current_analysis = {
+            "status": current.get("status"),
+            "reason": "A fresh source-only analysis of the pinned tree completed after Phase 9. It emitted no current lock-dependency edges or cycles. Objtool and ORC generation were explicitly skipped, so this result is not evidence that the driver is deadlock-free.",
+            "validation": current.get("validation", {}),
+            "aggregate": current.get("aggregate", {}),
+            "measurements": str(current_path),
+        }
+        review_status = "archived_review_with_current_source_scan"
+    else:
+        current_analysis = {
+            "status": "unavailable",
+            "reason": "No fresh post-Phase-9 analysis of the pinned Linux source is available in this checkout.",
+        }
+        review_status = "current_analysis_not_recomputed"
+
     output = {
         "schema_version": 1,
         "review_kind": "retrospective_archived_cycle_review",
-        "status": "current_analysis_not_recomputed",
+        "status": review_status,
         "kernel": {"release_tag": "v6.6.87", "commit": "814637ca257f4faf57a73fd4e38888cce88b5911"},
         "input": {"report": str(report_path), "schema_version": report.get("schema_version"),
                   "sha256": hashlib.sha256(report_bytes).hexdigest(),
                   "uncertainty_ledger": str(uncertainty_path)},
-        "current_analysis": {"status": "unavailable", "reason": "The pinned Linux source checkout is not present in the current environment; archived findings predate the Phase 9 extraction fix."},
+        "current_analysis": current_analysis,
         "classification_definitions": {
             "candidate": "A modeled cycle exists, but feasibility has not been assessed enough to support a stronger conclusion.",
             "potentially_feasible": "Source and execution evidence support a plausible conflicting execution, while material uncertainties remain.",

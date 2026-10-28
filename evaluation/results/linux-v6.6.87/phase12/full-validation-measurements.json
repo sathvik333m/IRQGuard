@@ -1,0 +1,152 @@
+{
+  "evaluation_schema": 1,
+  "kernel": {
+    "release_tag": "v6.6.87",
+    "commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "checkout_commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "git_describe": "v6.6.87"
+  },
+  "analyzer": {
+    "path": "/home/sathvik/os_project/build/deadlock-analyzer"
+  },
+  "configuration": {
+    "architecture": "x86_64",
+    "compiler_mode": "Clang via Kbuild LLVM=",
+    "config_base": "x86_64_defconfig",
+    "driver_config": "CONFIG_E1000E=m",
+    "kbuild_variables": {
+      "ARCH": "x86_64",
+      "LLVM": "/usr/lib/llvm-20/bin/",
+      "LD": "/usr/bin/ld",
+      "HOSTLD": "/usr/bin/ld"
+    },
+    "build_limitations": [
+      "Objtool preparation failed; selected object compilation and analysis were not run. See build.log for the exact missing dependency or tool."
+    ],
+    "subsystem": "drivers/net/ethernet/intel/e1000e",
+    "requested_files": [
+      "drivers/net/ethernet/intel/e1000e/netdev.c",
+      "drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "drivers/net/ethernet/intel/e1000e/phy.c",
+      "drivers/net/ethernet/intel/e1000e/nvm.c"
+    ],
+    "config_sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1"
+  },
+  "validation": {
+    "objtool_mode": "enabled",
+    "objtool_build": "failed",
+    "objtool_object_checks": "not_started",
+    "kernel_object_compilation": "not_run",
+    "source_analysis": "not_started",
+    "unwinder_orc_configured": true,
+    "stack_validation_configured": false,
+    "stack_validation": "not_configured_by_defconfig",
+    "skip_stack_validation_variable_supported_by_kernel": false
+  },
+  "setup_steps": [
+    {
+      "stage": "x86_64_defconfig",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/tmp/irqguard-phase12-default-final/kbuild",
+        "x86_64_defconfig"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.225
+    },
+    {
+      "stage": "enable_e1000e",
+      "command": [
+        "/tmp/linux-v6.6.87/scripts/config",
+        "--file",
+        "/tmp/irqguard-phase12-default-final/kbuild/.config",
+        "--module",
+        "E1000E"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.033
+    },
+    {
+      "stage": "olddefconfig",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/tmp/irqguard-phase12-default-final/kbuild",
+        "olddefconfig"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.426
+    },
+    {
+      "stage": "prepare",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/tmp/irqguard-phase12-default-final/kbuild",
+        "prepare"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 6.987
+    }
+  ],
+  "translation_units": [
+    {
+      "file": "drivers/net/ethernet/intel/e1000e/netdev.c",
+      "status": "skipped",
+      "skip_reason": "kernel build stage 'prepare' failed before source analysis"
+    },
+    {
+      "file": "drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "status": "skipped",
+      "skip_reason": "kernel build stage 'prepare' failed before source analysis"
+    },
+    {
+      "file": "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "status": "skipped",
+      "skip_reason": "kernel build stage 'prepare' failed before source analysis"
+    },
+    {
+      "file": "drivers/net/ethernet/intel/e1000e/phy.c",
+      "status": "skipped",
+      "skip_reason": "kernel build stage 'prepare' failed before source analysis"
+    },
+    {
+      "file": "drivers/net/ethernet/intel/e1000e/nvm.c",
+      "status": "skipped",
+      "skip_reason": "kernel build stage 'prepare' failed before source analysis"
+    }
+  ],
+  "aggregate": {
+    "files_requested": 5,
+    "files_analyzed": 0,
+    "files_skipped_or_failed": 5
+  },
+  "comparison_note": "Mode counts are derived projections from a single analyzer report; they are not separately configured analyzer runs.",
+  "precision_recall": null,
+  "status": "kernel_build_failed",
+  "environment": {
+    "python": "3.12.3",
+    "kernel_host": "6.6.87.2-microsoft-standard-WSL2",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "make": "GNU Make 4.3",
+    "time": "time (GNU Time) UNKNOWN",
+    "cmake": "cmake version 3.28.3",
+    "host_linker": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+    "lld": "unavailable",
+    "libelf_dev_package": "unavailable",
+    "analyzer_sha256": "c9d2b43cd2cf1abfb1680cc5e4adc9c6a9df65316ad6a958e0bb8ad5fa858332"
+  },
+  "blocker": "Kernel build stage 'prepare' failed (2); see /tmp/irqguard-phase12-default-final/build.log"
+}

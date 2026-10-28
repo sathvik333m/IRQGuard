@@ -40,9 +40,9 @@ describe('IRQGuard workspace states', () => {
       translation_units: [], precision_recall: null,
       interpretation: 'Archived run predates the lock API fix.',
       cycle_review: {
-        status: 'current_analysis_not_recomputed',
+        status: 'archived_review_with_current_source_scan',
         input: { report: 'netdev.json', schema_version: 3, sha256: 'abc123' },
-        current_analysis: { status: 'unavailable', reason: 'Pinned source is not present.' },
+        current_analysis: { status: 'completed_with_validation_skips', reason: 'Fresh source-only analysis found no current cycles; objtool was skipped.' },
         findings: [{
           finding_id: 'C-1', classification: 'inconclusive', archived_analyzer_category: 'inconclusive_analysis', archived_feasibility: 'inconclusive',
           cycle_path: ['lock at 501', 'lock at 501'], source_file: '/kernel/netdev.c', functions: { source: 'rx_cleaner', target: 'clock_helper' },
@@ -54,6 +54,12 @@ describe('IRQGuard workspace states', () => {
           reasons: ['Archived edge is an unresolved self-edge.'], manual_validation: ['Rerun with the pinned tree.'],
         }],
       },
+      phase12_validation: {
+        full_validation: { status: 'completed', blocker: null, validation: { objtool_build: 'succeeded', objtool_object_checks: 'succeeded', objtool_invocations: 1, objtool_options: ['--orc', '--ibt', '--module', '--link'], orc_sections_present: true, kernel_object_compilation: 'succeeded', source_analysis: 'completed', kernel_module_link: 'not_attempted; composite object target only', stack_validation: 'not_configured_by_defconfig' } },
+        pre_install_attempt: { status: 'kernel_build_failed', blocker: "Kernel build stage 'prepare' failed; missing libelf headers.", validation: { objtool_build: 'failed' } },
+        source_only: { status: 'completed_with_validation_skips', validation: { kernel_object_compilation: 'succeeded', source_analysis: 'completed', objtool_build: 'skipped_by_request', objtool_object_checks: 'skipped_by_request', unwinder_orc_configured: true, stack_validation: 'not_configured_by_defconfig' }, aggregate: { files_requested: 5, files_analyzed: 5, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, interrupt_cycles: 0 } } },
+        build_limitations: ['Final .ko link and full kernel build were not attempted.'],
+      },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
       ? jsonResponse(health)
@@ -64,7 +70,13 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByText('inconclusive')).toBeInTheDocument()
     expect(screen.getByText(/rx_cleaner → clock_helper/)).toBeInTheDocument()
     expect(screen.getByText(/U-1 lock_identity/)).toBeInTheDocument()
-    expect(screen.getByText(/Pinned source is not present/)).toBeInTheDocument()
+    expect(screen.getByText(/Fresh source-only analysis found no current cycles/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Kernel validation stages' })).toBeInTheDocument()
+    expect(screen.getByText(/Earlier pre-install attempt/)).toBeInTheDocument()
+    expect(screen.getByText(/missing libelf headers/)).toBeInTheDocument()
+    expect(screen.getByText(/C object compilation/)).toBeInTheDocument()
+    expect(screen.getByText(/objtool was explicitly skipped/)).toBeInTheDocument()
+    expect(screen.getByText(/ORC sections in composite object/)).toBeInTheDocument()
   })
 
   it('allows the desktop sidebar to collapse without hiding its navigation controls', async () => {

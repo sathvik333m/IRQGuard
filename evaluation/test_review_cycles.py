@@ -18,7 +18,10 @@ with tempfile.TemporaryDirectory(prefix="irqguard-phase11-") as temp:
     assert result.returncode == 0, result.stderr
     report = json.loads(output.read_text())
 
-assert report["status"] == "current_analysis_not_recomputed"
+assert report["status"] == "archived_review_with_current_source_scan"
+assert report["current_analysis"]["status"] == "completed_with_validation_skips"
+assert report["current_analysis"]["aggregate"]["counts_sum_across_translation_units"]["interrupt_cycles"] == 0
+assert report["current_analysis"]["validation"]["objtool_object_checks"] == "skipped_by_request"
 assert report["input"]["sha256"] == "1413deebf409eb04a7c0a22e7eae35fc7d33897f69fd080bafa3095f54ba489c"
 assert len(report["findings"]) == 3
 for i, finding in enumerate(report["findings"], 1):

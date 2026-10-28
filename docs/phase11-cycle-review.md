@@ -6,11 +6,14 @@ This review examines the three cycles in the preserved Phase 9.0 `netdev.json`
 report for Linux `v6.6.87`, commit
 `814637ca257f4faf57a73fd4e38888cce88b5911`. The input report SHA-256 is
 `1413deebf409eb04a7c0a22e7eae35fc7d33897f69fd080bafa3095f54ba489c`.
-The report predates the Phase 9 extraction fix. The pinned source checkout is
-not present in the current environment, so this is a review of archived tool
-evidence, not a fresh post-fix evaluation. The number and classification of
-current candidates remain unknown until the documented kernel evaluation is
-rerun.
+The report predates the Phase 9 extraction fix. Phase 12 subsequently restored
+the pinned source and reran the current analyzer on all five selected files.
+That source-only run emitted zero lock dependencies and zero cycles; it
+explicitly skipped objtool and ORC metadata generation because `libelf-dev`
+could not be installed in the restricted environment. This is the current
+tool output, not evidence that the driver is deadlock-free. The three archived
+cycles remain individually classified as inconclusive and were not re-labeled
+as rejected based only on their disappearance from the new graph.
 
 Recreate this retrospective artifact from the preserved inputs:
 
@@ -21,10 +24,11 @@ python3 evaluation/test_review_cycles.py
 
 The generated JSON is
 [`../evaluation/results/linux-v6.6.87/cycle-review-phase11.json`](../evaluation/results/linux-v6.6.87/cycle-review-phase11.json).
-To produce current findings, restore the pinned source using the clone and
-commit verification commands in `evaluation/results/linux-v6.6.87/REPORT.md`,
-then rerun `evaluation/run_kernel_eval.py` with the post-Phase-9 analyzer. Do
-not merge those results with this archived review.
+The generator joins the archived per-cycle review with the separate current
+source-only run at `evaluation/results/linux-v6.6.87/phase12/`; it keeps the
+archived cycle records distinct from current-run counts. See the
+[Phase 12 build-validation report](../evaluation/results/linux-v6.6.87/phase12-report.md)
+for why full objtool validation remains incomplete.
 
 ## Classification meanings
 
