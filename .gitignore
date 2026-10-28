@@ -11,6 +11,14 @@ Makefile
 *.so
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+*.profraw
+*.gcda
+*.gcno
 /web/node_modules/
 /web/dist/
 /web/tsconfig.tsbuildinfo
@@ -26,4 +34,6 @@ __pycache__/
 /evaluation/results/linux-v6.6.87/reports/
 /evaluation/results/linux-v6.6.87/build.log
 /evaluation/results/linux-v6.6.87/compile_commands.json
+# Ad hoc reruns are disposable; the curated phase12 evidence directory stays tracked.
+/evaluation/results/linux-v6.6.87/phase12-rerun/
 # Keep REPORT.md and raw-measurements.json tracked; ignore only generated kernel artifacts.
