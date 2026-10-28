@@ -284,6 +284,12 @@ export interface KernelEvaluation {
     after: Record<string, any>
     metrics_warning: string
   } | null
+  phase13_latest_rerun?: {
+    status: string
+    environment: Record<string, any>
+    validation: Record<string, any>
+    aggregate: Record<string, any>
+  } | null
   phase12_validation?: {
     full_validation: {
       status: string

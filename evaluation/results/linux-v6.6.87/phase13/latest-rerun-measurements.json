@@ -1,0 +1,766 @@
+{
+  "evaluation_schema": 1,
+  "kernel": {
+    "release_tag": "v6.6.87",
+    "commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "checkout_commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "git_describe": "v6.6.87"
+  },
+  "analyzer": {
+    "path": "/home/sathvik/os_project/build/deadlock-analyzer"
+  },
+  "configuration": {
+    "architecture": "x86_64",
+    "compiler_mode": "Clang via Kbuild LLVM=",
+    "config_base": "x86_64_defconfig",
+    "driver_config": "CONFIG_E1000E=m",
+    "kbuild_variables": {
+      "ARCH": "x86_64",
+      "LLVM": "/usr/lib/llvm-20/bin/",
+      "LD": "/usr/bin/ld",
+      "HOSTLD": "/usr/bin/ld"
+    },
+    "build_limitations": [],
+    "subsystem": "drivers/net/ethernet/intel/e1000e",
+    "requested_files": [
+      "drivers/net/ethernet/intel/e1000e/netdev.c",
+      "drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "drivers/net/ethernet/intel/e1000e/phy.c",
+      "drivers/net/ethernet/intel/e1000e/nvm.c"
+    ],
+    "config_sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1",
+    "missing_object_files": [],
+    "compile_commands_count": 11
+  },
+  "validation": {
+    "objtool_mode": "enabled",
+    "objtool_build": "succeeded",
+    "objtool_object_checks": "succeeded",
+    "kernel_object_compilation": "succeeded",
+    "source_analysis": "completed",
+    "unwinder_orc_configured": true,
+    "stack_validation_configured": false,
+    "stack_validation": "not_configured_by_defconfig",
+    "skip_stack_validation_variable_supported_by_kernel": false,
+    "objtool_deferred_to_composite": true,
+    "objtool_invocations": 1,
+    "objtool_command": "/usr/bin/ld -m elf_x86_64 -z noexecstack --no-warn-rwx-segments   -r -o drivers/net/ethernet/intel/e1000e/e1000e.o @drivers/net/ethernet/intel/e1000e/e1000e.mod  ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --ibt --orc --retpoline --rethunk --static-call --uaccess --prefix=16  --link  --module drivers/net/ethernet/intel/e1000e/e1000e.o",
+    "objtool_options": [
+      "--orc",
+      "--retpoline",
+      "--ibt",
+      "--module",
+      "--link"
+    ],
+    "kernel_module_link": "not_attempted; composite object target only",
+    "orc_sections_present": true
+  },
+  "setup_steps": [
+    {
+      "stage": "x86_64_defconfig",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "x86_64_defconfig"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.572
+    },
+    {
+      "stage": "enable_e1000e",
+      "command": [
+        "/tmp/linux-v6.6.87/scripts/config",
+        "--file",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild/.config",
+        "--module",
+        "E1000E"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.016
+    },
+    {
+      "stage": "olddefconfig",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "olddefconfig"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.119
+    },
+    {
+      "stage": "prepare",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "prepare"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.588
+    },
+    {
+      "stage": "selected_objects",
+      "command": [
+        "make",
+        "ARCH=x86_64",
+        "LLVM=/usr/lib/llvm-20/bin/",
+        "LD=/usr/bin/ld",
+        "HOSTLD=/usr/bin/ld",
+        "O=/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "V=1",
+        "-j2",
+        "drivers/net/ethernet/intel/e1000e/netdev.o",
+        "drivers/net/ethernet/intel/e1000e/ethtool.o",
+        "drivers/net/ethernet/intel/e1000e/ich8lan.o",
+        "drivers/net/ethernet/intel/e1000e/phy.o",
+        "drivers/net/ethernet/intel/e1000e/nvm.o",
+        "drivers/net/ethernet/intel/e1000e/e1000e.o"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.428
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/linux-v6.6.87/scripts/clang-tools/gen_compile_commands.py",
+        "-d",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "-o",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild/compile_commands.json",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild/drivers/net/ethernet/intel/e1000e"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.064
+    }
+  ],
+  "translation_units": [
+    {
+      "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+      "status": "analyzed",
+      "skip_reason": null,
+      "command": [
+        "/usr/bin/time",
+        "-v",
+        "-o",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/netdev.time.txt",
+        "/home/sathvik/os_project/build/deadlock-analyzer",
+        "analyze",
+        "--source",
+        "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+        "--compile-commands",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "--format",
+        "json",
+        "--output",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/netdev.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.321,
+      "peak_rss_kib": 192924,
+      "report_path": "reports/netdev.json",
+      "stderr_path": "reports/netdev.stderr.txt",
+      "time_path": "reports/netdev.time.txt",
+      "counts": {
+        "functions": 154,
+        "lock_operations": 10,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "finding_categories": {},
+        "uncertainties": 29151,
+        "diagnostics": 2
+      },
+      "mode_views": {
+        "analysis_kind": "interrupt_aware_lock_analysis",
+        "schema_version": 4,
+        "counts": {
+          "functions": 154,
+          "lock_operations": 10,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "uncertainties": 29151,
+          "unique_uncertainty_records": 2193,
+          "diagnostics": 2
+        },
+        "uncertainty_counts": {
+          "event_count": 29151,
+          "unique_record_count": 2193,
+          "propagated_event_count": 26958,
+          "high_impact_unique_records": 1150,
+          "lock_identity_events": 0,
+          "interrupt_state_events": 14537,
+          "unresolved_call_events": 14537,
+          "candidate_affecting_unique_records": 0,
+          "affected_candidate_count": 0,
+          "candidate_record_association_count": 0,
+          "proven_non_affecting_event_count": 0,
+          "by_category": {
+            "control_flow": {
+              "event_count": 4,
+              "unique_record_count": 2
+            },
+            "handler_lifecycle": {
+              "event_count": 39,
+              "unique_record_count": 5
+            },
+            "interrupt_state": {
+              "event_count": 14537,
+              "unique_record_count": 1076
+            },
+            "unresolved_call": {
+              "event_count": 14537,
+              "unique_record_count": 1076
+            },
+            "unsupported_api": {
+              "event_count": 34,
+              "unique_record_count": 34
+            }
+          },
+          "by_stage": {
+            "api_model": {
+              "event_count": 34,
+              "unique_record_count": 34
+            },
+            "control_flow": {
+              "event_count": 4,
+              "unique_record_count": 2
+            },
+            "handler_discovery": {
+              "event_count": 39,
+              "unique_record_count": 5
+            },
+            "interprocedural": {
+              "event_count": 14537,
+              "unique_record_count": 1076
+            },
+            "interrupt_state": {
+              "event_count": 14537,
+              "unique_record_count": 1076
+            }
+          }
+        },
+        "basic_lock_cycle_view": {
+          "cyclic_scc_count": 0
+        },
+        "interrupt_aware_view": {
+          "candidate_lock_order_cycles": 0,
+          "interrupt_aware_candidates": 0,
+          "candidate_findings_total": 0
+        },
+        "feasibility_refined_view": {
+          "candidate_lock_order_cycle": 0,
+          "interrupt_aware_candidate": 0,
+          "rejected_candidate": 0,
+          "inconclusive_analysis": 0,
+          "finding_categories": {}
+        },
+        "limits": [
+          "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+          "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+          "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+        ]
+      }
+    },
+    {
+      "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "status": "analyzed",
+      "skip_reason": null,
+      "command": [
+        "/usr/bin/time",
+        "-v",
+        "-o",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/ethtool.time.txt",
+        "/home/sathvik/os_project/build/deadlock-analyzer",
+        "analyze",
+        "--source",
+        "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ethtool.c",
+        "--compile-commands",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "--format",
+        "json",
+        "--output",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/ethtool.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.017,
+      "peak_rss_kib": 132104,
+      "report_path": "reports/ethtool.json",
+      "stderr_path": "reports/ethtool.stderr.txt",
+      "time_path": "reports/ethtool.time.txt",
+      "counts": {
+        "functions": 51,
+        "lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "finding_categories": {},
+        "uncertainties": 1806,
+        "diagnostics": 0
+      },
+      "mode_views": {
+        "analysis_kind": "interrupt_aware_lock_analysis",
+        "schema_version": 4,
+        "counts": {
+          "functions": 51,
+          "lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "uncertainties": 1806,
+          "unique_uncertainty_records": 745,
+          "diagnostics": 0
+        },
+        "uncertainty_counts": {
+          "event_count": 1806,
+          "unique_record_count": 745,
+          "propagated_event_count": 1061,
+          "high_impact_unique_records": 384,
+          "lock_identity_events": 0,
+          "interrupt_state_events": 898,
+          "unresolved_call_events": 898,
+          "candidate_affecting_unique_records": 0,
+          "affected_candidate_count": 0,
+          "candidate_record_association_count": 0,
+          "proven_non_affecting_event_count": 0,
+          "by_category": {
+            "handler_lifecycle": {
+              "event_count": 2,
+              "unique_record_count": 1
+            },
+            "interrupt_state": {
+              "event_count": 898,
+              "unique_record_count": 368
+            },
+            "unresolved_call": {
+              "event_count": 898,
+              "unique_record_count": 368
+            },
+            "unsupported_api": {
+              "event_count": 8,
+              "unique_record_count": 8
+            }
+          },
+          "by_stage": {
+            "api_model": {
+              "event_count": 8,
+              "unique_record_count": 8
+            },
+            "handler_discovery": {
+              "event_count": 2,
+              "unique_record_count": 1
+            },
+            "interprocedural": {
+              "event_count": 898,
+              "unique_record_count": 368
+            },
+            "interrupt_state": {
+              "event_count": 898,
+              "unique_record_count": 368
+            }
+          }
+        },
+        "basic_lock_cycle_view": {
+          "cyclic_scc_count": 0
+        },
+        "interrupt_aware_view": {
+          "candidate_lock_order_cycles": 0,
+          "interrupt_aware_candidates": 0,
+          "candidate_findings_total": 0
+        },
+        "feasibility_refined_view": {
+          "candidate_lock_order_cycle": 0,
+          "interrupt_aware_candidate": 0,
+          "rejected_candidate": 0,
+          "inconclusive_analysis": 0,
+          "finding_categories": {}
+        },
+        "limits": [
+          "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+          "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+          "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+        ]
+      }
+    },
+    {
+      "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "status": "analyzed",
+      "skip_reason": null,
+      "command": [
+        "/usr/bin/time",
+        "-v",
+        "-o",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/ich8lan.time.txt",
+        "/home/sathvik/os_project/build/deadlock-analyzer",
+        "analyze",
+        "--source",
+        "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+        "--compile-commands",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "--format",
+        "json",
+        "--output",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/ich8lan.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.218,
+      "peak_rss_kib": 141632,
+      "report_path": "reports/ich8lan.json",
+      "stderr_path": "reports/ich8lan.stderr.txt",
+      "time_path": "reports/ich8lan.time.txt",
+      "counts": {
+        "functions": 98,
+        "lock_operations": 2,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "finding_categories": {},
+        "uncertainties": 6880,
+        "diagnostics": 0
+      },
+      "mode_views": {
+        "analysis_kind": "interrupt_aware_lock_analysis",
+        "schema_version": 4,
+        "counts": {
+          "functions": 98,
+          "lock_operations": 2,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "uncertainties": 6880,
+          "unique_uncertainty_records": 1272,
+          "diagnostics": 0
+        },
+        "uncertainty_counts": {
+          "event_count": 6880,
+          "unique_record_count": 1272,
+          "propagated_event_count": 5608,
+          "high_impact_unique_records": 696,
+          "lock_identity_events": 0,
+          "interrupt_state_events": 3401,
+          "unresolved_call_events": 3401,
+          "candidate_affecting_unique_records": 0,
+          "affected_candidate_count": 0,
+          "candidate_record_association_count": 0,
+          "proven_non_affecting_event_count": 0,
+          "by_category": {
+            "interrupt_state": {
+              "event_count": 3401,
+              "unique_record_count": 597
+            },
+            "unresolved_call": {
+              "event_count": 3401,
+              "unique_record_count": 597
+            },
+            "unsupported_api": {
+              "event_count": 78,
+              "unique_record_count": 78
+            }
+          },
+          "by_stage": {
+            "api_model": {
+              "event_count": 78,
+              "unique_record_count": 78
+            },
+            "interprocedural": {
+              "event_count": 3401,
+              "unique_record_count": 597
+            },
+            "interrupt_state": {
+              "event_count": 3401,
+              "unique_record_count": 597
+            }
+          }
+        },
+        "basic_lock_cycle_view": {
+          "cyclic_scc_count": 0
+        },
+        "interrupt_aware_view": {
+          "candidate_lock_order_cycles": 0,
+          "interrupt_aware_candidates": 0,
+          "candidate_findings_total": 0
+        },
+        "feasibility_refined_view": {
+          "candidate_lock_order_cycle": 0,
+          "interrupt_aware_candidate": 0,
+          "rejected_candidate": 0,
+          "inconclusive_analysis": 0,
+          "finding_categories": {}
+        },
+        "limits": [
+          "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+          "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+          "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+        ]
+      }
+    },
+    {
+      "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/phy.c",
+      "status": "analyzed",
+      "skip_reason": null,
+      "command": [
+        "/usr/bin/time",
+        "-v",
+        "-o",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/phy.time.txt",
+        "/home/sathvik/os_project/build/deadlock-analyzer",
+        "analyze",
+        "--source",
+        "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/phy.c",
+        "--compile-commands",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "--format",
+        "json",
+        "--output",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/phy.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.017,
+      "peak_rss_kib": 132516,
+      "report_path": "reports/phy.json",
+      "stderr_path": "reports/phy.stderr.txt",
+      "time_path": "reports/phy.time.txt",
+      "counts": {
+        "functions": 76,
+        "lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "finding_categories": {},
+        "uncertainties": 5005,
+        "diagnostics": 0
+      },
+      "mode_views": {
+        "analysis_kind": "interrupt_aware_lock_analysis",
+        "schema_version": 4,
+        "counts": {
+          "functions": 76,
+          "lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "uncertainties": 5005,
+          "unique_uncertainty_records": 473,
+          "diagnostics": 0
+        },
+        "uncertainty_counts": {
+          "event_count": 5005,
+          "unique_record_count": 473,
+          "propagated_event_count": 4532,
+          "high_impact_unique_records": 274,
+          "lock_identity_events": 0,
+          "interrupt_state_events": 2502,
+          "unresolved_call_events": 2502,
+          "candidate_affecting_unique_records": 0,
+          "affected_candidate_count": 0,
+          "candidate_record_association_count": 0,
+          "proven_non_affecting_event_count": 0,
+          "by_category": {
+            "interrupt_state": {
+              "event_count": 2502,
+              "unique_record_count": 236
+            },
+            "unresolved_call": {
+              "event_count": 2502,
+              "unique_record_count": 236
+            },
+            "unsupported_api": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "by_stage": {
+            "api_model": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "interprocedural": {
+              "event_count": 2502,
+              "unique_record_count": 236
+            },
+            "interrupt_state": {
+              "event_count": 2502,
+              "unique_record_count": 236
+            }
+          }
+        },
+        "basic_lock_cycle_view": {
+          "cyclic_scc_count": 0
+        },
+        "interrupt_aware_view": {
+          "candidate_lock_order_cycles": 0,
+          "interrupt_aware_candidates": 0,
+          "candidate_findings_total": 0
+        },
+        "feasibility_refined_view": {
+          "candidate_lock_order_cycle": 0,
+          "interrupt_aware_candidate": 0,
+          "rejected_candidate": 0,
+          "inconclusive_analysis": 0,
+          "finding_categories": {}
+        },
+        "limits": [
+          "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+          "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+          "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+        ]
+      }
+    },
+    {
+      "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/nvm.c",
+      "status": "analyzed",
+      "skip_reason": null,
+      "command": [
+        "/usr/bin/time",
+        "-v",
+        "-o",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/nvm.time.txt",
+        "/home/sathvik/os_project/build/deadlock-analyzer",
+        "analyze",
+        "--source",
+        "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/nvm.c",
+        "--compile-commands",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/kbuild",
+        "--format",
+        "json",
+        "--output",
+        "/home/sathvik/os_project/evaluation/results/linux-v6.6.87/phase13-rerun/reports/nvm.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.918,
+      "peak_rss_kib": 130864,
+      "report_path": "reports/nvm.json",
+      "stderr_path": "reports/nvm.stderr.txt",
+      "time_path": "reports/nvm.time.txt",
+      "counts": {
+        "functions": 17,
+        "lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "finding_categories": {},
+        "uncertainties": 672,
+        "diagnostics": 0
+      },
+      "mode_views": {
+        "analysis_kind": "interrupt_aware_lock_analysis",
+        "schema_version": 4,
+        "counts": {
+          "functions": 17,
+          "lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "uncertainties": 672,
+          "unique_uncertainty_records": 150,
+          "diagnostics": 0
+        },
+        "uncertainty_counts": {
+          "event_count": 672,
+          "unique_record_count": 150,
+          "propagated_event_count": 522,
+          "high_impact_unique_records": 78,
+          "lock_identity_events": 0,
+          "interrupt_state_events": 336,
+          "unresolved_call_events": 336,
+          "candidate_affecting_unique_records": 0,
+          "affected_candidate_count": 0,
+          "candidate_record_association_count": 0,
+          "proven_non_affecting_event_count": 0,
+          "by_category": {
+            "interrupt_state": {
+              "event_count": 336,
+              "unique_record_count": 75
+            },
+            "unresolved_call": {
+              "event_count": 336,
+              "unique_record_count": 75
+            }
+          },
+          "by_stage": {
+            "interprocedural": {
+              "event_count": 336,
+              "unique_record_count": 75
+            },
+            "interrupt_state": {
+              "event_count": 336,
+              "unique_record_count": 75
+            }
+          }
+        },
+        "basic_lock_cycle_view": {
+          "cyclic_scc_count": 0
+        },
+        "interrupt_aware_view": {
+          "candidate_lock_order_cycles": 0,
+          "interrupt_aware_candidates": 0,
+          "candidate_findings_total": 0
+        },
+        "feasibility_refined_view": {
+          "candidate_lock_order_cycle": 0,
+          "interrupt_aware_candidate": 0,
+          "rejected_candidate": 0,
+          "inconclusive_analysis": 0,
+          "finding_categories": {}
+        },
+        "limits": [
+          "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+          "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+          "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+        ]
+      }
+    }
+  ],
+  "aggregate": {
+    "files_requested": 5,
+    "files_analyzed": 5,
+    "files_skipped_or_failed": 0,
+    "analysis_elapsed_seconds_sum": 6.491,
+    "peak_rss_kib_max_across_separate_runs": 192924,
+    "counts_sum_across_translation_units": {
+      "functions": 396,
+      "lock_operations": 12,
+      "lock_dependencies": 0,
+      "interrupt_graph_edges": 0,
+      "interrupt_graph_nodes": 0,
+      "interrupt_cycles": 0,
+      "uncertainties": 43514,
+      "diagnostics": 2
+    },
+    "finding_category_counts_sum": {}
+  },
+  "comparison_note": "Mode counts are derived projections from a single analyzer report; they are not separately configured analyzer runs.",
+  "precision_recall": null,
+  "status": "completed",
+  "environment": {
+    "python": "3.12.3",
+    "kernel_host": "6.6.87.2-microsoft-standard-WSL2",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "make": "GNU Make 4.3",
+    "time": "time (GNU Time) UNKNOWN",
+    "cmake": "cmake version 3.28.3",
+    "host_linker": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+    "lld": "unavailable",
+    "libelf_dev_package": "0.190-1.1ubuntu0.1",
+    "analyzer_sha256": "c9d2b43cd2cf1abfb1680cc5e4adc9c6a9df65316ad6a958e0bb8ad5fa858332"
+  }
+}

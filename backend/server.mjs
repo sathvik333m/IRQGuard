@@ -442,6 +442,7 @@ async function route(request, response) {
     const cycleReviewPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/cycle-review-phase11.json')
     const phase12Directory = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase12')
     const phase13ComparisonPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13-before-after.json')
+    const phase13LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13/latest-rerun-measurements.json')
     let measurement
     try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
     catch (error) {
@@ -457,6 +458,20 @@ async function route(request, response) {
     try { phase13Comparison = JSON.parse(await readFile(phase13ComparisonPath, 'utf8')) }
     catch (error) {
       if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the Phase 13 comparison: ${error.message}`)
+    }
+    let phase13LatestRun = null
+    try {
+      const latest = JSON.parse(await readFile(phase13LatestRunPath, 'utf8'))
+      phase13LatestRun = {
+        status: latest.status,
+        kernel: latest.kernel,
+        environment: latest.environment,
+        configuration: latest.configuration,
+        validation: latest.validation,
+        aggregate: latest.aggregate,
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the latest Phase 13 run: ${error.message}`)
     }
     const readPhase12Measurement = async (filename) => {
       try { return JSON.parse(await readFile(path.join(phase12Directory, filename), 'utf8')) }
@@ -517,6 +532,7 @@ async function route(request, response) {
       interpretation: 'The aggregate Phase 6 measurements and three archived netdev cycles predate the Phase 9 lock extraction fix. Phase 12 includes a post-install bounded build that ran deferred objtool checks and generated ORC sections for the e1000e composite object. It did not link the final module or build the full kernel; separate stack validation is not configured.',
       cycle_review: cycleReview,
       phase13_comparison: phase13Comparison,
+      phase13_latest_rerun: phase13LatestRun,
       phase12_validation: fullValidation || sourceOnlyValidation ? {
         full_validation: fullValidation ? {
           status: fullValidation.status,

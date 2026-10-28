@@ -157,8 +157,8 @@ output directory.
 
 ## Post-fix comparison and regression results
 
-The Phase 13 comparison uses the preserved Phase 9.0 baseline and the post-fix
-Phase 12 run on the same kernel commit, five source files, Clang version, and
+The Phase 13 comparison uses the preserved Phase 9.0 baseline and the latest
+post-fix Phase 13 rerun on the same kernel commit, five source files, Clang version, and
 configuration hash. It records the change from two unresolved lock identities
 to 12 symbolic identities, 3 inconclusive cycles to no reported cycles, and
 uncertainty counts with their counting rules. These changes are not accuracy

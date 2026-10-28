@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "evaluation/baselines/phase9.0"
 PHASE12 = ROOT / "evaluation/results/linux-v6.6.87/phase12"
+PHASE13 = ROOT / "evaluation/results/linux-v6.6.87/phase13"
 CURRENT_REPORTS = PHASE12 / "post-libelf-reports"
 DEFAULT_OUTPUT = ROOT / "evaluation/results/linux-v6.6.87/phase13-before-after.json"
 
@@ -71,7 +72,10 @@ def main() -> None:
                         help="comparison JSON path (default: checked-in Phase 13 artifact)")
     args = parser.parse_args()
     baseline = load_json(BASE / "kernel-v6.6.87-raw-measurements.json")
-    current = load_json(PHASE12 / "post-libelf-full-validation-measurements.json")
+    current_measurements = PHASE13 / "latest-rerun-measurements.json"
+    if not current_measurements.is_file():
+        current_measurements = PHASE12 / "post-libelf-full-validation-measurements.json"
+    current = load_json(current_measurements)
     baseline_summary = load_json(ROOT / "evaluation/results/linux-v6.6.87/uncertainty-summary-phase10.json")
     current_reports = [load_json(path) for path in sorted(CURRENT_REPORTS.glob("*.json"))]
     kernel_files_before = baseline["configuration"]["requested_files"]
@@ -82,13 +86,19 @@ def main() -> None:
         raise SystemExit("Cannot compare different selected source files")
     if baseline["configuration"].get("config_sha256") != current["configuration"].get("config_sha256"):
         raise SystemExit("Cannot compare different generated kernel configurations")
+    if baseline["environment"]["clang"] != current["environment"]["clang"]:
+        raise SystemExit("Cannot compare different Clang versions")
+    report_analyzer_hashes = {report.get("analyzer", {}).get("sha256") for report in current_reports}
+    report_analyzer_hashes.discard(None)
+    if report_analyzer_hashes and report_analyzer_hashes != {current["environment"]["analyzer_sha256"]}:
+        raise SystemExit("Latest measurements and preserved schema-v4 reports came from different analyzer binaries")
     current_revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     current_status = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()
     baseline_report = (BASE / "BASELINE.md").read_text(encoding="utf-8")
     baseline_revision = re.search(r"Repository revision: `([0-9a-f]+)`", baseline_report).group(1)
     result = {
         "schema_version": 1,
-        "comparison": "saved Phase 9.0 baseline versus post-fix Phase 12 evaluation",
+        "comparison": "saved Phase 9.0 baseline versus latest post-fix Phase 13 evaluation",
         "comparable_setup": {
             "kernel_revision": baseline["kernel"]["commit"],
             "source_files": [Path(file).name for file in kernel_files_before],

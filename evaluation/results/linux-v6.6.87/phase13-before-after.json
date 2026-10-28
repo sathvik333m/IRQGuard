@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "comparison": "saved Phase 9.0 baseline versus post-fix Phase 12 evaluation",
+  "comparison": "saved Phase 9.0 baseline versus latest post-fix Phase 13 evaluation",
   "comparable_setup": {
     "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
     "source_files": [
@@ -17,7 +17,7 @@
   },
   "repository": {
     "baseline_revision": "23f602b2f725ea385cff4d3715e8e1906a52dfee",
-    "current_revision": "2545d6a85b103ee5b2c5d0f1555d7c860f943be9",
+    "current_revision": "58eebaa8d96e99d951d43baf9d4df01ae9e12b64",
     "current_worktree_dirty": true,
     "baseline_analyzer_sha256": "dd9221162839ada581675aa4edc5c06a3f7b6e1989d840d6680306e862f7d34b",
     "post_analyzer_sha256": "c9d2b43cd2cf1abfb1680cc5e4adc9c6a9df65316ad6a958e0bb8ad5fa858332"
@@ -74,8 +74,8 @@
     "uncertainty_events": 43514,
     "unique_uncertainty_records": 4833,
     "parser_or_analysis_diagnostics": 2,
-    "analysis_elapsed_seconds_sum": 5.79,
-    "peak_rss_kib_max_across_separate_runs": 192848,
+    "analysis_elapsed_seconds_sum": 6.491,
+    "peak_rss_kib_max_across_separate_runs": 192924,
     "validation": {
       "objtool_mode": "enabled",
       "objtool_build": "succeeded",

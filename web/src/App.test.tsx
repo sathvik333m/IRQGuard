@@ -65,6 +65,11 @@ describe('IRQGuard workspace states', () => {
         after: { functions: 396, lock_acquisitions: 6, lock_releases: 6, lock_dependencies: 0, interrupt_graph_edges: 0, candidate_cycles: 0, uncertainty_events: 43514, unique_uncertainty_records: 4833 },
         metrics_warning: 'Counts are not accuracy metrics.',
       },
+      phase13_latest_rerun: {
+        status: 'completed', environment: { analyzer_sha256: 'abc' },
+        validation: { objtool_object_checks: 'succeeded', orc_sections_present: true, stack_validation: 'not_configured_by_defconfig', kernel_module_link: 'not_attempted; composite object target only' },
+        aggregate: { files_analyzed: 5, files_requested: 5, analysis_elapsed_seconds_sum: 6.491, peak_rss_kib_max_across_separate_runs: 192924, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43514, diagnostics: 2 } },
+      },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
       ? jsonResponse(health)
@@ -78,8 +83,10 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByText(/Fresh source-only analysis found no current cycles/)).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Kernel validation stages' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Post-fix comparison' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Current analyzer results' })).toBeInTheDocument()
+    expect(screen.getByText(/6.491s/)).toBeInTheDocument()
     expect(screen.getAllByText('43,705')).toHaveLength(2)
-    expect(screen.getByText('43,514')).toBeInTheDocument()
+    expect(screen.getAllByText('43,514')).toHaveLength(2)
     expect(screen.getByText(/Earlier pre-install attempt/)).toBeInTheDocument()
     expect(screen.getByText(/missing libelf headers/)).toBeInTheDocument()
     expect(screen.getByText(/C object compilation/)).toBeInTheDocument()

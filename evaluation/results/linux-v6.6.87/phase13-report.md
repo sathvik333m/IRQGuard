@@ -2,8 +2,8 @@
 
 ## Compared artifacts and provenance
 
-This comparison uses the preserved Phase 9.0 data and the post-fix Phase 12
-post-install run. The baseline is repository revision
+This comparison uses the preserved Phase 9.0 data and the latest Phase 13
+rerun. The baseline is repository revision
 `23f602b2f725ea385cff4d3715e8e1906a52dfee`; the current analyzer source is at
 revision `2545d6a85b103ee5b2c5d0f1555d7c860f943be9` with a dirty working tree
 (the Phase 13 documentation and comparison files are in progress). Analyzer
@@ -22,7 +22,7 @@ unchanged.
 
 ## Before/after results
 
-| Measure | Phase 9.0 saved baseline | Post-fix Phase 12 run |
+| Measure | Phase 9.0 saved baseline | Latest post-fix Phase 13 run |
 | --- | ---: | ---: |
 | Translation units / functions | 5 / 396 | 5 / 396 |
 | Lock acquisitions / releases | 6 / 6 | 6 / 6 |
@@ -34,8 +34,8 @@ unchanged.
 | Raw uncertainty events | 43,705 | 43,514 |
 | Grouped unique uncertainty records | 4,872 | 4,833 |
 | Diagnostics | 2 | 2 |
-| Analyzer elapsed time, sum of per-file runs | 6.644 s | 5.790 s |
-| Peak RSS, maximum across separate runs | 192,312 KiB | 192,848 KiB |
+| Analyzer elapsed time, sum of per-file runs | 6.644 s | 6.491 s |
+| Peak RSS, maximum across separate runs | 192,312 KiB | 192,924 KiB |
 | Objtool / ORC validation | Explicitly skipped; no ORC metadata | Objtool composite-object check passed; ORC sections present |
 | Separate `CONFIG_STACK_VALIDATION` | Not established by legacy record | Not configured by defconfig |
 
@@ -148,6 +148,10 @@ python3 evaluation/run_kernel_eval.py \
   --llvm /usr/lib/llvm-20/bin \
   --output evaluation/results/linux-v6.6.87/phase13-rerun \
   --jobs 2
+cp evaluation/results/linux-v6.6.87/phase13-rerun/raw-measurements.json \
+  evaluation/results/linux-v6.6.87/phase13/latest-rerun-measurements.json
+cp evaluation/results/linux-v6.6.87/phase13-rerun/build.log \
+  evaluation/results/linux-v6.6.87/phase13/latest-rerun-build.log
 python3 evaluation/compare_phase13.py
 ```
 
@@ -158,3 +162,7 @@ objtool pass; it does not build the full kernel or link/load a module. The
 comparison script checks source revision, file list, and config hash before
 creating [`phase13-before-after.json`](phase13-before-after.json). The original
 baseline data is preserved under [`../../baselines/phase9.0`](../../baselines/phase9.0).
+The latest rerun produced the same parsed schema-v4 reports as the prior
+post-install analysis; the equality check passed for all five files. Its fresh
+measurements and build log are preserved under `phase13/` and consumed by the
+website endpoint.
