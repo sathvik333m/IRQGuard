@@ -257,5 +257,27 @@ export interface KernelEvaluation {
     }
   }>
   interpretation: string
+  cycle_review?: {
+    status: string
+    input: { report: string; schema_version: number; sha256: string }
+    current_analysis: { status: string; reason: string }
+    findings: Array<{
+      finding_id: string
+      classification: string
+      archived_analyzer_category: string
+      archived_feasibility: string
+      cycle_path: string[]
+      edges: GraphEdge[]
+      source_file: string
+      functions: { source?: string; target?: string }
+      call_path: Array<{ caller?: string; callee?: string; file?: string; line?: number; column?: number }>
+      interrupt_evidence: { from_context?: string; to_context?: string; handler?: string | null; interpretation: string }
+      lock_operation_evidence: Array<{ api?: string; kind?: string; function?: string; lock?: { expression?: string; identity_status?: string }; location?: LocatedSource; arguments?: string[] }>
+      irq_state: { edge_state?: string; saved_flags_relation: string; interpretation: string }
+      uncertainties: Array<{ id: string; category: string; reason: string; source_file: string; line: string; explanation: string }>
+      reasons: string[]
+      manual_validation: string[]
+    }>
+  } | null
   precision_recall: Record<string, unknown> | null
 }

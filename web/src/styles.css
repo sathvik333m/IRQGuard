@@ -251,6 +251,11 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .inspector-facts span { color: var(--text-dim); }
 .inspector-facts strong { overflow-wrap: anywhere; color: var(--text-secondary); font-weight: 450; }
 .inspector-evidence-list { display: flex; flex-direction: column; gap: 7px; }
+.finding-uncertainties { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-raised); }
+.finding-uncertainties > strong { color: var(--text); font-size: 11px; }
+.finding-uncertainties article { display: flex; flex-direction: column; gap: 3px; padding-top: 7px; border-top: 1px solid var(--line-soft); }
+.finding-uncertainties code { color: var(--amber); font-size: 10px; }
+.finding-uncertainties small { color: var(--text-secondary); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
 .inspector-source-row, .inspector-context-row { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 8px; border: 1px solid var(--line-soft); border-radius: 4px; background: var(--surface-raised); color: var(--accent-strong); text-align: left; }
 .inspector-source-row { cursor: pointer; }
 .inspector-source-row:hover { border-color: var(--accent); }
@@ -725,6 +730,21 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .kernel-eval-details dd code { font-size: 10px; }
 .kernel-eval-build-note { margin-top: 14px; }
 .kernel-eval-footnote { margin: 13px 0 0; color: var(--text-dim); font-size: 11px; line-height: 1.55; }
+.kernel-cycle-review { margin-top: 16px; padding: 0 14px 14px; }
+.kernel-cycle-review > .panel-heading { padding: 12px 0 10px; }
+.kernel-cycle-review .panel-heading h2 { margin: 3px 0 0; font-size: 15px; }
+.kernel-cycle-caveat { margin: 0 0 12px; color: var(--amber); font-size: 12px; line-height: 1.55; }
+.kernel-cycle-list { display: flex; flex-direction: column; gap: 9px; }
+.kernel-cycle-list article { padding: 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.kernel-cycle-title { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.kernel-cycle-title > strong { color: var(--text); font-size: 12px; }
+.kernel-cycle-title > code { color: var(--text-dim); font-size: 10px; }
+.kernel-cycle-list p { margin: 8px 0 0; color: var(--text-secondary); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.kernel-cycle-list p b { color: var(--text); font-weight: 550; }
+.kernel-cycle-list ul, .kernel-cycle-list ol { margin: 8px 0 0; padding-left: 18px; color: var(--text-secondary); font-size: 10px; line-height: 1.55; }
+.kernel-cycle-list details { margin-top: 8px; color: var(--text-secondary); font-size: 11px; }
+.kernel-cycle-list summary { cursor: pointer; color: var(--blue); }
+.kernel-review-provenance { display: block; margin-top: 10px; color: var(--text-dim); font-size: 10px; overflow-wrap: anywhere; }
 .kernel-eval-state { min-height: 130px; display: flex; align-items: center; gap: 9px; color: var(--text-secondary); }
 .cli-guide-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 330px); gap: 28px; align-items: start; }
 .cli-command-list { min-width: 0; border-top: 1px solid var(--line); }

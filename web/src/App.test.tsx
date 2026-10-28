@@ -31,6 +31,42 @@ describe('IRQGuard workspace states', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/local irqguard api is unavailable/i)
   })
 
+  it('shows the archived kernel cycle classifications and linked evidence from the review response', async () => {
+    const evaluation = {
+      status: 'completed',
+      kernel: { release_tag: 'v6.6.87', commit: '814637ca257f4faf57a73fd4e38888cce88b5911' },
+      configuration: { subsystem: 'e1000e', architecture: 'x86_64', config_base: 'x86_64_defconfig', compiler_mode: 'Clang', build_limitations: [] },
+      aggregate: { files_requested: 5, files_analyzed: 5, files_skipped_or_failed: 0, functions: 396, lock_operations: 12, lock_dependencies: 6, interrupt_graph_edges: 6, interrupt_cycles: 3, uncertainties: 43705, diagnostics: 2, elapsed_seconds_sum: 6.644, peak_rss_kib_max: 192312 },
+      translation_units: [], precision_recall: null,
+      interpretation: 'Archived run predates the lock API fix.',
+      cycle_review: {
+        status: 'current_analysis_not_recomputed',
+        input: { report: 'netdev.json', schema_version: 3, sha256: 'abc123' },
+        current_analysis: { status: 'unavailable', reason: 'Pinned source is not present.' },
+        findings: [{
+          finding_id: 'C-1', classification: 'inconclusive', archived_analyzer_category: 'inconclusive_analysis', archived_feasibility: 'inconclusive',
+          cycle_path: ['lock at 501', 'lock at 501'], source_file: '/kernel/netdev.c', functions: { source: 'rx_cleaner', target: 'clock_helper' },
+          call_path: [{ caller: 'rx_cleaner', callee: 'clock_helper', file: '/kernel/netdev.c', line: 1032 }],
+          edges: [{ from_location: { expansion: { file: '/kernel/netdev.c', line: 501 } } }],
+          interrupt_evidence: { from_context: 'process', to_context: 'process', handler: null, interpretation: 'No handler evidence is attached.' },
+          lock_operation_evidence: [], irq_state: { edge_state: 'not_applicable', saved_flags_relation: 'unresolved', interpretation: 'Saved state unknown.' },
+          uncertainties: [{ id: 'U-1', category: 'lock_identity', reason: 'unknown lock', source_file: '/kernel/netdev.c', line: '501', explanation: 'Identity unavailable.' }],
+          reasons: ['Archived edge is an unresolved self-edge.'], manual_validation: ['Rerun with the pinned tree.'],
+        }],
+      },
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
+      ? jsonResponse(health)
+      : String(input).endsWith('/evaluations/linux-v6.6.87') ? jsonResponse(evaluation) : jsonResponse({ analyses: [] })))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Kernel evaluation' }))
+    expect(await screen.findByRole('heading', { name: 'Candidate validation' })).toBeInTheDocument()
+    expect(screen.getByText('inconclusive')).toBeInTheDocument()
+    expect(screen.getByText(/rx_cleaner → clock_helper/)).toBeInTheDocument()
+    expect(screen.getByText(/U-1 lock_identity/)).toBeInTheDocument()
+    expect(screen.getByText(/Pinned source is not present/)).toBeInTheDocument()
+  })
+
   it('allows the desktop sidebar to collapse without hiding its navigation controls', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
       ? jsonResponse(health) : jsonResponse({ analyses: [] })))

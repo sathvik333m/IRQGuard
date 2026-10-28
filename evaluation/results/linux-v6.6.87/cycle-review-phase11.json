@@ -1,0 +1,1711 @@
+{
+  "schema_version": 1,
+  "review_kind": "retrospective_archived_cycle_review",
+  "status": "current_analysis_not_recomputed",
+  "kernel": {
+    "release_tag": "v6.6.87",
+    "commit": "814637ca257f4faf57a73fd4e38888cce88b5911"
+  },
+  "input": {
+    "report": "evaluation/results/linux-v6.6.87/reports/netdev.json",
+    "schema_version": 3,
+    "sha256": "1413deebf409eb04a7c0a22e7eae35fc7d33897f69fd080bafa3095f54ba489c",
+    "uncertainty_ledger": "evaluation/results/linux-v6.6.87/uncertainty-summary-phase10.json"
+  },
+  "current_analysis": {
+    "status": "unavailable",
+    "reason": "The pinned Linux source checkout is not present in the current environment; archived findings predate the Phase 9 extraction fix."
+  },
+  "classification_definitions": {
+    "candidate": "A modeled cycle exists, but feasibility has not been assessed enough to support a stronger conclusion.",
+    "potentially_feasible": "Source and execution evidence support a plausible conflicting execution, while material uncertainties remain.",
+    "inconclusive": "Missing, unresolved, or stale evidence prevents a defensible feasibility conclusion.",
+    "rejected_by_feasibility_checks": "A documented contradiction or proven modeled constraint rules out the scenario under stated assumptions.",
+    "independently_confirmed": "Independent evidence establishes a deadlock under clearly stated conditions."
+  },
+  "findings": [
+    {
+      "finding_id": "C-1",
+      "classification": "inconclusive",
+      "classification_definition": "The archived graph has a reported cycle, but unresolved identity, state, or stale-input evidence prevents a defensible feasibility conclusion.",
+      "archived_analyzer_category": "inconclusive_analysis",
+      "archived_feasibility": "inconclusive",
+      "cycle_path": [
+        "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3",
+        "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3"
+      ],
+      "edges": [
+        {
+          "from_lock": "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3",
+          "to_lock": "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3",
+          "kind": "regular",
+          "from_context": "process",
+          "to_context": "process",
+          "source_function": "e1000_clean_rx_irq",
+          "target_function": "e1000e_systim_to_hwtstamp",
+          "handler": "",
+          "irq_state": "not_applicable",
+          "certainty": "uncertain",
+          "feasibility": "unrefined",
+          "feasibility_reason": "",
+          "from_location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 381,
+              "column": 24,
+              "valid": true
+            }
+          },
+          "to_location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 381,
+              "column": 24,
+              "valid": true
+            }
+          },
+          "registration_location": {
+            "is_macro": false,
+            "expansion": {
+              "file": "",
+              "line": 0,
+              "column": 0,
+              "valid": false
+            },
+            "spelling": {
+              "file": "",
+              "line": 0,
+              "column": 0,
+              "valid": false
+            }
+          },
+          "source_provenance": [
+            {
+              "function": "e1000_clean_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_receive_skb",
+              "callee": "e1000e_rx_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000e_rx_hwtstamp",
+              "callee": "e1000e_systim_to_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_clean_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            }
+          ],
+          "target_provenance": [
+            {
+              "function": "e1000_clean_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_receive_skb",
+              "callee": "e1000e_rx_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000e_rx_hwtstamp",
+              "callee": "e1000e_systim_to_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_clean_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1032,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+      "functions": {
+        "source": "e1000_clean_rx_irq",
+        "target": "e1000e_systim_to_hwtstamp"
+      },
+      "call_path": [
+        {
+          "caller": "e1000_clean_rx_irq",
+          "callee": "e1000_receive_skb",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 1032,
+          "column": 3
+        },
+        {
+          "caller": "e1000_receive_skb",
+          "callee": "e1000e_rx_hwtstamp",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 558,
+          "column": 2
+        },
+        {
+          "caller": "e1000e_rx_hwtstamp",
+          "callee": "e1000e_systim_to_hwtstamp",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 539,
+          "column": 2
+        }
+      ],
+      "interrupt_evidence": {
+        "from_context": "process",
+        "to_context": "process",
+        "handler": null,
+        "registration_location": {
+          "is_macro": false,
+          "expansion": {
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "valid": false
+          },
+          "spelling": {
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "valid": false
+          }
+        },
+        "interpretation": "No handler evidence is attached to this cycle edge. Other registrations in the translation unit do not establish that this call path is a hard-IRQ handler path."
+      },
+      "lock_operation_evidence": [
+        {
+          "api": "_raw_spin_lock_irqsave",
+          "kind": "lock_acquire_irqsave",
+          "function": "e1000e_systim_to_hwtstamp",
+          "lock": {
+            "expression": "spinlock_check(&adapter->systim_lock)",
+            "syntax": "call",
+            "identity_template": "unknown@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "identity_status": "unresolved",
+            "location": {
+              "is_macro": true,
+              "expansion": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "spelling": {
+                "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 381,
+                "column": 24,
+                "valid": true
+              }
+            }
+          },
+          "location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 244,
+              "column": 11,
+              "valid": true
+            }
+          },
+          "arguments": [
+            "spinlock_check(&adapter->systim_lock)"
+          ]
+        },
+        {
+          "api": "spin_unlock_irqrestore",
+          "kind": "lock_release_irqrestore",
+          "function": "e1000e_systim_to_hwtstamp",
+          "lock": {
+            "expression": "&adapter->systim_lock",
+            "syntax": "unary",
+            "identity_template": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+            "identity_status": "symbolic",
+            "location": {
+              "is_macro": false,
+              "expansion": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 25,
+                "valid": true
+              },
+              "spelling": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 25,
+                "valid": true
+              }
+            }
+          },
+          "location": {
+            "is_macro": false,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 503,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 503,
+              "column": 2,
+              "valid": true
+            }
+          },
+          "arguments": [
+            "&adapter->systim_lock",
+            "flags"
+          ]
+        }
+      ],
+      "irq_state": {
+        "edge_state": "not_applicable",
+        "saved_flags_relation": "unresolved in archived Phase 9 report",
+        "interpretation": "The report does not establish whether local IRQs were previously enabled or disabled, nor prove a saved-state restoration relation for this cycle."
+      },
+      "uncertainty_record_ids": [
+        "U-0123342d4203857b",
+        "U-e91c7fc33aae346a",
+        "U-ae81ae3d6b7b0c7d",
+        "U-c9c5f66021b49e8c",
+        "U-ab5b30b1ab3bba82"
+      ],
+      "uncertainties": [
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-0123342d4203857b",
+          "category": "unresolved_call",
+          "reason": "missing_body",
+          "analysis_stage": "interprocedural",
+          "impact": "lock_held_across_unknown_call; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "A called function body is unavailable, so its effects cannot be summarized.",
+          "root_cause": "call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "e1000e_systim_to_hwtstamp",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "e1000e_systim_to_hwtstamp: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)",
+            "e1000e_rx_hwtstamp: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)",
+            "e1000_receive_skb: via call e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-e91c7fc33aae346a",
+          "category": "lock_identity",
+          "reason": "lock_expression_unresolved",
+          "analysis_stage": "lock_extraction",
+          "impact": "lock_identity_and_edges; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "The lock expression could not be mapped to a stable lock identity.",
+          "root_cause": "lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "",
+          "enclosing_function": "e1000e_systim_to_hwtstamp",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "e1000e_systim_to_hwtstamp: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "e1000e_rx_hwtstamp: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "e1000_receive_skb: via call e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-ae81ae3d6b7b0c7d",
+          "category": "interrupt_state",
+          "reason": "saved_flags_unresolved",
+          "analysis_stage": "interrupt_state",
+          "impact": "interrupt_state; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "The irqsave operation was found, but its saved interrupt-state value is unknown.",
+          "root_cause": "irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "",
+          "enclosing_function": "e1000e_systim_to_hwtstamp@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:494:13",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "IRQ state e1000_clean_rx_irq@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:914:13: via e1000_receive_skb at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000_receive_skb@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:552:13: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000e_tx_hwtstamp_work@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1172:13: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1186:3: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-c9c5f66021b49e8c",
+          "category": "interrupt_state",
+          "reason": "unknown_call_irq_effect",
+          "analysis_stage": "interrupt_state",
+          "impact": "interrupt_state; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "An unmodeled call may change interrupt state.",
+          "root_cause": "unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "e1000e_systim_to_hwtstamp@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:494:13",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "IRQ state e1000_clean_rx_irq@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:914:13: via e1000_receive_skb at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000_receive_skb@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:552:13: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000e_tx_hwtstamp_work@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1172:13: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1186:3: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-ab5b30b1ab3bba82",
+          "category": "unsupported_api",
+          "reason": "api_semantics_missing",
+          "analysis_stage": "api_model",
+          "impact": "heuristic_name_match_may_be_false_positive; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "An API name matched a lock/IRQ warning heuristic, but its semantics are not modeled.",
+          "root_cause": "possibly unsupported lock/IRQ API 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "",
+          "event_count": 1,
+          "propagated_event_count": 0,
+          "direct_event_count": 1,
+          "has_repeated_propagation": false,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "possibly unsupported lock/IRQ API 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2; add an explicit API model if applicable"
+          ]
+        }
+      ],
+      "reasons": [
+        "The archived graph contains one edge whose source and destination are the same unresolved lock key; this is not evidence of two distinct lock acquisitions forming a real order cycle.",
+        "The edge is marked uncertain and unrefined, and its lock acquisition identity is unresolved while the matching irqrestore release is represented by a different symbolic expression.",
+        "The archived edge is process-to-process, has no handler target or registration location, and does not encode an interrupt-context conflict.",
+        "The irqsave saved-state relation is unresolved in the archived uncertainty ledger, so no defensible IRQ-state feasibility conclusion follows.",
+        "The preserved report predates the Phase 9 extraction fix; the pinned Linux checkout is unavailable for a fresh run and direct source-line verification."
+      ],
+      "manual_validation": [
+        "Rerun the analyzer on the exact pinned v6.6.87 checkout with the post-Phase-9 binary.",
+        "Inspect the macro-expanded acquisition and matching release to verify both resolve to adapter->systim_lock and that flags are saved/restored consistently.",
+        "Inspect all call-site conditions and execution contexts before asserting a conflicting acquisition path.",
+        "Confirm any suspected cross-context contention against handler registration and driver execution semantics; do not infer a bug from this archived self-edge."
+      ],
+      "review_notes": [
+        "The archived graph contains one edge whose source and destination are the same unresolved lock key; this is not evidence of two distinct lock acquisitions forming a real order cycle.",
+        "The edge is marked uncertain and unrefined, and its lock acquisition identity is unresolved while the matching irqrestore release is represented by a different symbolic expression.",
+        "The archived edge is process-to-process, has no handler target or registration location, and does not encode an interrupt-context conflict.",
+        "The irqsave saved-state relation is unresolved in the archived uncertainty ledger, so no defensible IRQ-state feasibility conclusion follows.",
+        "The preserved report predates the Phase 9 extraction fix; the pinned Linux checkout is unavailable for a fresh run and direct source-line verification."
+      ],
+      "archived_edge_is_self_edge": true
+    },
+    {
+      "finding_id": "C-2",
+      "classification": "inconclusive",
+      "classification_definition": "The archived graph has a reported cycle, but unresolved identity, state, or stale-input evidence prevents a defensible feasibility conclusion.",
+      "archived_analyzer_category": "inconclusive_analysis",
+      "archived_feasibility": "inconclusive",
+      "cycle_path": [
+        "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1457:3",
+        "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1457:3"
+      ],
+      "edges": [
+        {
+          "from_lock": "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1457:3",
+          "to_lock": "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1457:3",
+          "kind": "regular",
+          "from_context": "process",
+          "to_context": "process",
+          "source_function": "e1000_clean_rx_irq_ps",
+          "target_function": "e1000e_systim_to_hwtstamp",
+          "handler": "",
+          "irq_state": "not_applicable",
+          "certainty": "uncertain",
+          "feasibility": "unrefined",
+          "feasibility_reason": "",
+          "from_location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 381,
+              "column": 24,
+              "valid": true
+            }
+          },
+          "to_location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 381,
+              "column": 24,
+              "valid": true
+            }
+          },
+          "registration_location": {
+            "is_macro": false,
+            "expansion": {
+              "file": "",
+              "line": 0,
+              "column": 0,
+              "valid": false
+            },
+            "spelling": {
+              "file": "",
+              "line": 0,
+              "column": 0,
+              "valid": false
+            }
+          },
+          "source_provenance": [
+            {
+              "function": "e1000_clean_rx_irq_ps",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_receive_skb",
+              "callee": "e1000e_rx_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000e_rx_hwtstamp",
+              "callee": "e1000e_systim_to_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_clean_rx_irq_ps",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            }
+          ],
+          "target_provenance": [
+            {
+              "function": "e1000_clean_rx_irq_ps",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_receive_skb",
+              "callee": "e1000e_rx_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000e_rx_hwtstamp",
+              "callee": "e1000e_systim_to_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_clean_rx_irq_ps",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1457,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+      "functions": {
+        "source": "e1000_clean_rx_irq_ps",
+        "target": "e1000e_systim_to_hwtstamp"
+      },
+      "call_path": [
+        {
+          "caller": "e1000_clean_rx_irq_ps",
+          "callee": "e1000_receive_skb",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 1457,
+          "column": 3
+        },
+        {
+          "caller": "e1000_receive_skb",
+          "callee": "e1000e_rx_hwtstamp",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 558,
+          "column": 2
+        },
+        {
+          "caller": "e1000e_rx_hwtstamp",
+          "callee": "e1000e_systim_to_hwtstamp",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 539,
+          "column": 2
+        }
+      ],
+      "interrupt_evidence": {
+        "from_context": "process",
+        "to_context": "process",
+        "handler": null,
+        "registration_location": {
+          "is_macro": false,
+          "expansion": {
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "valid": false
+          },
+          "spelling": {
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "valid": false
+          }
+        },
+        "interpretation": "No handler evidence is attached to this cycle edge. Other registrations in the translation unit do not establish that this call path is a hard-IRQ handler path."
+      },
+      "lock_operation_evidence": [
+        {
+          "api": "_raw_spin_lock_irqsave",
+          "kind": "lock_acquire_irqsave",
+          "function": "e1000e_systim_to_hwtstamp",
+          "lock": {
+            "expression": "spinlock_check(&adapter->systim_lock)",
+            "syntax": "call",
+            "identity_template": "unknown@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "identity_status": "unresolved",
+            "location": {
+              "is_macro": true,
+              "expansion": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "spelling": {
+                "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 381,
+                "column": 24,
+                "valid": true
+              }
+            }
+          },
+          "location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 244,
+              "column": 11,
+              "valid": true
+            }
+          },
+          "arguments": [
+            "spinlock_check(&adapter->systim_lock)"
+          ]
+        },
+        {
+          "api": "spin_unlock_irqrestore",
+          "kind": "lock_release_irqrestore",
+          "function": "e1000e_systim_to_hwtstamp",
+          "lock": {
+            "expression": "&adapter->systim_lock",
+            "syntax": "unary",
+            "identity_template": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+            "identity_status": "symbolic",
+            "location": {
+              "is_macro": false,
+              "expansion": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 25,
+                "valid": true
+              },
+              "spelling": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 25,
+                "valid": true
+              }
+            }
+          },
+          "location": {
+            "is_macro": false,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 503,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 503,
+              "column": 2,
+              "valid": true
+            }
+          },
+          "arguments": [
+            "&adapter->systim_lock",
+            "flags"
+          ]
+        }
+      ],
+      "irq_state": {
+        "edge_state": "not_applicable",
+        "saved_flags_relation": "unresolved in archived Phase 9 report",
+        "interpretation": "The report does not establish whether local IRQs were previously enabled or disabled, nor prove a saved-state restoration relation for this cycle."
+      },
+      "uncertainty_record_ids": [
+        "U-0123342d4203857b",
+        "U-e91c7fc33aae346a",
+        "U-ae81ae3d6b7b0c7d",
+        "U-c9c5f66021b49e8c",
+        "U-ab5b30b1ab3bba82"
+      ],
+      "uncertainties": [
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-0123342d4203857b",
+          "category": "unresolved_call",
+          "reason": "missing_body",
+          "analysis_stage": "interprocedural",
+          "impact": "lock_held_across_unknown_call; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "A called function body is unavailable, so its effects cannot be summarized.",
+          "root_cause": "call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "e1000e_systim_to_hwtstamp",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "e1000e_systim_to_hwtstamp: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)",
+            "e1000e_rx_hwtstamp: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)",
+            "e1000_receive_skb: via call e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-e91c7fc33aae346a",
+          "category": "lock_identity",
+          "reason": "lock_expression_unresolved",
+          "analysis_stage": "lock_extraction",
+          "impact": "lock_identity_and_edges; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "The lock expression could not be mapped to a stable lock identity.",
+          "root_cause": "lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "",
+          "enclosing_function": "e1000e_systim_to_hwtstamp",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "e1000e_systim_to_hwtstamp: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "e1000e_rx_hwtstamp: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "e1000_receive_skb: via call e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-ae81ae3d6b7b0c7d",
+          "category": "interrupt_state",
+          "reason": "saved_flags_unresolved",
+          "analysis_stage": "interrupt_state",
+          "impact": "interrupt_state; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "The irqsave operation was found, but its saved interrupt-state value is unknown.",
+          "root_cause": "irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "",
+          "enclosing_function": "e1000e_systim_to_hwtstamp@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:494:13",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "IRQ state e1000_clean_rx_irq@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:914:13: via e1000_receive_skb at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000_receive_skb@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:552:13: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000e_tx_hwtstamp_work@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1172:13: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1186:3: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-c9c5f66021b49e8c",
+          "category": "interrupt_state",
+          "reason": "unknown_call_irq_effect",
+          "analysis_stage": "interrupt_state",
+          "impact": "interrupt_state; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "An unmodeled call may change interrupt state.",
+          "root_cause": "unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "e1000e_systim_to_hwtstamp@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:494:13",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "IRQ state e1000_clean_rx_irq@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:914:13: via e1000_receive_skb at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000_receive_skb@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:552:13: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000e_tx_hwtstamp_work@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1172:13: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1186:3: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-ab5b30b1ab3bba82",
+          "category": "unsupported_api",
+          "reason": "api_semantics_missing",
+          "analysis_stage": "api_model",
+          "impact": "heuristic_name_match_may_be_false_positive; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "An API name matched a lock/IRQ warning heuristic, but its semantics are not modeled.",
+          "root_cause": "possibly unsupported lock/IRQ API 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "",
+          "event_count": 1,
+          "propagated_event_count": 0,
+          "direct_event_count": 1,
+          "has_repeated_propagation": false,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "possibly unsupported lock/IRQ API 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2; add an explicit API model if applicable"
+          ]
+        }
+      ],
+      "reasons": [
+        "The archived graph contains one edge whose source and destination are the same unresolved lock key; this is not evidence of two distinct lock acquisitions forming a real order cycle.",
+        "The edge is marked uncertain and unrefined, and its lock acquisition identity is unresolved while the matching irqrestore release is represented by a different symbolic expression.",
+        "The archived edge is process-to-process, has no handler target or registration location, and does not encode an interrupt-context conflict.",
+        "The irqsave saved-state relation is unresolved in the archived uncertainty ledger, so no defensible IRQ-state feasibility conclusion follows.",
+        "The preserved report predates the Phase 9 extraction fix; the pinned Linux checkout is unavailable for a fresh run and direct source-line verification."
+      ],
+      "manual_validation": [
+        "Rerun the analyzer on the exact pinned v6.6.87 checkout with the post-Phase-9 binary.",
+        "Inspect the macro-expanded acquisition and matching release to verify both resolve to adapter->systim_lock and that flags are saved/restored consistently.",
+        "Inspect all call-site conditions and execution contexts before asserting a conflicting acquisition path.",
+        "Confirm any suspected cross-context contention against handler registration and driver execution semantics; do not infer a bug from this archived self-edge."
+      ],
+      "review_notes": [
+        "The archived graph contains one edge whose source and destination are the same unresolved lock key; this is not evidence of two distinct lock acquisitions forming a real order cycle.",
+        "The edge is marked uncertain and unrefined, and its lock acquisition identity is unresolved while the matching irqrestore release is represented by a different symbolic expression.",
+        "The archived edge is process-to-process, has no handler target or registration location, and does not encode an interrupt-context conflict.",
+        "The irqsave saved-state relation is unresolved in the archived uncertainty ledger, so no defensible IRQ-state feasibility conclusion follows.",
+        "The preserved report predates the Phase 9 extraction fix; the pinned Linux checkout is unavailable for a fresh run and direct source-line verification."
+      ],
+      "archived_edge_is_self_edge": true
+    },
+    {
+      "finding_id": "C-3",
+      "classification": "inconclusive",
+      "classification_definition": "The archived graph has a reported cycle, but unresolved identity, state, or stale-input evidence prevents a defensible feasibility conclusion.",
+      "archived_analyzer_category": "inconclusive_analysis",
+      "archived_feasibility": "inconclusive",
+      "cycle_path": [
+        "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1637:3",
+        "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1637:3"
+      ],
+      "edges": [
+        {
+          "from_lock": "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1637:3",
+          "to_lock": "unknown-context@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2|call@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1637:3",
+          "kind": "regular",
+          "from_context": "process",
+          "to_context": "process",
+          "source_function": "e1000_clean_jumbo_rx_irq",
+          "target_function": "e1000e_systim_to_hwtstamp",
+          "handler": "",
+          "irq_state": "not_applicable",
+          "certainty": "uncertain",
+          "feasibility": "unrefined",
+          "feasibility_reason": "",
+          "from_location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 381,
+              "column": 24,
+              "valid": true
+            }
+          },
+          "to_location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 381,
+              "column": 24,
+              "valid": true
+            }
+          },
+          "registration_location": {
+            "is_macro": false,
+            "expansion": {
+              "file": "",
+              "line": 0,
+              "column": 0,
+              "valid": false
+            },
+            "spelling": {
+              "file": "",
+              "line": 0,
+              "column": 0,
+              "valid": false
+            }
+          },
+          "source_provenance": [
+            {
+              "function": "e1000_clean_jumbo_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_receive_skb",
+              "callee": "e1000e_rx_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000e_rx_hwtstamp",
+              "callee": "e1000e_systim_to_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_clean_jumbo_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            }
+          ],
+          "target_provenance": [
+            {
+              "function": "e1000_clean_jumbo_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_receive_skb",
+              "callee": "e1000e_rx_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 558,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000e_rx_hwtstamp",
+              "callee": "e1000e_systim_to_hwtstamp",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 539,
+                  "column": 2,
+                  "valid": true
+                }
+              }
+            },
+            {
+              "function": "e1000_clean_jumbo_rx_irq",
+              "callee": "e1000_receive_skb",
+              "location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 1637,
+                  "column": 3,
+                  "valid": true
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+      "functions": {
+        "source": "e1000_clean_jumbo_rx_irq",
+        "target": "e1000e_systim_to_hwtstamp"
+      },
+      "call_path": [
+        {
+          "caller": "e1000_clean_jumbo_rx_irq",
+          "callee": "e1000_receive_skb",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 1637,
+          "column": 3
+        },
+        {
+          "caller": "e1000_receive_skb",
+          "callee": "e1000e_rx_hwtstamp",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 558,
+          "column": 2
+        },
+        {
+          "caller": "e1000e_rx_hwtstamp",
+          "callee": "e1000e_systim_to_hwtstamp",
+          "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": 539,
+          "column": 2
+        }
+      ],
+      "interrupt_evidence": {
+        "from_context": "process",
+        "to_context": "process",
+        "handler": null,
+        "registration_location": {
+          "is_macro": false,
+          "expansion": {
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "valid": false
+          },
+          "spelling": {
+            "file": "",
+            "line": 0,
+            "column": 0,
+            "valid": false
+          }
+        },
+        "interpretation": "No handler evidence is attached to this cycle edge. Other registrations in the translation unit do not establish that this call path is a hard-IRQ handler path."
+      },
+      "lock_operation_evidence": [
+        {
+          "api": "_raw_spin_lock_irqsave",
+          "kind": "lock_acquire_irqsave",
+          "function": "e1000e_systim_to_hwtstamp",
+          "lock": {
+            "expression": "spinlock_check(&adapter->systim_lock)",
+            "syntax": "call",
+            "identity_template": "unknown@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "identity_status": "unresolved",
+            "location": {
+              "is_macro": true,
+              "expansion": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "spelling": {
+                "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 381,
+                "column": 24,
+                "valid": true
+              }
+            }
+          },
+          "location": {
+            "is_macro": true,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 501,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/include/linux/spinlock.h",
+              "line": 244,
+              "column": 11,
+              "valid": true
+            }
+          },
+          "arguments": [
+            "spinlock_check(&adapter->systim_lock)"
+          ]
+        },
+        {
+          "api": "spin_unlock_irqrestore",
+          "kind": "lock_release_irqrestore",
+          "function": "e1000e_systim_to_hwtstamp",
+          "lock": {
+            "expression": "&adapter->systim_lock",
+            "syntax": "unary",
+            "identity_template": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+            "identity_status": "symbolic",
+            "location": {
+              "is_macro": false,
+              "expansion": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 25,
+                "valid": true
+              },
+              "spelling": {
+                "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 25,
+                "valid": true
+              }
+            }
+          },
+          "location": {
+            "is_macro": false,
+            "expansion": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 503,
+              "column": 2,
+              "valid": true
+            },
+            "spelling": {
+              "file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+              "line": 503,
+              "column": 2,
+              "valid": true
+            }
+          },
+          "arguments": [
+            "&adapter->systim_lock",
+            "flags"
+          ]
+        }
+      ],
+      "irq_state": {
+        "edge_state": "not_applicable",
+        "saved_flags_relation": "unresolved in archived Phase 9 report",
+        "interpretation": "The report does not establish whether local IRQs were previously enabled or disabled, nor prove a saved-state restoration relation for this cycle."
+      },
+      "uncertainty_record_ids": [
+        "U-0123342d4203857b",
+        "U-e91c7fc33aae346a",
+        "U-ae81ae3d6b7b0c7d",
+        "U-c9c5f66021b49e8c",
+        "U-ab5b30b1ab3bba82"
+      ],
+      "uncertainties": [
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-0123342d4203857b",
+          "category": "unresolved_call",
+          "reason": "missing_body",
+          "analysis_stage": "interprocedural",
+          "impact": "lock_held_across_unknown_call; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "A called function body is unavailable, so its effects cannot be summarized.",
+          "root_cause": "call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "e1000e_systim_to_hwtstamp",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "e1000e_systim_to_hwtstamp: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)",
+            "e1000e_rx_hwtstamp: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)",
+            "e1000_receive_skb: via call e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: call to external or unavailable body 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2 while holding 1 lock(s)"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-e91c7fc33aae346a",
+          "category": "lock_identity",
+          "reason": "lock_expression_unresolved",
+          "analysis_stage": "lock_extraction",
+          "impact": "lock_identity_and_edges; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "The lock expression could not be mapped to a stable lock identity.",
+          "root_cause": "lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "",
+          "enclosing_function": "e1000e_systim_to_hwtstamp",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "e1000e_systim_to_hwtstamp: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "e1000e_rx_hwtstamp: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "e1000_receive_skb: via call e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via call e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: lock identity unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-ae81ae3d6b7b0c7d",
+          "category": "interrupt_state",
+          "reason": "saved_flags_unresolved",
+          "analysis_stage": "interrupt_state",
+          "impact": "interrupt_state; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "The irqsave operation was found, but its saved interrupt-state value is unknown.",
+          "root_cause": "irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "",
+          "enclosing_function": "e1000e_systim_to_hwtstamp@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:494:13",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "IRQ state e1000_clean_rx_irq@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:914:13: via e1000_receive_skb at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000_receive_skb@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:552:13: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000e_tx_hwtstamp_work@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1172:13: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1186:3: irqsave flags argument unresolved at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-c9c5f66021b49e8c",
+          "category": "interrupt_state",
+          "reason": "unknown_call_irq_effect",
+          "analysis_stage": "interrupt_state",
+          "impact": "interrupt_state; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "An unmodeled call may change interrupt state.",
+          "root_cause": "unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "e1000e_systim_to_hwtstamp@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:494:13",
+          "event_count": 7,
+          "propagated_event_count": 6,
+          "direct_event_count": 1,
+          "has_repeated_propagation": true,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "IRQ state e1000_clean_rx_irq@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:914:13: via e1000_receive_skb at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1032:3: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000_receive_skb@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:552:13: via e1000e_rx_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:558:2: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:539:2: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+            "IRQ state e1000e_tx_hwtstamp_work@/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1172:13: via e1000e_systim_to_hwtstamp at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:1186:3: unmodeled call may alter IRQ state: 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2"
+          ]
+        },
+        {
+          "translation_unit": "netdev.json",
+          "id": "U-ab5b30b1ab3bba82",
+          "category": "unsupported_api",
+          "reason": "api_semantics_missing",
+          "analysis_stage": "api_model",
+          "impact": "heuristic_name_match_may_be_false_positive; candidate evidence overlaps this uncertainty source location",
+          "severity": "high",
+          "explanation": "An API name matched a lock/IRQ warning heuristic, but its semantics are not modeled.",
+          "root_cause": "possibly unsupported lock/IRQ API 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2",
+          "source_file": "/tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "line": "501",
+          "column": "2",
+          "api_or_expression": "spinlock_check",
+          "enclosing_function": "",
+          "event_count": 1,
+          "propagated_event_count": 0,
+          "direct_event_count": 1,
+          "has_repeated_propagation": false,
+          "unique_record": true,
+          "cause_identity_is_heuristic": true,
+          "associated_findings": [
+            "C-1",
+            "C-2",
+            "C-3"
+          ],
+          "example_events": [
+            "possibly unsupported lock/IRQ API 'spinlock_check' at /tmp/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:501:2; add an explicit API model if applicable"
+          ]
+        }
+      ],
+      "reasons": [
+        "The archived graph contains one edge whose source and destination are the same unresolved lock key; this is not evidence of two distinct lock acquisitions forming a real order cycle.",
+        "The edge is marked uncertain and unrefined, and its lock acquisition identity is unresolved while the matching irqrestore release is represented by a different symbolic expression.",
+        "The archived edge is process-to-process, has no handler target or registration location, and does not encode an interrupt-context conflict.",
+        "The irqsave saved-state relation is unresolved in the archived uncertainty ledger, so no defensible IRQ-state feasibility conclusion follows.",
+        "The preserved report predates the Phase 9 extraction fix; the pinned Linux checkout is unavailable for a fresh run and direct source-line verification."
+      ],
+      "manual_validation": [
+        "Rerun the analyzer on the exact pinned v6.6.87 checkout with the post-Phase-9 binary.",
+        "Inspect the macro-expanded acquisition and matching release to verify both resolve to adapter->systim_lock and that flags are saved/restored consistently.",
+        "Inspect all call-site conditions and execution contexts before asserting a conflicting acquisition path.",
+        "Confirm any suspected cross-context contention against handler registration and driver execution semantics; do not infer a bug from this archived self-edge."
+      ],
+      "review_notes": [
+        "The archived graph contains one edge whose source and destination are the same unresolved lock key; this is not evidence of two distinct lock acquisitions forming a real order cycle.",
+        "The edge is marked uncertain and unrefined, and its lock acquisition identity is unresolved while the matching irqrestore release is represented by a different symbolic expression.",
+        "The archived edge is process-to-process, has no handler target or registration location, and does not encode an interrupt-context conflict.",
+        "The irqsave saved-state relation is unresolved in the archived uncertainty ledger, so no defensible IRQ-state feasibility conclusion follows.",
+        "The preserved report predates the Phase 9 extraction fix; the pinned Linux checkout is unavailable for a fresh run and direct source-line verification."
+      ],
+      "archived_edge_is_self_edge": true
+    }
+  ]
+}

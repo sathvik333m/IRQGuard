@@ -130,6 +130,9 @@ if(BUILD_TESTING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/summarize_uncertainties.py
                 ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/results/linux-v6.6.87/reports
     )
+    add_test(NAME evaluation_phase11_cycle_review
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_review_cycles.py
+    )
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_test(NAME runtime_lock_evidence
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/runtime/test_runtime_evidence.py

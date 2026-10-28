@@ -439,11 +439,17 @@ async function route(request, response) {
   }
   if (request.method === 'GET' && pathname === '/api/v1/evaluations/linux-v6.6.87') {
     const measurementPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/raw-measurements.json')
+    const cycleReviewPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/cycle-review-phase11.json')
     let measurement
     try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
     catch (error) {
       if (error.code === 'ENOENT') throw new HttpError(404, 'The recorded Linux v6.6.87 evaluation is not available in this checkout')
       throw new HttpError(500, `Could not read the recorded kernel evaluation: ${error.message}`)
+    }
+    let cycleReview = null
+    try { cycleReview = JSON.parse(await readFile(cycleReviewPath, 'utf8')) }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the archived cycle review: ${error.message}`)
     }
     const aggregate = measurement.aggregate ?? {}
     const counts = aggregate.counts_sum_across_translation_units ?? {}
@@ -488,7 +494,8 @@ async function route(request, response) {
           diagnostics: unit.counts?.diagnostics ?? 0,
         },
       })),
-      interpretation: 'No reported cycles does not establish that the analyzed driver is deadlock-free. Source review found spin_lock_irqsave acquisitions missed by the current lock extractor.',
+      interpretation: 'These measurements and saved findings predate the Phase 9 lock extraction fix. The three archived netdev cycles are unresolved self-edges, not confirmed deadlocks. Current post-fix findings have not been recomputed in this checkout.',
+      cycle_review: cycleReview,
       precision_recall: measurement.precision_recall ?? null,
     }); return
   }
