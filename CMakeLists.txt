@@ -115,10 +115,20 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/kernel_lock_api_macros.c
     )
+    add_test(NAME analyzer_uncertainty_reporting
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_uncertainty_reporting.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/uncertainty_propagation.c
+    )
     add_test(NAME evaluation_summarizer
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_summarize.py
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interrupts.c
+    )
+    add_test(NAME evaluation_uncertainty_baseline
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_uncertainty_baseline.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/summarize_uncertainties.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/results/linux-v6.6.87/reports
     )
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_test(NAME runtime_lock_evidence

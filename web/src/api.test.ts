@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import fixture from './test-data/report.fixture.json'
 import { getSource, parseReport } from './api'
 
-describe('schema-v3 report adapter', () => {
+describe('schema-v3/v4 report adapter', () => {
   it('accepts optional missing collections as empty lists', () => {
     const report = parseReport({ schema_version: 3, analysis_kind: 'interrupt_aware_lock_analysis' })
     expect(report.functions).toEqual([])
@@ -11,7 +11,14 @@ describe('schema-v3 report adapter', () => {
   })
 
   it('rejects incompatible schema versions instead of guessing field meanings', () => {
-    expect(() => parseReport({ ...fixture, schema_version: 99 })).toThrow(/expects schema 3/)
+    expect(() => parseReport({ ...fixture, schema_version: 99 })).toThrow(/supports schemas 3 and 4/)
+  })
+
+  it('accepts structured uncertainty fields in schema 4 while retaining raw messages', () => {
+    const report = parseReport({ ...fixture, schema_version: 4,
+      uncertainties: ['raw evidence'], uncertainty_records: [{ id: 'U-1' }] })
+    expect(report.uncertainties).toEqual(['raw evidence'])
+    expect(report.uncertainty_records).toEqual([{ id: 'U-1' }])
   })
 
   it('rejects malformed report arrays and graph objects', () => {

@@ -102,7 +102,46 @@ export interface AnalysisReport {
   interrupt_lock_graph: { nodes: Array<{ lock_identity: string }>; edges: GraphEdge[] }
   interrupt_cycles: Finding[]
   uncertainties: string[]
+  uncertainty_records?: UncertaintyRecord[]
+  uncertainty_summary?: UncertaintySummary
   diagnostics: string[]
+}
+
+export interface UncertaintyRecord {
+  id: string
+  category: string
+  reason: string
+  analysis_stage: string
+  severity: 'high' | 'medium' | 'low' | string
+  impact: string
+  explanation: string
+  root_cause: string
+  source_location: SourcePoint
+  enclosing_function: string
+  api_or_expression: string
+  event_count: number
+  direct_event_count: number
+  propagated_event_count: number
+  has_repeated_propagation: boolean
+  unique_record: boolean
+  cause_identity_is_heuristic: boolean
+  associated_findings: string[]
+  example_events: string[]
+}
+
+export interface UncertaintySummary {
+  event_count: number
+  unique_record_count: number
+  propagated_event_count: number
+  high_impact_unique_records: number
+  lock_identity_events: number
+  interrupt_state_events: number
+  unresolved_call_events: number
+  candidate_affecting_unique_records: number
+  affected_candidate_count: number
+  proven_non_affecting_event_count: number
+  by_category: Record<string, { event_count: number; unique_record_count: number }>
+  by_stage: Record<string, { event_count: number; unique_record_count: number }>
 }
 
 export interface AnalysisSummary {

@@ -300,6 +300,14 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .activity-summary div { display: flex; flex-direction: column; gap: 3px; }
 .activity-summary span { color: var(--text-dim); font-size: 11px; }
 .activity-summary strong { color: var(--text); font-family: monospace; font-size: 11px; }
+.activity-uncertainty-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); }
+.activity-uncertainty-overview div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.activity-uncertainty-overview strong { color: var(--text); font: 600 12px monospace; }
+.activity-uncertainty-overview span, .activity-high-impact > span { color: var(--text-dim); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.activity-high-impact { display: grid; gap: 5px; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); }
+.activity-high-impact > div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.activity-high-impact strong { flex: 0 0 150px; color: var(--warning); font-size: 10px; text-transform: capitalize; }
+.activity-high-impact code { overflow: hidden; color: var(--text-dim); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .activity-filters { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-bottom: 1px solid var(--line-soft); }
 .activity-filters button { padding: 3px 5px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--text-dim); font-size: 11px; cursor: pointer; }
 .activity-filters button.selected { border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); }

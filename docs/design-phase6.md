@@ -28,7 +28,7 @@ out-of-tree output directory; source files are not edited.
 The runner records exact commands, tool versions, Kconfig SHA-256, build logs,
 and per-TU analyzer wall time, peak RSS, return status, parse diagnostics, raw
 JSON and extracted counts. It reports missing files/commands and parse errors
-explicitly. Only successful schema-v3 JSON contributes to aggregate counts.
+explicitly. Successful schema-v3 or schema-v4 JSON contributes to aggregate counts.
 Counts are summed across translation units and can include duplicated inline or
 header-derived facts; they should not be interpreted as unique whole-subsystem
 symbols.

@@ -36,6 +36,57 @@ separate basic, IRQ-disabled, and feasibility-refined executions. No precision
 or recall is reported because this evaluation has no independently labeled
 kernel ground truth. No unfamiliar cycle was validated as a kernel bug.
 
+## Phase 10 uncertainty review
+
+The Phase 9.0 reports were independently re-counted by
+[`summarize_uncertainties.py`](../../summarize_uncertainties.py). The raw event
+count remains **43,705**; no message was deleted or rewritten. Under the
+documented cause-key rules, they group into **4,872 structured records** across
+the five translation units. Of the raw messages, **38,771** carry an
+interprocedural or IRQ-summary propagation prefix. This grouping reduces the
+number of displayed causes by 88.85%, but it does not establish that each group
+is one independently verified program defect.
+
+| Category | Raw events | Unique records | Main interpretation |
+| --- | ---: | ---: | --- |
+| `unresolved_call` | 21,742 | 2,352 | 20,683 missing/unavailable bodies and 1,059 unresolved indirect calls |
+| `interrupt_state` | 21,734 | 2,356 | Unknown call effects, unresolved irqsave flags, and unmatched restores |
+| `handler_lifecycle` | 41 | 6 | `free_irq` teardown timing is not modeled |
+| `unsupported_api` | 154 | 154 | Name-based warnings; some may be false positives and require API review |
+| `lock_identity` | 30 | 2 | Two source sites with unresolved lock identity (`netdev.c:501`, `:3935`) |
+| `control_flow` | 4 | 2 | Two CFG event mapping misses and their propagated summary records |
+| **Total** | **43,705** | **4,872** | |
+
+| Analysis stage | Raw events | Unique records |
+| --- | ---: | ---: |
+| `interprocedural` | 21,742 | 2,352 |
+| `interrupt_state` | 21,734 | 2,356 |
+| `handler_discovery` | 41 | 6 |
+| `api_model` | 154 | 154 |
+| `lock_extraction` | 30 | 2 |
+| `control_flow` | 4 | 2 |
+
+There are **2,636 high-impact records** under the documented rule-based
+priority labels. This is not a probability or a calibrated risk score.
+
+The three saved inconclusive cycles are all associated by source-location
+evidence with five structured records at `netdev.c:501`: the missing body for
+`spinlock_check`, unresolved lock identity, unresolved irqsave flags, the
+unknown IRQ effect of `spinlock_check`, and its unsupported-API heuristic
+warning. There are 15 record-to-cycle associations (five records × three
+cycles). This explains why the cycles are inconclusive; it does not validate
+them as deadlocks. No uncertainty event is marked proven non-affecting because
+the saved data does not support that conclusion.
+
+The breakdown and per-record evidence are preserved in
+[`uncertainty-summary-phase10.json`](uncertainty-summary-phase10.json),
+including SHA-256 hashes of the five input reports. This is a retrospective
+classification of the schema-v3 saved reports. The original report files,
+43,705 raw strings, counts, cycle results, and Phase 9.0 checksums remain
+unchanged. The Phase 10 schema-v4 analyzer adds the same structured fields to
+new runs, but a fresh post-fix kernel run was not possible because the pinned
+source checkout is no longer present in this environment.
+
 ## Target and scope
 
 - Stable release tag: `v6.6.87`

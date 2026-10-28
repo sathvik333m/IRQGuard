@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Summarize analyzer reports into the three documented evaluation views.
 
-The views are projections over one schema-v3 report, not three separate
+The views are projections over one schema-v3 or schema-v4 report, not separate
 analyzer implementations or runs. Basic cycles are counted as cyclic strongly
 connected components in the interprocedural lock-dependency graph. The other
 two views use the analyzer's context graph and emitted feasibility categories.
@@ -14,6 +14,8 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
+
+from summarize_uncertainties import summarize as summarize_uncertainties
 
 
 def cyclic_scc_count(edges: list[dict[str, Any]]) -> int:
@@ -74,6 +76,18 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
     categories: dict[str, int] = defaultdict(int)
     for finding in report.get("interrupt_cycles", []):
         categories[str(finding.get("category", "unknown"))] += 1
+    uncertainty = report.get("uncertainty_summary")
+    if not isinstance(uncertainty, dict):
+        uncertainty = summarize_uncertainties(report)
+    uncertainty_counts = {
+        key: uncertainty.get(key)
+        for key in ("event_count", "unique_record_count", "propagated_event_count",
+                    "high_impact_unique_records", "lock_identity_events",
+                    "interrupt_state_events", "unresolved_call_events",
+                    "candidate_affecting_unique_records", "affected_candidate_count",
+                    "candidate_record_association_count", "proven_non_affecting_event_count",
+                    "by_category", "by_stage")
+    }
 
     basic = cyclic_scc_count(dependencies)
     interrupt_candidates = categories.get("interrupt_aware_candidate", 0)
@@ -100,8 +114,10 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
             "interrupt_graph_edges": len(edges),
             "interrupt_graph_nodes": len(graph.get("nodes", [])) if isinstance(graph, dict) else 0,
             "uncertainties": len(report.get("uncertainties", [])),
+            "unique_uncertainty_records": uncertainty_counts["unique_record_count"],
             "diagnostics": len(report.get("diagnostics", [])),
         },
+        "uncertainty_counts": uncertainty_counts,
         "basic_lock_cycle_view": {"cyclic_scc_count": basic},
         "interrupt_aware_view": interrupt_view,
         "feasibility_refined_view": refined,

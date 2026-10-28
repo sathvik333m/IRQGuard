@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory(prefix="irqguard-cli-test-") as temporary:
 
     basic = invoke("analyze", "--source", ROOT / "examples/basic.c", "--format", "json")
     report = json.loads(basic.stdout)
-    assert report["schema_version"] == 3
+    assert report["schema_version"] == 4
     assert {item["name"] for item in report["functions"]} >= {"worker", "update_state"}
     assert report["lock_dependencies"], "ordinary source example should show an interprocedural dependency"
 

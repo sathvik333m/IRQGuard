@@ -50,13 +50,13 @@ the architecture, and limitations.
 
 ## Graphical interface (Phase 8)
 
-The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads the real schema-v3 analyzer JSON through a small Node.js API; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
+The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads schema-v3 historical reports and schema-v4 analyzer JSON through a small Node.js API; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
 
 ```mermaid
 flowchart LR
   Browser[React + TypeScript UI] -->|HTTP /api/v1| API[Local Node.js API]
   API -->|fixed argv, timeout and output limits| Analyzer[C++ Clang analyzer]
-  Analyzer -->|schema-v3 JSON| API
+  Analyzer -->|schema-v4 JSON; v3 history supported| API
   API -->|metadata + report JSON| DB[(Local JSON history + report files)]
   API -->|bounded source ranges| Browser
 ```
@@ -122,11 +122,26 @@ The GUI exposes these controls in **Runtime Evidence** and **Benchmarks**. Runti
 - **The API says the analyzer is unavailable:** rebuild with `cmake --build build` and confirm `IRQGUARD_ANALYZER` points to the executable.
 - **A source path is rejected:** enter an absolute Linux path and add its parent workspace to `IRQGUARD_WORKSPACES`; symlinks resolving outside those roots are intentionally denied.
 - **Windows cannot reach the development server:** first check WSL 2 localhost forwarding. The documented frontend and API bind to loopback; do not expose the API on a public interface.
-- **A report schema is rejected:** this interface is currently pinned to analyzer JSON schema 3. Update and test the frontend adapter when the analyzer schema changes.
+- **A report schema is rejected:** this interface accepts analyzer JSON schemas 3 and 4. Update and test the frontend adapter when the analyzer schema changes.
 
 API models can be extended or overridden by name with `--api-config config/apis.example.json`. The configuration is JSON with an `apis` array. Each item has `name`, `kind`, and optional zero-based `lock_argument`, `state_argument`, and `handler_argument` indexes. Built-ins include selected mutex/spinlock operations, public and selected raw spinlock helpers, `spin_lock_irqsave`/`spin_unlock_irqrestore`, `local_irq_disable`/`local_irq_enable`, `request_irq`, and `free_irq`. For macro-expanded irqsave helpers that return saved flags, the analyzer uses the expansion-site API token and assignment AST to recover the flags lvalue where possible; otherwise IRQ state remains unknown with an explicit uncertainty. See [Phase 3 design](docs/design-phase3.md) and [Phase 4 design](docs/design-phase4.md) for the modeled semantics and limits.
 
 Both human-readable output and JSON preserve expansion and spelling locations. Calls introduced through macros are attributed to their expansion site, with spelling location retained for inspection. Parser errors are printed by Clang and cause a nonzero exit; the analyzer will not emit a successful report for a failed parse.
+
+Schema-v4 JSON keeps every raw uncertainty message in `uncertainties` and adds
+`uncertainty_summary` plus grouped `uncertainty_records`. The grouped records
+include source evidence, category/stage, impact, stable cause ID, propagation
+count, and candidate links where those can be matched. Grouping is heuristic
+and does not prove that each record is an independent bug. See
+[Phase 10 design](docs/design-phase10.md) and the
+[saved Linux uncertainty review](evaluation/results/linux-v6.6.87/REPORT.md).
+To classify archived schema-v3 reports without changing them, run:
+
+```sh
+python3 evaluation/summarize_uncertainties.py \
+  evaluation/results/linux-v6.6.87/reports \
+  evaluation/results/linux-v6.6.87/uncertainty-summary-phase10.json
+```
 
 ## JSON example
 

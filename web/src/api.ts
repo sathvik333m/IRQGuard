@@ -30,8 +30,8 @@ export function parseReport(value: unknown): AnalysisReport {
     throw new ApiError('The analyzer report is not a JSON object.')
   }
   const raw = value as Record<string, unknown>
-  if (raw.schema_version !== 3 || raw.analysis_kind !== 'interrupt_aware_lock_analysis') {
-    throw new ApiError(`Unsupported analyzer report schema (${String(raw.schema_version)}). IRQGuard UI expects schema 3.`)
+  if ((raw.schema_version !== 3 && raw.schema_version !== 4) || raw.analysis_kind !== 'interrupt_aware_lock_analysis') {
+    throw new ApiError(`Unsupported analyzer report schema (${String(raw.schema_version)}). IRQGuard UI supports schemas 3 and 4.`)
   }
   const array = (name: string) => {
     const item = raw[name]
@@ -63,6 +63,7 @@ export function parseReport(value: unknown): AnalysisReport {
     interrupt_lock_graph: { nodes, edges },
     interrupt_cycles: array('interrupt_cycles'),
     uncertainties: array('uncertainties'),
+    uncertainty_records: array('uncertainty_records'),
     diagnostics: array('diagnostics'),
   } as AnalysisReport
 }

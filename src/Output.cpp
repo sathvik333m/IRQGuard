@@ -1,11 +1,261 @@
 #include "deadlock/Output.h"
 
 #include <iomanip>
+#include <algorithm>
+#include <cstdint>
+#include <limits>
+#include <map>
+#include <regex>
 #include <set>
 #include <sstream>
 
 namespace deadlock {
 namespace {
+
+struct UncertaintyRecordView {
+    std::string id;
+    std::string category;
+    std::string reason;
+    std::string stage;
+    std::string impact;
+    std::string severity;
+    std::string explanation;
+    std::string key;
+    std::string sourceFile;
+    unsigned line = 0;
+    unsigned column = 0;
+    std::string function;
+    std::string api;
+    std::size_t events = 0;
+    std::size_t propagated = 0;
+    std::vector<std::string> examples;
+    std::set<std::string> findings;
+};
+
+struct UncertaintyClass {
+    const char *marker;
+    const char *category;
+    const char *reason;
+    const char *stage;
+    const char *impact;
+    const char *severity;
+    const char *explanation;
+};
+
+const UncertaintyClass uncertaintyClasses[] = {
+    {"call to external or unavailable body", "unresolved_call", "missing_body", "interprocedural",
+     "potential_lock_or_irq_effect", "medium", "A called function body is unavailable, so its effects cannot be summarized."},
+    {"unresolved call '", "unresolved_call", "indirect_target_unknown", "interprocedural",
+     "potential_lock_or_irq_effect", "high", "The call target could not be resolved; it may change held locks or interrupt state."},
+    {"lock identity unresolved", "lock_identity", "lock_expression_unresolved", "lock_extraction",
+     "lock_identity_and_edges", "high", "The lock expression could not be mapped to a stable lock identity."},
+    {"irqsave flags argument unresolved", "interrupt_state", "saved_flags_unresolved", "interrupt_state",
+     "interrupt_state", "high", "The irqsave operation was found, but its saved interrupt-state value is unknown."},
+    {"irqrestore has no matching saved state", "interrupt_state", "restore_state_unmatched", "interrupt_state",
+     "interrupt_state", "high", "The restore does not match a saved-state identity in the modeled path."},
+    {"local_irq_save flags expression unresolved", "interrupt_state", "saved_flags_unresolved", "interrupt_state",
+     "interrupt_state", "high", "The local IRQ save value could not be identified."},
+    {"local_irq_restore has no matching saved state", "interrupt_state", "restore_state_unmatched", "interrupt_state",
+     "interrupt_state", "high", "The local IRQ restore does not match a saved-state identity."},
+    {"unmodeled call may alter IRQ state", "interrupt_state", "unknown_call_irq_effect", "interrupt_state",
+     "interrupt_state", "high", "An unmodeled call may change interrupt state."},
+    {"interrupt teardown/lifecycle", "handler_lifecycle", "teardown_not_modeled", "handler_discovery",
+     "handler_lifecycle", "medium", "Interrupt handler deregistration timing is not modeled."},
+    {"unresolved interrupt handler registration", "handler_resolution", "registration_unresolved", "handler_discovery",
+     "handler_identity", "high", "The registered interrupt handler target could not be resolved."},
+    {"handler target for '", "handler_resolution", "handler_target_unresolved", "handler_discovery",
+     "handler_identity", "high", "A handler argument could not be resolved to a function definition."},
+    {"possibly unsupported lock/IRQ API", "unsupported_api", "api_semantics_missing", "api_model",
+     "heuristic_name_match_may_be_false_positive", "medium", "An API name matched a lock/IRQ warning heuristic, but its semantics are not modeled."},
+    {"call events could not be mapped into the CFG", "control_flow", "cfg_event_unmapped", "control_flow",
+     "path_and_dependency_analysis", "high", "A call event is absent from the CFG mapping, limiting path and summary analysis."},
+    {"IRQ-state analysis has unmapped call events", "control_flow", "cfg_event_unmapped", "control_flow",
+     "interrupt_state", "high", "IRQ-state transfer could not map all calls to CFG events."},
+    {"CFG unavailable", "control_flow", "cfg_unavailable", "control_flow",
+     "path_and_dependency_analysis", "high", "Control-flow data is unavailable for this function."},
+    {"fixed point did not converge", "analysis_limit", "summary_nonconvergence", "summary_propagation",
+     "lock_and_interrupt_summaries", "high", "The bounded summary iteration did not converge."},
+    {"iteration limit reached", "analysis_limit", "iteration_limit", "summary_propagation",
+     "lock_and_interrupt_summaries", "high", "A bounded analysis iteration limit was reached."},
+    {"capped at", "analysis_limit", "output_or_search_cap", "graph_search",
+     "candidate_completeness", "high", "An output or graph search cap may omit additional results."},
+};
+
+std::string trim(std::string value) {
+    const auto first = value.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) return {};
+    const auto last = value.find_last_not_of(" \t\r\n");
+    return value.substr(first, last - first + 1);
+}
+
+std::string causeText(const std::string &message, const UncertaintyClass &classification) {
+    const auto marker = message.find(classification.marker);
+    std::string cause = marker == std::string::npos ? message : message.substr(marker);
+    const auto held = cause.find(" while holding ");
+    if (held != std::string::npos) cause.erase(held);
+    const auto configHint = cause.find("; add an explicit API model");
+    if (configHint != std::string::npos) cause.erase(configHint);
+    return trim(std::move(cause));
+}
+
+std::string stableHash(const std::string &value) {
+    std::uint64_t hash = 14695981039346656037ull;
+    for (unsigned char byte : value) {
+        hash ^= byte;
+        hash *= 1099511628211ull;
+    }
+    std::ostringstream out;
+    out << std::hex << std::setw(16) << std::setfill('0') << hash;
+    return out.str();
+}
+
+void parseIssueLocation(UncertaintyRecordView &record) {
+    static const std::regex suffix(R"(([^\s]+):([0-9]+):([0-9]+))");
+    std::smatch match;
+    std::string::const_iterator begin = record.key.begin();
+    std::string::const_iterator end = record.key.end();
+    std::smatch lastMatch;
+    bool found = false;
+    while (std::regex_search(begin, end, match, suffix)) {
+        lastMatch = match;
+        found = true;
+        begin = match.suffix().first;
+    }
+    if (!found) return;
+    try {
+        record.sourceFile = lastMatch[1].str();
+        record.line = static_cast<unsigned>(std::stoul(lastMatch[2].str()));
+        record.column = static_cast<unsigned>(std::stoul(lastMatch[3].str()));
+    } catch (...) {
+        record.sourceFile.clear();
+        record.line = record.column = 0;
+    }
+}
+
+std::string quotedOperand(const std::string &cause) {
+    const auto first = cause.find('\'');
+    if (first == std::string::npos) return {};
+    const auto last = cause.find('\'', first + 1);
+    return last == std::string::npos ? std::string{} : cause.substr(first + 1, last - first - 1);
+}
+
+std::string enclosingFunction(const std::string &message) {
+    std::string prefix = message;
+    if (prefix.rfind("IRQ state ", 0) == 0) prefix.erase(0, 10);
+    const auto delimiter = prefix.find(": ");
+    if (delimiter == std::string::npos) return {};
+    prefix.erase(delimiter);
+    if (prefix.find(" at ") != std::string::npos) return {};
+    const auto via = prefix.find(" via ");
+    if (via != std::string::npos) prefix.erase(via);
+    return prefix;
+}
+
+std::vector<UncertaintyRecordView> uncertaintyRecords(const AnalysisResult &result) {
+    std::map<std::string, UncertaintyRecordView> grouped;
+    std::map<std::string, std::size_t> representativeScore;
+    for (const auto &message : result.uncertainties) {
+        const UncertaintyClass *classification = nullptr;
+        for (const auto &candidate : uncertaintyClasses) {
+            if (message.find(candidate.marker) != std::string::npos) {
+                classification = &candidate;
+                break;
+            }
+        }
+        static const UncertaintyClass other{
+            "", "other", "unclassified", "analysis", "unknown", "medium",
+            "The uncertainty was retained but did not match a known diagnostic rule."};
+        if (!classification) classification = &other;
+        const std::string cause = causeText(message, *classification);
+        const std::string groupKey = std::string(classification->category) + "|" + cause;
+        auto inserted = grouped.emplace(groupKey, UncertaintyRecordView{});
+        auto &record = inserted.first->second;
+        if (inserted.second) {
+            record.category = classification->category;
+            record.reason = classification->reason;
+            record.stage = classification->stage;
+            record.impact = classification->impact;
+            record.severity = classification->severity;
+            record.explanation = classification->explanation;
+            record.key = cause;
+            record.id = "U-" + stableHash(groupKey);
+            parseIssueLocation(record);
+            record.api = quotedOperand(cause);
+            representativeScore[groupKey] = std::numeric_limits<std::size_t>::max();
+        }
+        ++record.events;
+        if (message.find("via call ") != std::string::npos || message.find(": via ") != std::string::npos)
+            ++record.propagated;
+        if (record.examples.size() < 3) record.examples.push_back(message);
+        const auto viaCount = static_cast<std::size_t>(std::count(message.begin(), message.end(), ':'));
+        const auto score = (message.find("via call ") == std::string::npos ? 0u : 1000u) + viaCount;
+        if (score < representativeScore[groupKey]) {
+            representativeScore[groupKey] = score;
+            record.function = enclosingFunction(message);
+        }
+        if (message.find(" while holding ") != std::string::npos) {
+            record.severity = "high";
+            record.impact = "lock_held_across_unknown_call";
+        }
+    }
+
+    for (std::size_t i = 0; i < result.interruptCycles.size(); ++i) {
+        const std::string findingId = "C-" + std::to_string(i + 1);
+        const auto &cycle = result.interruptCycles[i];
+        std::string cycleEvidence;
+        for (const auto &lock : cycle.lockSequence) cycleEvidence += lock + "\n";
+        for (const auto edgeIndex : cycle.edgeIndexes) {
+            if (edgeIndex >= result.interruptLockEdges.size()) continue;
+            const auto &edge = result.interruptLockEdges[edgeIndex];
+            cycleEvidence += edge.fromLocation.expansion.file + ":" +
+                std::to_string(edge.fromLocation.expansion.line) + ":" +
+                std::to_string(edge.fromLocation.expansion.column) + "\n";
+            cycleEvidence += edge.toLocation.expansion.file + ":" +
+                std::to_string(edge.toLocation.expansion.line) + ":" +
+                std::to_string(edge.toLocation.expansion.column) + "\n";
+        }
+        for (auto &entry : grouped) {
+            auto &record = entry.second;
+            if (record.sourceFile.empty() || record.line == 0) continue;
+            const std::string site = record.sourceFile + ":" + std::to_string(record.line) + ":";
+            if (cycleEvidence.find(site) != std::string::npos) record.findings.insert(findingId);
+        }
+    }
+
+    for (auto &entry : grouped) {
+        auto &record = entry.second;
+        if (!record.findings.empty()) {
+            record.severity = "high";
+            record.impact += "; candidate evidence overlaps this uncertainty source location";
+        }
+        for (const auto &api : result.apiOperations) {
+            const auto &location = api.location.expansion;
+            if (location.valid && location.file == record.sourceFile &&
+                location.line == record.line && location.column == record.column) {
+                if (record.function.empty()) record.function = api.caller;
+                if (record.api.empty()) record.api = api.api;
+                if (api.lock && record.key.find("lock identity unresolved") != std::string::npos)
+                    record.api += ": " + api.lock->text;
+            }
+        }
+        if (record.function.empty()) {
+            for (const auto &call : result.calls) {
+                const auto &location = call.location.expansion;
+                if (location.valid && location.file == record.sourceFile &&
+                    location.line == record.line && location.column == record.column) {
+                    record.function = call.caller;
+                    if (record.api.empty()) record.api = call.calleeExpression;
+                    break;
+                }
+            }
+        }
+    }
+
+    std::vector<UncertaintyRecordView> records;
+    records.reserve(grouped.size());
+    for (auto &entry : grouped) records.push_back(std::move(entry.second));
+    return records;
+}
 
 std::string quote(const std::string &value) {
     std::ostringstream out;
@@ -166,7 +416,35 @@ void interruptEdgeJson(std::ostringstream &out, const InterruptLockEdge &edge) {
 
 std::string toJson(const AnalysisResult &result) {
     std::ostringstream out;
-    out << "{\n  \"schema_version\":3,\n  \"source\":" << quote(result.source)
+    const auto uncertaintyReport = uncertaintyRecords(result);
+    std::map<std::string, std::pair<std::size_t, std::size_t>> byUncertaintyCategory;
+    std::map<std::string, std::pair<std::size_t, std::size_t>> byUncertaintyStage;
+    std::size_t highImpactRecords = 0;
+    std::size_t lockIdentityEvents = 0;
+    std::size_t interruptStateEvents = 0;
+    std::size_t unresolvedCallEvents = 0;
+    std::size_t candidateAffectingRecords = 0;
+    std::size_t candidateRecordAssociations = 0;
+    std::set<std::string> affectedCandidates;
+    for (const auto &record : uncertaintyReport) {
+        auto &category = byUncertaintyCategory[record.category];
+        category.first += record.events;
+        ++category.second;
+        auto &stage = byUncertaintyStage[record.stage];
+        stage.first += record.events;
+        ++stage.second;
+        if (record.severity == "high") ++highImpactRecords;
+        if (record.category == "lock_identity") lockIdentityEvents += record.events;
+        if (record.category == "interrupt_state") interruptStateEvents += record.events;
+        if (record.category == "unresolved_call") unresolvedCallEvents += record.events;
+        if (!record.findings.empty()) {
+            ++candidateAffectingRecords;
+            candidateRecordAssociations += record.findings.size();
+            affectedCandidates.insert(record.findings.begin(), record.findings.end());
+        }
+    }
+
+    out << "{\n  \"schema_version\":4,\n  \"source\":" << quote(result.source)
         << ",\n  \"analysis_kind\":\"interrupt_aware_lock_analysis\",\n  \"functions\":[";
     for (std::size_t i = 0; i < result.functions.size(); ++i) {
         const auto &item = result.functions[i];
@@ -308,7 +586,9 @@ std::string toJson(const AnalysisResult &result) {
               [&](const InterruptLockEdge &edge) { interruptEdgeJson(out, edge); });
     out << "},\n  \"interrupt_cycles\":";
     arrayJson(out, result.interruptCycles, [&](const InterruptCycle &cycle) {
-        out << "{\"classification\":" << quote(cycle.classification)
+        const auto cycleIndex = static_cast<std::size_t>(&cycle - result.interruptCycles.data());
+        out << "{\"finding_id\":" << quote("C-" + std::to_string(cycleIndex + 1))
+            << ",\"classification\":" << quote(cycle.classification)
             << ",\"category\":" << quote(cycle.category)
             << ",\"feasibility\":" << quote(cycle.feasibility)
             << ",\"contains_uncertain_edge\":" << (cycle.containsUncertainEdge ? "true" : "false")
@@ -330,6 +610,70 @@ std::string toJson(const AnalysisResult &result) {
     });
     out << ",\n  \"uncertainties\":";
     arrayJson(out, result.uncertainties, [&](const std::string &value) { out << quote(value); });
+    out << ",\n  \"uncertainty_summary\":{\"event_count\":" << result.uncertainties.size()
+        << ",\"unique_record_count\":" << uncertaintyReport.size()
+        << ",\"propagated_event_count\":";
+    std::size_t propagatedEvents = 0;
+    for (const auto &record : uncertaintyReport) propagatedEvents += record.propagated;
+    out << propagatedEvents << ",\"high_impact_unique_records\":" << highImpactRecords
+        << ",\"lock_identity_events\":" << lockIdentityEvents
+        << ",\"interrupt_state_events\":" << interruptStateEvents
+        << ",\"unresolved_call_events\":" << unresolvedCallEvents
+        << ",\"candidate_affecting_unique_records\":" << candidateAffectingRecords
+        << ",\"candidate_record_association_count\":" << candidateRecordAssociations
+        << ",\"affected_candidate_count\":" << affectedCandidates.size()
+        << ",\"proven_non_affecting_event_count\":0,\"non_affecting_count_note\":"
+        << quote("No uncertainty is marked non-affecting unless that can be established; none are proven non-affecting by this classifier.")
+        << ",\"by_category\":{";
+    bool firstCount = true;
+    for (const auto &entry : byUncertaintyCategory) {
+        if (!firstCount) out << ',';
+        firstCount = false;
+        out << quote(entry.first) << ":{\"event_count\":" << entry.second.first
+            << ",\"unique_record_count\":" << entry.second.second << '}';
+    }
+    out << "},\"by_stage\":{";
+    firstCount = true;
+    for (const auto &entry : byUncertaintyStage) {
+        if (!firstCount) out << ',';
+        firstCount = false;
+        out << quote(entry.first) << ":{\"event_count\":" << entry.second.first
+            << ",\"unique_record_count\":" << entry.second.second << '}';
+    }
+    out << "}},\n  \"uncertainty_records\":[";
+    for (std::size_t i = 0; i < uncertaintyReport.size(); ++i) {
+        const auto &record = uncertaintyReport[i];
+        if (i) out << ',';
+        out << "\n    {\"id\":" << quote(record.id)
+            << ",\"category\":" << quote(record.category)
+            << ",\"reason\":" << quote(record.reason)
+            << ",\"analysis_stage\":" << quote(record.stage)
+            << ",\"severity\":" << quote(record.severity)
+            << ",\"impact\":" << quote(record.impact)
+            << ",\"explanation\":" << quote(record.explanation)
+            << ",\"root_cause\":" << quote(record.key)
+            << ",\"source_location\":{" << "\"file\":" << quote(record.sourceFile)
+            << ",\"line\":" << record.line << ",\"column\":" << record.column
+            << ",\"valid\":" << (!record.sourceFile.empty() ? "true" : "false") << '}'
+            << ",\"enclosing_function\":" << quote(record.function)
+            << ",\"api_or_expression\":" << quote(record.api)
+            << ",\"event_count\":" << record.events
+            << ",\"direct_event_count\":" << (record.events - record.propagated)
+            << ",\"propagated_event_count\":" << record.propagated
+            << ",\"has_repeated_propagation\":" << (record.propagated ? "true" : "false")
+            << ",\"unique_record\":true,\"cause_identity_is_heuristic\":true,\"associated_findings\":[";
+        bool firstFinding = true;
+        for (const auto &finding : record.findings) {
+            if (!firstFinding) out << ',';
+            firstFinding = false;
+            out << quote(finding);
+        }
+        out << "],\"example_events\":";
+        arrayJson(out, record.examples, [&](const std::string &value) { out << quote(value); });
+        out << '}';
+    }
+    if (!uncertaintyReport.empty()) out << '\n' << "  ";
+    out << ']';
     out << ",\n  \"diagnostics\":";
     arrayJson(out, result.diagnostics, [&](const std::string &value) { out << quote(value); });
     out << "\n}\n";

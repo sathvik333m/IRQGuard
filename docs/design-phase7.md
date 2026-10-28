@@ -99,11 +99,13 @@ analysis.
 
 ## Report contract and finding semantics
 
-Schema version 3 is the stable report format for this release. The top-level
+Schema version 4 is the current report format; the web adapter continues to
+read schema-v3 historical reports. The top-level
 fields are `schema_version`, `source`, `analysis_kind`, `functions`, `calls`,
 `api_operations`, `control_constructs`, `call_graph`, `function_summaries`,
 `lock_dependencies`, `interrupt_registrations`, `interrupt_state_snapshots`,
-`interrupt_lock_graph`, `interrupt_cycles`, `uncertainties`, and `diagnostics`.
+`interrupt_lock_graph`, `interrupt_cycles`, `uncertainties`,
+`uncertainty_summary`, `uncertainty_records`, and `diagnostics`.
 Locations retain macro expansion and spelling points when available.
 Dependencies and interrupt graph edges preserve functions, acquisition
 locations, execution contexts, registration sites, and call-chain provenance.

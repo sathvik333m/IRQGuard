@@ -100,7 +100,7 @@ def main() -> int:
         },
         "setup_steps": [], "translation_units": [],
         "aggregate": {"files_requested": len(SOURCE_FILES), "files_analyzed": 0, "files_skipped_or_failed": 0},
-        "comparison_note": "Mode counts are derived projections from a single schema-v3 report; they are not separately configured analyzer runs.",
+        "comparison_note": "Mode counts are derived projections from a single analyzer report; they are not separately configured analyzer runs.",
         "precision_recall": None,
         "status": "not_started",
     }
@@ -222,7 +222,7 @@ def main() -> int:
             if code == 0 and report_path.is_file():
                 try:
                     report = json.loads(report_path.read_text(encoding="utf-8"))
-                    if report.get("schema_version") != 3:
+                    if report.get("schema_version") not in (3, 4):
                         raise ValueError(f"unexpected report schema {report.get('schema_version')}")
                     item["status"] = "analyzed"
                     item["counts"] = report_counts(report)

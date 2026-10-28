@@ -44,6 +44,8 @@ def main() -> None:
     assert refined["candidate_lock_order_cycle"] >= 1
     assert refined["interrupt_aware_candidate"] >= 1
     assert result["counts"]["functions"] == len(report["functions"])
+    assert result["uncertainty_counts"]["event_count"] == len(report["uncertainties"])
+    assert result["counts"]["unique_uncertainty_records"] == result["uncertainty_counts"]["unique_record_count"]
     print("evaluation projection and controlled-fixture checks passed")
 
 

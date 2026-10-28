@@ -9,7 +9,7 @@ run = subprocess.run([binary, "analyze", "--source", fixture, "--format", "json"
                      text=True, capture_output=True)
 assert run.returncode == 0, run.stderr
 report = json.loads(run.stdout)
-assert report["schema_version"] == 3
+assert report["schema_version"] == 4
 assert report["analysis_kind"] == "interrupt_aware_lock_analysis"
 
 registrations = report["interrupt_registrations"]

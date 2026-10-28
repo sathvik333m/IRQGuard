@@ -12,7 +12,7 @@ Phase 8 adds an optional local React/TypeScript interface and a small Node.js ad
 
 ## Analyzer data mapping
 
-The UI accepts only `schema_version: 3` with `analysis_kind: interrupt_aware_lock_analysis`. It uses `functions` and `calls` for source navigation, `api_operations` for lock events, `lock_dependencies` and `interrupt_lock_graph` for relationships, and `interrupt_cycles` for findings. The backend summary counts are computed from those real arrays. A missing optional report array is shown as empty; malformed arrays and unsupported schema versions produce visible errors. The backend measures wall duration around the analyzer process because the analyzer report does not contain duration. Its health endpoint detects the local OS and WSL status; analyzer build version and target kernel are reported as unknown because the analyzer does not expose them.
+The UI accepts `schema_version: 3` and `schema_version: 4` with `analysis_kind: interrupt_aware_lock_analysis`. Schema 4 adds structured uncertainty summaries and records; schema 3 remains accepted for saved history. It uses `functions` and `calls` for source navigation, `api_operations` for lock events, `lock_dependencies` and `interrupt_lock_graph` for relationships, and `interrupt_cycles` for findings. The backend summary counts are computed from those real arrays. A missing optional report array is shown as empty; malformed arrays and unsupported schema versions produce visible errors. The backend measures wall duration around the analyzer process because the analyzer report does not contain duration. Its health endpoint detects the local OS and WSL status; analyzer build version and target kernel are reported as unknown because the analyzer does not expose them.
 
 The graph uses the report's lock identities and graph edges. Candidate edges are highlighted when their finding is selected; normal lock-order, interrupt, and rejected relationships have distinct styles. Lock API filters are populated only for identities that exactly match a lock identity in `api_operations`; unmatched identities remain unknown. Edge details preserve contexts and locations, and the finding inspector carries explanation and provenance supplied by the analyzer. The overview's API mix groups actual lock-bearing API events, not inferred object lock types or severity. The source endpoint serves only paths referenced in the stored report and still under configured workspace roots. It returns a limited line range, not an uploaded or copied source file.
 
@@ -37,9 +37,9 @@ The service binds to `127.0.0.1` in the documented command and allows only the l
 ## Limitations and unavailable capabilities
 
 - The adapter accepts one C translation unit per run; using a compilation database supplies flags but does not automatically schedule a whole kernel build.
-- The report contract is tied to schema 3 and requires an intentional UI update when the analyzer schema changes.
+- The report adapter supports schema 3 historical reports and schema 4 current reports; future versions require an intentional UI update.
 - The dashboard can show host OS and WSL detection, but the analyzer does not report its build version or a target kernel version. These stay marked unavailable.
-- The report does not provide severity, a lock-object type for every graph node, or live progress events. The UI does not infer high/medium/low severity or create chronological process logs.
+- The report provides heuristic uncertainty severity, not a calibrated risk score. It does not provide a lock-object type for every graph node or live progress events, and the UI does not create chronological process logs.
 - API config paths are supported. Arbitrary Clang flags and shell commands are not exposed in the GUI.
 - Source references outside the workspace or no longer present cannot be displayed.
 - Static findings remain candidates/inconclusive results according to analyzer categories, not confirmed deadlocks.
