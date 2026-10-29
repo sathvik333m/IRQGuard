@@ -95,6 +95,11 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/interprocedural.c
     )
+    add_test(NAME analyzer_dependency_generation
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_dependency_generation.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/dependency_generation.c
+    )
     add_test(NAME analyzer_interrupt_aware
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_interrupts.py
                 $<TARGET_FILE:deadlock-analyzer>

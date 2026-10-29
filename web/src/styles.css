@@ -742,6 +742,19 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .phase12-source-result th { width: 58%; color: var(--text-dim); font-weight: 500; }
 .phase12-source-result td { color: var(--text-secondary); overflow-wrap: anywhere; }
 .phase12-validation-note { margin: 8px 0 0; color: var(--text-dim); font-size: 10px; line-height: 1.5; }
+.phase14-evidence { margin-top: 17px; padding: 14px 0 12px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.phase14-evidence-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.phase14-evidence-heading h2 { margin: 3px 0 0; color: var(--text); font-size: 15px; }
+.phase14-evidence-summary { max-width: 980px; margin: 12px 0 13px; color: var(--text-secondary); font-size: 12px; line-height: 1.65; }
+.phase14-evidence-flow { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.phase14-evidence-flow > div { min-width: 0; padding: 11px 0; border-top: 1px solid var(--line-soft); }
+.phase14-evidence-flow > div > span { color: var(--text-dim); font-size: 10px; letter-spacing: .07em; }
+.phase14-evidence-flow p { display: flex; align-items: center; gap: 9px; margin: 9px 0 6px; }
+.phase14-evidence-flow code { padding: 4px 6px; border-radius: 4px; color: var(--text); background: var(--surface-raised); font-size: 10px; }
+.phase14-evidence-flow b { color: var(--accent); font-size: 12px; }
+.phase14-evidence-flow small { color: var(--text-dim); font-size: 10px; line-height: 1.5; }
+.phase14-evidence-limit { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0 0; color: var(--text-dim); font-size: 10px; line-height: 1.55; }
+.phase14-evidence-limit svg { flex: 0 0 auto; margin-top: 1px; color: var(--amber); }
 .kernel-eval-footnote { margin: 13px 0 0; color: var(--text-dim); font-size: 11px; line-height: 1.55; }
 .kernel-cycle-review { margin-top: 16px; padding: 0 14px 14px; }
 .kernel-cycle-review > .panel-heading { padding: 12px 0 10px; }
@@ -915,6 +928,7 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
   .kernel-eval-metric:nth-child(3n) { border-right: 0; margin-right: 0; }
   .kernel-eval-metric:nth-child(3n + 1) { border-right: 1px solid var(--line-soft); }
   .kernel-eval-details { grid-template-columns: 1fr; gap: 18px; }
+  .phase14-evidence-flow { grid-template-columns: 1fr; gap: 6px; }
   .cli-guide-layout { grid-template-columns: 1fr; gap: 20px; }
   .app-footer span:last-child { max-width: 390px; }
 }

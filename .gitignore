@@ -37,4 +37,6 @@ coverage.xml
 # Ad hoc reruns are disposable; the curated phase12 evidence directory stays tracked.
 /evaluation/results/linux-v6.6.87/phase12-rerun/
 /evaluation/results/linux-v6.6.87/phase13-rerun/
+# Generated Phase 14 kernel reruns are disposable; keep curated docs/ and tests/ tracked.
+/evaluation/results/linux-v6.6.87/phase14-rerun/
 # Keep REPORT.md and raw-measurements.json tracked; ignore only generated kernel artifacts.
