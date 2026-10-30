@@ -223,9 +223,19 @@ describe('IRQGuard workspace states', () => {
   })
 
   it('shows actual graph edges and makes multiple report cycles selectable', async () => {
+    const evidenceEdges = fixture.interrupt_cycles[0].edges.map((edge, index) => ({
+      ...edge,
+      feasibility: index === 0 ? 'cfg_reachable' : 'potentially_feasible',
+      feasibility_reason: 'Supported path evidence retained.',
+      summary_status: 'direct',
+      path_condition_status: 'compatible',
+      path_conditions: index === 0 ? [{ expression: 'choose', atom: 'param@choose', truth: true, supported: true, loop_back_edge: false }] : [],
+      registration_lifecycle: index === 1 ? 'matching_free_irq_arguments_order_unproven' : 'not_applicable',
+      deregistration_evidence: index === 1 ? [{ isMacro: false, expansion: { file: '/tmp/irqguard-test/demo.c', line: 16, column: 3, valid: true }, spelling: { file: '/tmp/irqguard-test/demo.c', line: 16, column: 3, valid: true } }] : [],
+    }))
     const multipleReport = {
       ...fixture,
-      interrupt_cycles: [fixture.interrupt_cycles[0], {
+      interrupt_cycles: [{ ...fixture.interrupt_cycles[0], feasibility: 'potentially_feasible', edges: evidenceEdges }, {
         ...fixture.interrupt_cycles[0], category: 'candidate_lock_order_cycle',
         lock_sequence: ['lock-B', 'lock-A', 'lock-B'],
       }],
@@ -244,6 +254,9 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByRole('tablist', { name: 'Finding detail sections' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('tab', { name: 'Execution Context' }))
     expect(screen.getByText(/process → hardirq/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Analysis Evidence' }))
+    expect(screen.getByText(/Path constraint: param@choose is true/)).toBeInTheDocument()
+    expect(screen.getByText(/Handler lifecycle: matching_free_irq_arguments_order_unproven/)).toBeInTheDocument()
     fireEvent.click(await screen.findByRole('button', { name: 'Lock graph' }))
     const findingSelect = await screen.findByLabelText('Highlight a finding')
     expect(findingSelect.querySelectorAll('option')).toHaveLength(3)

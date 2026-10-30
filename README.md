@@ -69,6 +69,15 @@ linking were not attempted, and separate stack validation was not configured.
 See the [fresh Phase 15 measurements](evaluation/results/linux-v6.6.87/phase15-report.md)
 and [machine-readable comparison](evaluation/results/linux-v6.6.87/phase15-comparison.json).
 
+Phase 16 adds bounded branch-predicate checks for direct same-function lock
+paths and records `free_irq` argument matches without inferring lifecycle
+ordering. Findings distinguish unrefined candidates, potentially feasible
+static scenarios, inconclusive cases, and rejected paths. Interprocedural path
+predicates, general symbolic execution, registration-before-use, interrupt
+delivery, and independent deadlock confirmation remain out of scope. See the
+[Phase 16 feasibility review and limits](docs/phase16-feasibility-review.md)
+and the [cycle/feasibility design](docs/design-phase4.md).
+
 ## Graphical interface (Phase 8)
 
 The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads schema-v3 historical reports and schema-v4 analyzer JSON through a small Node.js API; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.

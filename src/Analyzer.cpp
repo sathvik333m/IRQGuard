@@ -17,6 +17,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <limits>
 #include <set>
@@ -301,6 +302,121 @@ const clang::FunctionDecl *referencedFunction(const clang::Expr *expression) {
     }
     if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(expression))
         return llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl());
+    return nullptr;
+}
+
+class ConditionMutationCollector : public clang::RecursiveASTVisitor<ConditionMutationCollector> {
+public:
+    bool VisitBinaryOperator(clang::BinaryOperator *binary) {
+        if (binary->isAssignmentOp())
+            mark(binary->getLHS(), modified);
+        return true;
+    }
+
+    bool VisitUnaryOperator(clang::UnaryOperator *unary) {
+        if (unary->isIncrementDecrementOp()) mark(unary->getSubExpr(), modified);
+        if (unary->getOpcode() == clang::UO_AddrOf) mark(unary->getSubExpr(), escaped);
+        return true;
+    }
+
+    std::set<const clang::VarDecl *> modified;
+    std::set<const clang::VarDecl *> escaped;
+
+private:
+    static void mark(const clang::Expr *expression, std::set<const clang::VarDecl *> &set) {
+        expression = expression ? expression->IgnoreParenImpCasts() : nullptr;
+        if (const auto *reference = llvm::dyn_cast_or_null<clang::DeclRefExpr>(expression))
+            if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(reference->getDecl()))
+                set.insert(variable->getCanonicalDecl());
+    }
+};
+
+bool conditionOperand(const clang::Expr *expression,
+                      const clang::ASTContext &context,
+                      const clang::SourceManager &manager,
+                      const std::set<const clang::VarDecl *> &modified,
+                      const std::set<const clang::VarDecl *> &escaped,
+                      std::string &key) {
+    expression = expression ? expression->IgnoreParenImpCasts() : nullptr;
+    if (const auto *reference = llvm::dyn_cast_or_null<clang::DeclRefExpr>(expression)) {
+        if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(reference->getDecl())) {
+            const bool local = variable->hasLocalStorage() || llvm::isa<clang::ParmVarDecl>(variable);
+            if (!local && !variable->getType().isConstQualified()) return false;
+            if (modified.count(variable->getCanonicalDecl()) ||
+                escaped.count(variable->getCanonicalDecl()) ||
+                !variable->getType()->isScalarType() || variable->getType().isVolatileQualified())
+                return false;
+            key = declarationIdentity(variable, manager);
+            return true;
+        }
+        if (const auto *constant = llvm::dyn_cast<clang::EnumConstantDecl>(reference->getDecl())) {
+            key = "enum@" + locationIdentity(constant->getLocation(), manager) + ":" +
+                  constant->getQualifiedNameAsString();
+            return true;
+        }
+        return false;
+    }
+    if (llvm::isa_and_nonnull<clang::IntegerLiteral>(expression) ||
+        llvm::isa_and_nonnull<clang::CXXBoolLiteralExpr>(expression) ||
+        llvm::isa_and_nonnull<clang::CharacterLiteral>(expression)) {
+        key = expressionText(expression, context);
+        return true;
+    }
+    return false;
+}
+
+bool normalizeCondition(const clang::Expr *expression,
+                        const clang::ASTContext &context,
+                        const clang::SourceManager &manager,
+                        const std::set<const clang::VarDecl *> &modified,
+                        const std::set<const clang::VarDecl *> &escaped,
+                        std::string &atom, bool &truth) {
+    expression = expression ? expression->IgnoreParenImpCasts() : nullptr;
+    if (const auto *unary = llvm::dyn_cast_or_null<clang::UnaryOperator>(expression)) {
+        if (unary->getOpcode() == clang::UO_LNot) {
+            if (!normalizeCondition(unary->getSubExpr(), context, manager, modified, escaped, atom, truth))
+                return false;
+            truth = !truth;
+            return true;
+        }
+    }
+    if (const auto *binary = llvm::dyn_cast_or_null<clang::BinaryOperator>(expression)) {
+        std::string lhs, rhs, op;
+        bool invert = false;
+        switch (binary->getOpcode()) {
+        case clang::BO_EQ: op = "=="; break;
+        case clang::BO_NE: op = "=="; invert = true; break;
+        case clang::BO_LT: op = "<"; break;
+        case clang::BO_GE: op = "<"; invert = true; break;
+        case clang::BO_GT: op = ">"; break;
+        case clang::BO_LE: op = ">"; invert = true; break;
+        default: return false;
+        }
+        if (!conditionOperand(binary->getLHS(), context, manager, modified, escaped, lhs) ||
+            !conditionOperand(binary->getRHS(), context, manager, modified, escaped, rhs))
+            return false;
+        if ((op == "==") && rhs < lhs) std::swap(lhs, rhs);
+        if (op == ">") { std::swap(lhs, rhs); op = "<"; }
+        atom = "cmp(" + op + "," + lhs + "," + rhs + ")";
+        truth = !invert;
+        return true;
+    }
+    std::string operand;
+    if (!conditionOperand(expression, context, manager, modified, escaped, operand)) return false;
+    atom = "bool(" + operand + ")";
+    truth = true;
+    return true;
+}
+
+const clang::Expr *supportedBranchCondition(const clang::Stmt *terminator) {
+    if (const auto *statement = llvm::dyn_cast_or_null<clang::IfStmt>(terminator))
+        return statement->getCond();
+    if (const auto *statement = llvm::dyn_cast_or_null<clang::WhileStmt>(terminator))
+        return statement->getCond();
+    if (const auto *statement = llvm::dyn_cast_or_null<clang::DoStmt>(terminator))
+        return statement->getCond();
+    if (const auto *statement = llvm::dyn_cast_or_null<clang::ForStmt>(terminator))
+        return statement->getCond();
     return nullptr;
 }
 
@@ -697,14 +813,45 @@ private:
         info.cfgAvailable = true;
         info.cfg.resize(cfg->getNumBlockIDs());
         info.entryBlock = cfg->getEntry().getBlockID();
+        ConditionMutationCollector mutations;
+        mutations.TraverseStmt(function->getBody());
         std::unordered_map<std::size_t, std::pair<unsigned, unsigned long long>> chosenBlock;
         for (const clang::CFGBlock *block : *cfg) {
             auto &record = info.cfg[block->getBlockID()];
             record.id = block->getBlockID();
             record.isExit = block == &cfg->getExit();
+            std::vector<const clang::CFGBlock *> reachableSuccessors;
             for (auto successor : block->succs())
                 if (const clang::CFGBlock *target = successor.getReachableBlock())
-                    record.successors.push_back(target->getBlockID());
+                    reachableSuccessors.push_back(target);
+            const auto *terminator = block->getTerminatorStmt();
+            const auto *condition = supportedBranchCondition(terminator);
+            const bool recognizedBranch = condition &&
+                (llvm::isa<clang::IfStmt>(terminator) || llvm::isa<clang::WhileStmt>(terminator) ||
+                 llvm::isa<clang::DoStmt>(terminator) || llvm::isa<clang::ForStmt>(terminator));
+            for (std::size_t successorIndex = 0; successorIndex < reachableSuccessors.size(); ++successorIndex) {
+                const clang::CFGBlock *target = reachableSuccessors[successorIndex];
+                record.successors.push_back(target->getBlockID());
+                FunctionInfo::CFGBlock::BranchCondition branch;
+                branch.targetBlock = target->getBlockID();
+                branch.hasCondition = reachableSuccessors.size() > 1;
+                if (branch.hasCondition) {
+                    const clang::Expr *branchExpr = recognizedBranch
+                        ? condition : llvm::dyn_cast_or_null<clang::Expr>(block->getTerminatorCondition());
+                    branch.expression = branchExpr ? expressionText(branchExpr, context_) : "<unsupported-branch>";
+                    branch.location = branchExpr ? makeLocated(branchExpr->getExprLoc(), manager_) :
+                        makeLocated(block->getTerminatorStmt() ? block->getTerminatorStmt()->getBeginLoc()
+                                                               : clang::SourceLocation(), manager_);
+                    if (recognizedBranch && reachableSuccessors.size() == 2) {
+                        bool conditionTruth = true;
+                        branch.supported = normalizeCondition(condition, context_, manager_, mutations.modified,
+                                                              mutations.escaped, branch.atom, conditionTruth);
+                        // Clang CFG orders the if/loop body before the alternate/exit edge.
+                        branch.truth = successorIndex == 0 ? conditionTruth : !conditionTruth;
+                    }
+                }
+                record.successorConditions.push_back(std::move(branch));
+            }
             for (const auto &element : *block) {
                 auto cfgStmt = element.getAs<clang::CFGStmt>();
                 if (!cfgStmt)
@@ -750,6 +897,24 @@ private:
         for (auto &block : info.cfg)
             std::stable_sort(block.callEvents.begin(), block.callEvents.end(),
                 [&](std::size_t left, std::size_t right) { return offsets(left) < offsets(right); });
+
+        // Mark DFS back edges so predicate facts from one loop iteration are
+        // not incorrectly reused in a later iteration after values may change.
+        std::vector<unsigned char> color(info.cfg.size(), 0);
+        std::function<void(unsigned)> markBackEdges = [&](unsigned blockId) {
+            if (blockId >= info.cfg.size() || color[blockId] == 2) return;
+            color[blockId] = 1;
+            auto &block = info.cfg[blockId];
+            for (auto &branch : block.successorConditions) {
+                if (branch.targetBlock >= color.size()) continue;
+                if (color[branch.targetBlock] == 1)
+                    branch.loopBackEdge = true;
+                else if (color[branch.targetBlock] == 0)
+                    markBackEdges(branch.targetBlock);
+            }
+            color[blockId] = 2;
+        };
+        markBackEdges(info.entryBlock);
     }
 
     bool isMainFile(clang::SourceLocation location) const {

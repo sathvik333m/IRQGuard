@@ -43,25 +43,42 @@ is `disabled`, and its reason states the modeled same-CPU hardirq preemption
 assumption. The separate edge kind prevents it from being mistaken for an
 observed lock dependency.
 
-This phase's bounded feasibility check uses CFG-derived IRQ state at acquisition
-points, handler-scoped graph paths, and an event-level CFG reachability check
-for direct same-function dependencies. That check searches from the source
-acquisition to the target while tracking whether the source lock is released;
-its per-function work limit is `max(256, CFG block count * 128)`. A found path
-is labeled `cfg_reachable`, not semantically feasible, because correlated
-branch predicates are not evaluated. A path that
-cannot reach the target before release rejects that dependency and any cycle
-that relies on it. Interprocedural dependencies are retained with their call
-provenance because a full expanded call-path feasibility check is not yet
-implemented. A join of enabled and disabled IRQ paths remains `unknown`, so a
-cycle using it becomes `inconclusive_analysis`. The analyzer does not combine
-branch predicates or claim that individually reachable edges occur in the same
-invocation. Correlated predicates such as `if (x) acquire(A); if (!x)
-acquire(B);` are therefore not proven exclusive; such dependencies remain
-possible. Where path correlation, lock aliasing, registration lifetime, or
-target resolution is needed, the result remains a candidate/inconclusive
-finding with uncertainty rather than being declared feasible or safe. No
-numeric confidence score is used.
+The original bounded check used CFG reachability but did not retain branch
+predicates. Phase 16 extends direct same-function paths with CFG successor
+guards for supported `if`, `while`, `do`, and `for` conditions. The guard
+normalizer accepts stable scalar local/parameter references and simple
+comparisons (`==`, `!=`, `<`, `<=`, `>`, `>=`) against similarly stable values.
+Exact opposite facts for one declaration can contradict a path, for example
+`if (x) acquire(A); if (!x) acquire(B);`. Assignments, address escapes,
+volatile/global mutable state, function-call conditions, compound boolean
+expressions, switches, and unsupported predicates remain unknown. Conditions
+are not conjoined across cycle edges because different edges can arise in
+separate invocations or threads.
+
+For each direct dependency, a CFG search begins at the function entry and
+tracks whether the source lock has been acquired, released, and reacquired
+before the target operation. It retains simple path facts up to 16 atoms and
+2,048 states, with an additional work cap of `min(2,048, max(256, CFG blocks *
+128))`. Loop back edges clear predicate facts and mark paths that cross
+iterations inconclusive; loops are represented by CFG cycles, not unrolled.
+A compatible witness is recorded as `cfg_reachable`; an unsupported witness
+is inconclusive; a path with only contradictory supported predicates or no
+held-lock path is rejected. Interprocedural summary paths retain provenance
+but remain unrefined; summaries with unresolved effects or failed convergence
+are explicitly inconclusive.
+
+Cycle `feasibility` is additive to the existing stable `category` values:
+`candidate` means at least one edge remains unrefined; `potentially_feasible`
+means every required edge has compatible supported evidence, while static
+assumptions remain; `inconclusive` means material uncertainty affects the
+cycle; `rejected` means a required edge is ruled out by a documented modeled
+constraint. `independently_confirmed` is never emitted. An interrupt cycle
+requires a resolved `request_irq` handler and a modeled IRQ-enabled process
+snapshot, but registration execution, interrupt delivery, and lifetime are not
+proven. An exact `free_irq` IRQ/device argument match is exported as
+deregistration evidence only; it does not establish ordering or retire the
+handler. `irqrestore` continues to use the saved flags state, and paths with
+unknown IRQ state remain inconclusive. No numeric confidence score is used.
 
 ## Explicit limits
 

@@ -31,6 +31,19 @@ struct FunctionInfo {
         unsigned id = 0;
         bool isExit = false;
         std::vector<unsigned> successors;
+        struct BranchCondition {
+            unsigned targetBlock = 0;
+            bool hasCondition = false;
+            std::string expression;
+            std::string atom;
+            bool truth = false;
+            bool supported = false;
+            bool loopBackEdge = false;
+            LocatedSource location;
+        };
+        // Positional counterpart to successors. Unsupported guards are retained
+        // as unknown edges instead of being treated as unconstrained facts.
+        std::vector<BranchCondition> successorConditions;
         // Indexes into AnalysisResult::calls, in source evaluation order.
         std::vector<std::size_t> callEvents;
     };
@@ -156,10 +169,21 @@ struct InterruptRegistration {
     std::string api;
     std::string caller;
     std::string irqExpression;
+    std::string deviceExpression;
     std::string resolution;
     std::vector<std::string> handlerIds;
     std::vector<std::string> handlerNames;
     LocatedSource location;
+};
+
+struct InterruptDeregistration {
+    std::string api;
+    std::string caller;
+    std::string irqExpression;
+    std::string deviceExpression;
+    std::string resolution;
+    LocatedSource location;
+    std::vector<LocatedSource> argumentMatchedRegistrations;
 };
 
 struct InterruptStateSnapshot {
@@ -190,6 +214,13 @@ struct InterruptLockEdge {
     std::string handler;
     std::string feasibility = "unrefined"; // cfg_reachable, rejected, inconclusive
     std::string feasibilityReason;
+    std::string summaryStatus = "not_applicable";
+    // Direct dependency path evidence. Branches are scoped to one function
+    // invocation; they are not conjoined across separate cycle edges.
+    std::string pathConditionStatus = "not_checked"; // compatible, inconclusive, contradictory
+    std::vector<FunctionInfo::CFGBlock::BranchCondition> pathConditions;
+    std::string registrationLifecycle = "not_applicable";
+    std::vector<LocatedSource> deregistrationEvidence;
     std::vector<ProvenanceStep> sourceProvenance;
     std::vector<ProvenanceStep> targetProvenance;
 };
@@ -217,6 +248,7 @@ struct AnalysisResult {
     std::vector<FunctionSummaryInfo> functionSummaries;
     std::vector<LockDependency> lockDependencies;
     std::vector<InterruptRegistration> interruptRegistrations;
+    std::vector<InterruptDeregistration> interruptDeregistrations;
     std::vector<InterruptStateSnapshot> interruptSnapshots;
     std::vector<InterruptLockEdge> interruptLockEdges;
     std::vector<InterruptCycle> interruptCycles;

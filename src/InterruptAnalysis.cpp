@@ -580,8 +580,8 @@ std::vector<std::string> cycleNodes(const std::vector<std::size_t> &edgeIndexes,
 }
 
 // Validate direct, same-function dependencies with an event-level CFG search.
-// The state means the source lock remains held after its acquisition. A path
-// that releases it before acquiring the target cannot justify that edge.
+// Supported branch predicates are tracked only within one invocation. Unknown
+// guards remain possible but cannot justify rejection.
 void refineDirectDependencies(AnalysisResult &result) {
     struct EventPosition { unsigned block = 0; std::size_t event = 0; };
     auto findPosition = [&](const FunctionInfo &function, std::size_t callIndex,
@@ -639,42 +639,127 @@ void refineDirectDependencies(AnalysisResult &result) {
         }
         std::unordered_map<unsigned, const FunctionInfo::CFGBlock *> blocks;
         for (const auto &block : function->cfg) blocks[block.id] = &block;
-        std::deque<std::pair<unsigned, std::size_t>> queue{{from.block, from.event + 1}};
-        std::set<std::pair<unsigned, std::size_t>> seen;
-        bool reachable = false;
+        struct PathState {
+            unsigned block = 0;
+            std::size_t event = 0;
+            std::map<std::string, bool> predicates;
+            std::vector<FunctionInfo::CFGBlock::BranchCondition> evidence;
+            bool holdingSource = false;
+            bool unknown = false;
+        };
+        auto stateKey = [](const PathState &state) {
+            std::string key = std::to_string(state.block) + ":" + std::to_string(state.event) +
+                (state.holdingSource ? ":h" : ":n") + (state.unknown ? ":u" : ":k");
+            for (const auto &predicate : state.predicates)
+                key += ":" + predicate.first + "=" + (predicate.second ? "1" : "0");
+            return key;
+        };
+        std::deque<PathState> queue{{function->entryBlock, 0, {}, {}, false, false}};
+        std::set<std::string> seen;
+        bool compatibleWitness = false;
+        bool unknownWitness = false;
+        bool compatibleEvidenceCaptured = false;
+        bool unknownEvidenceCaptured = false;
+        bool sawContradiction = false;
+        std::vector<FunctionInfo::CFGBlock::BranchCondition> witnessConditions;
         std::size_t steps = 0;
-        const std::size_t limit = std::max<std::size_t>(256, function->cfg.size() * 128);
+        constexpr std::size_t MaxPathStates = 2048;
+        constexpr std::size_t MaxConditionAtoms = 16;
+        const std::size_t limit = std::min<std::size_t>(MaxPathStates,
+            std::max<std::size_t>(256, function->cfg.size() * 128));
         while (!queue.empty() && steps++ < limit) {
-            auto state = queue.front(); queue.pop_front();
-            if (!seen.insert(state).second) continue;
-            auto block = blocks.find(state.first);
+            PathState state = std::move(queue.front()); queue.pop_front();
+            if (!seen.insert(stateKey(state)).second) continue;
+            auto block = blocks.find(state.block);
             if (block == blocks.end()) continue;
-            bool held = true;
-            for (std::size_t event = state.second; event < block->second->callEvents.size(); ++event) {
+            bool targetFound = false;
+            for (std::size_t event = state.event; event < block->second->callEvents.size(); ++event) {
                 const auto callIndex = block->second->callEvents[event];
-                if (callIndex == toCall) { reachable = true; break; }
+                if (callIndex == toCall && state.holdingSource) {
+                    if (state.unknown) {
+                        unknownWitness = true;
+                        if (!compatibleEvidenceCaptured && !unknownEvidenceCaptured) {
+                            witnessConditions = state.evidence;
+                            unknownEvidenceCaptured = true;
+                        }
+                    }
+                    else {
+                        compatibleWitness = true;
+                        if (!compatibleEvidenceCaptured) {
+                            witnessConditions = state.evidence;
+                            compatibleEvidenceCaptured = true;
+                        }
+                    }
+                    targetFound = true;
+                    break;
+                }
+                if (callIndex == fromCall) {
+                    state.holdingSource = true;
+                    continue;
+                }
+                if (!state.holdingSource) continue;
                 const auto *api = apiAt(callIndex);
                 if (api && api->lock && api->lock->identityTemplate == dependency->fromLock &&
                     (api->kind == "lock_release" || api->kind == "lock_release_irq" ||
                      api->kind == "lock_release_irqrestore")) {
-                    held = false;
-                    break;
+                    state.holdingSource = false;
                 }
             }
-            if (reachable) break;
-            if (!held) continue;
-            for (unsigned successor : block->second->successors)
-                queue.emplace_back(successor, 0);
+            if (targetFound) continue;
+            for (std::size_t successorIndex = 0;
+                 successorIndex < block->second->successorConditions.size(); ++successorIndex) {
+                auto next = state;
+                const auto &branch = block->second->successorConditions[successorIndex];
+                if (branch.loopBackEdge) {
+                    // Values may change across loop iterations; do not carry
+                    // branch correlations through a back edge.
+                    next.predicates.clear();
+                    next.evidence.clear();
+                    next.unknown = true;
+                }
+                if (branch.hasCondition) {
+                    next.evidence.push_back(branch);
+                    if (!branch.supported || branch.atom.empty()) {
+                        next.unknown = true;
+                    } else {
+                        auto prior = next.predicates.find(branch.atom);
+                        if (prior != next.predicates.end() && prior->second != branch.truth) {
+                            sawContradiction = true;
+                            continue;
+                        }
+                        if (prior == next.predicates.end()) {
+                            if (next.predicates.size() >= MaxConditionAtoms) {
+                                next.unknown = true;
+                            } else {
+                                next.predicates.emplace(branch.atom, branch.truth);
+                            }
+                        }
+                    }
+                }
+                next.block = block->second->successors[successorIndex];
+                next.event = 0;
+                queue.push_back(std::move(next));
+            }
         }
-        if (steps >= limit) {
+        edge.pathConditions = std::move(witnessConditions);
+        if (compatibleWitness) edge.pathConditionStatus = "compatible";
+        else if (unknownWitness) edge.pathConditionStatus = "inconclusive";
+        else if (sawContradiction) edge.pathConditionStatus = "contradictory";
+        if (steps >= limit && !queue.empty()) {
             edge.feasibility = "inconclusive";
-            edge.feasibilityReason = "bounded CFG path search reached its step limit";
-        } else if (reachable) {
+            edge.pathConditionStatus = "inconclusive";
+            edge.feasibilityReason = "bounded CFG path/condition search reached its 2,048-state or per-function work limit";
+        } else if (compatibleWitness) {
             edge.feasibility = "cfg_reachable";
-            edge.feasibilityReason = "control-flow graph path reaches the target acquisition while the source lock remains held; branch predicate feasibility is not proven";
+            edge.feasibilityReason = "a supported CFG path reaches the target while the source lock remains held and its tracked branch predicates are compatible; aliasing, call effects, and other unmodeled conditions remain assumptions";
+        } else if (unknownWitness) {
+            edge.feasibility = "inconclusive";
+            edge.feasibilityReason = "a CFG path reaches the target while the source lock remains held, but at least one branch condition or loop iteration relation is unsupported";
         } else {
             edge.feasibility = "rejected";
-            edge.feasibilityReason = "no CFG path reaches the target acquisition before releasing the source lock";
+            edge.feasibilityReason = sawContradiction
+                ? "every candidate CFG path is excluded by contradictory supported branch predicates before the target acquisition"
+                : "no CFG path reaches the target acquisition while the source lock remains held";
         }
     }
 }
@@ -728,21 +813,31 @@ void detectCycles(AnalysisResult &result) {
         if (existing != result.interruptCycles.end()) {
             if (std::find(existing->provenanceVariants.begin(), existing->provenanceVariants.end(), indexes) ==
                 existing->provenanceVariants.end()) {
-                bool variantRejected = false, variantUncertain = false;
+                bool variantRejected = false, variantUncertain = false, variantUnrefined = false;
                 for (auto index : indexes) {
                     const auto &edge = cycleEdges[index];
                     variantRejected |= edge.feasibility == "rejected";
                     variantUncertain |= edge.certainty == "uncertain" || edge.feasibility == "inconclusive";
+                    variantUnrefined |= edge.feasibility == "unrefined" || edge.feasibility == "candidate";
                 }
                 existing->containsUncertainEdge |= variantUncertain;
-                const bool representativeRejected = existing->feasibility == "rejected";
-                const bool representativeUncertain = existing->feasibility == "inconclusive";
-                if ((variantRejected != representativeRejected) || variantUncertain || representativeUncertain) {
+                const bool hasRejectedVariant = existing->feasibility == "rejected";
+                const bool hasInconclusiveVariant = existing->feasibility == "inconclusive";
+                const bool hasCandidateVariant = existing->feasibility == "candidate";
+                if (variantUncertain || hasInconclusiveVariant ||
+                    ((variantRejected || hasRejectedVariant) &&
+                     !(variantRejected && hasRejectedVariant))) {
                     existing->category = "inconclusive_analysis";
                     existing->feasibility = "inconclusive";
-                } else if (variantRejected) {
+                } else if (variantUnrefined || hasCandidateVariant) {
+                    existing->category = classification == "interrupt_preemption_candidate"
+                        ? "interrupt_aware_candidate" : "candidate_lock_order_cycle";
+                    existing->feasibility = "candidate";
+                } else if (variantRejected && hasRejectedVariant) {
                     existing->category = "rejected_candidate";
                     existing->feasibility = "rejected";
+                } else {
+                    existing->feasibility = "potentially_feasible";
                 }
                 existing->provenanceVariants.push_back(std::move(indexes));
             }
@@ -756,21 +851,32 @@ void detectCycles(AnalysisResult &result) {
         cycle.lockSequence = std::move(nodes);
         cycle.explanation = std::move(explanation);
         bool rejected = classification == "rejected_interrupt_preemption";
+        bool inconclusive = false;
+        bool unrefined = false;
         for (auto index : cycle.edgeIndexes) {
             const auto &edge = result.interruptLockEdges[index];
             cycle.containsUncertainEdge |= edge.certainty == "uncertain" || edge.feasibility == "inconclusive";
             rejected |= edge.feasibility == "rejected";
+            inconclusive |= edge.certainty == "uncertain" || edge.feasibility == "inconclusive";
+            unrefined |= edge.feasibility == "unrefined" || edge.feasibility == "candidate";
         }
         const bool interrupt = classification == "interrupt_preemption_candidate" || rejected;
         cycle.category = rejected ? "rejected_candidate" :
-            (cycle.containsUncertainEdge ? "inconclusive_analysis" :
+            (inconclusive ? "inconclusive_analysis" :
              (interrupt ? "interrupt_aware_candidate" : "candidate_lock_order_cycle"));
         cycle.feasibility = rejected ? "rejected" :
-            (cycle.containsUncertainEdge ? "inconclusive" : "candidate");
-        if (rejected)
-            for (auto index : cycle.edgeIndexes)
-                if (result.interruptLockEdges[index].feasibility == "rejected")
-                    cycle.explanation += " Feasibility check: " + result.interruptLockEdges[index].feasibilityReason + ".";
+            (inconclusive ? "inconclusive" : (unrefined ? "candidate" : "potentially_feasible"));
+        for (auto index : cycle.edgeIndexes) {
+            const auto &edge = result.interruptLockEdges[index];
+            if (!edge.feasibilityReason.empty() &&
+                (edge.feasibility == "rejected" || edge.feasibility == "inconclusive" ||
+                 edge.feasibility == "unrefined" || edge.feasibility == "potentially_feasible"))
+                cycle.explanation += " Edge feasibility (" + edge.sourceFunction + " -> " +
+                    edge.targetFunction + "): " + edge.feasibilityReason + ".";
+            if (edge.registrationLifecycle != "not_applicable")
+                cycle.explanation += " Handler registration evidence is " + edge.registrationLifecycle +
+                    "; registration execution, lifetime, and delivery are not established.";
+        }
         result.interruptCycles.push_back(std::move(cycle));
     };
 
@@ -942,11 +1048,32 @@ void analyzeInterrupts(AnalysisResult &result) {
         registration.location = api.location;
         registration.resolution = api.handlerResolution.empty() ? "unresolved_handler" : api.handlerResolution;
         if (!api.arguments.empty()) registration.irqExpression = api.arguments.front();
+        if (api.arguments.size() > 4) registration.deviceExpression = api.arguments[4];
         registration.handlerIds = api.handlerTargetIds;
         registration.handlerNames = api.handlerTargetNames;
         if (registration.handlerIds.empty())
             result.uncertainties.push_back("unresolved interrupt handler registration at " + sourceKey(api.location));
         result.interruptRegistrations.push_back(std::move(registration));
+    }
+    for (const auto &api : result.apiOperations) {
+        if (api.kind != "interrupt_unregister") continue;
+        InterruptDeregistration deregistration;
+        deregistration.api = api.api;
+        deregistration.caller = api.caller;
+        deregistration.location = api.location;
+        if (!api.arguments.empty()) deregistration.irqExpression = api.arguments[0];
+        if (api.arguments.size() > 1) deregistration.deviceExpression = api.arguments[1];
+        for (const auto &registration : result.interruptRegistrations) {
+            if (!deregistration.irqExpression.empty() &&
+                deregistration.irqExpression == registration.irqExpression &&
+                deregistration.deviceExpression == registration.deviceExpression) {
+                deregistration.argumentMatchedRegistrations.push_back(registration.location);
+            }
+        }
+        deregistration.resolution = deregistration.argumentMatchedRegistrations.empty()
+            ? "no_exact_registration_argument_match"
+            : "exact_arguments_match_order_unproven";
+        result.interruptDeregistrations.push_back(std::move(deregistration));
     }
 
     std::unordered_map<std::string, IRQSummary> summaries;
@@ -1064,6 +1191,21 @@ void analyzeInterrupts(AnalysisResult &result) {
                 edge.targetFunction = dependency.originFunction;
                 edge.irqState = "not_applicable";
                 edge.certainty = dependency.certainty == "possible" ? "possible" : "uncertain";
+                edge.summaryStatus = dependency.origin == "direct" ? "direct" : "unrefined";
+                if (dependency.origin != "direct") {
+                    edge.feasibilityReason = "interprocedural path predicates are not instantiated with this dependency";
+                    auto summary = std::find_if(result.functionSummaries.begin(), result.functionSummaries.end(),
+                        [&](const FunctionSummaryInfo &item) {
+                            return item.function == dependency.reportingFunction;
+                        });
+                    if (summary == result.functionSummaries.end() || !summary->converged ||
+                        !summary->uncertainties.empty()) {
+                        edge.summaryStatus = "uncertain";
+                        edge.certainty = "uncertain";
+                        edge.feasibility = "inconclusive";
+                        edge.feasibilityReason = "interprocedural dependency uses a summary with unresolved effects or convergence status";
+                    }
+                }
                 edge.fromLocation = dependency.fromAcquisition;
                 edge.toLocation = dependency.toAcquisition;
                 edge.sourceProvenance = dependency.throughCalls;
@@ -1135,6 +1277,23 @@ void analyzeInterrupts(AnalysisResult &result) {
                         edge.toLocation = target.location;
                         edge.registrationLocation = registration.location;
                         edge.handler = handlerFunction->second->qualifiedName;
+                        edge.registrationLifecycle = "possible_registration_lifetime_not_proven";
+                        for (const auto &deregistration : result.interruptDeregistrations) {
+                            const bool matchesRegistration = std::any_of(
+                                deregistration.argumentMatchedRegistrations.begin(),
+                                deregistration.argumentMatchedRegistrations.end(),
+                                [&](const LocatedSource &location) {
+                                    return sourceKey(location) == sourceKey(registration.location);
+                                });
+                            if (matchesRegistration) {
+                                edge.registrationLifecycle = "matching_free_irq_arguments_order_unproven";
+                                edge.deregistrationEvidence.push_back(deregistration.location);
+                            }
+                        }
+                        edge.feasibility = edge.certainty == "uncertain" ? "inconclusive" : "potentially_feasible";
+                        edge.feasibilityReason = edge.certainty == "uncertain"
+                            ? "IRQ preemption path depends on unresolved lock identity, IRQ state, or summary effects"
+                            : "source contains a resolved registration and an IRQ-enabled process acquisition; registration execution, lifetime, and interrupt delivery are not proven";
                         edge.sourceProvenance = source.throughCalls;
                         edge.targetProvenance = target.throughCalls;
                         result.interruptLockEdges.push_back(std::move(edge));

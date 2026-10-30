@@ -361,6 +361,7 @@ void registrationJson(std::ostringstream &out, const InterruptRegistration &regi
     out << "{\"api\":" << quote(registration.api)
         << ",\"caller\":" << quote(registration.caller)
         << ",\"irq_expression\":" << quote(registration.irqExpression)
+        << ",\"device_expression\":" << quote(registration.deviceExpression)
         << ",\"resolution\":" << quote(registration.resolution)
         << ",\"handler_ids\":";
     arrayJson(out, registration.handlerIds, [&](const std::string &value) { out << quote(value); });
@@ -368,6 +369,20 @@ void registrationJson(std::ostringstream &out, const InterruptRegistration &regi
     arrayJson(out, registration.handlerNames, [&](const std::string &value) { out << quote(value); });
     out << ",\"location\":";
     locationJson(out, registration.location);
+    out << '}';
+}
+
+void deregistrationJson(std::ostringstream &out, const InterruptDeregistration &deregistration) {
+    out << "{\"api\":" << quote(deregistration.api)
+        << ",\"caller\":" << quote(deregistration.caller)
+        << ",\"irq_expression\":" << quote(deregistration.irqExpression)
+        << ",\"device_expression\":" << quote(deregistration.deviceExpression)
+        << ",\"resolution\":" << quote(deregistration.resolution)
+        << ",\"location\":";
+    locationJson(out, deregistration.location);
+    out << ",\"argument_matched_registrations\":";
+    arrayJson(out, deregistration.argumentMatchedRegistrations,
+              [&](const LocatedSource &location) { locationJson(out, location); });
     out << '}';
 }
 
@@ -399,7 +414,24 @@ void interruptEdgeJson(std::ostringstream &out, const InterruptLockEdge &edge) {
         << ",\"certainty\":" << quote(edge.certainty)
         << ",\"feasibility\":" << quote(edge.feasibility)
         << ",\"feasibility_reason\":" << quote(edge.feasibilityReason)
-        << ",\"from_location\":";
+        << ",\"summary_status\":" << quote(edge.summaryStatus)
+        << ",\"path_condition_status\":" << quote(edge.pathConditionStatus)
+        << ",\"path_conditions\":";
+    arrayJson(out, edge.pathConditions, [&](const FunctionInfo::CFGBlock::BranchCondition &condition) {
+        out << "{\"expression\":" << quote(condition.expression)
+            << ",\"atom\":" << quote(condition.atom)
+            << ",\"truth\":" << (condition.truth ? "true" : "false")
+            << ",\"supported\":" << (condition.supported ? "true" : "false")
+            << ",\"loop_back_edge\":" << (condition.loopBackEdge ? "true" : "false")
+            << ",\"location\":";
+        locationJson(out, condition.location);
+        out << '}';
+    });
+    out << ",\"registration_lifecycle\":" << quote(edge.registrationLifecycle)
+        << ",\"deregistration_evidence\":";
+    arrayJson(out, edge.deregistrationEvidence,
+              [&](const LocatedSource &location) { locationJson(out, location); });
+    out << ",\"from_location\":";
     locationJson(out, edge.fromLocation);
     out << ",\"to_location\":";
     locationJson(out, edge.toLocation);
@@ -591,6 +623,9 @@ std::string toJson(const AnalysisResult &result) {
     out << ",\n  \"interrupt_registrations\":";
     arrayJson(out, result.interruptRegistrations,
               [&](const InterruptRegistration &registration) { registrationJson(out, registration); });
+    out << ",\n  \"interrupt_deregistrations\":";
+    arrayJson(out, result.interruptDeregistrations,
+              [&](const InterruptDeregistration &deregistration) { deregistrationJson(out, deregistration); });
     out << ",\n  \"interrupt_state_snapshots\":";
     arrayJson(out, result.interruptSnapshots,
               [&](const InterruptStateSnapshot &snapshot) { snapshotJson(out, snapshot); });
@@ -812,6 +847,13 @@ std::string toText(const AnalysisResult &result) {
                 << edge.sourceFunction << '@' << edge.fromLocation.expansion.file << ':'
                 << edge.fromLocation.expansion.line << " -> " << edge.targetFunction << '@'
                 << edge.toLocation.expansion.file << ':' << edge.toLocation.expansion.line << '\n';
+            for (const auto &condition : edge.pathConditions)
+                out << "      Path constraint: " << condition.atom << " is "
+                    << (condition.truth ? "true" : "false") << " (source: "
+                    << condition.expression << ")"
+                    << (condition.supported ? "\n" : " [unresolved]\n");
+            if (edge.registrationLifecycle != "not_applicable")
+                out << "      Registration lifecycle: " << edge.registrationLifecycle << '\n';
         }
     }
     for (const auto &uncertainty : result.uncertainties)

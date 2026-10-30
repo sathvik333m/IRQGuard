@@ -30,6 +30,11 @@ export interface GraphEdge {
   certainty?: string
   feasibility?: string
   feasibility_reason?: string
+  summary_status?: string
+  path_condition_status?: string
+  path_conditions?: Array<{ expression: string; atom: string; truth: boolean; supported: boolean; loop_back_edge: boolean; location?: LocatedSource }>
+  registration_lifecycle?: string
+  deregistration_evidence?: LocatedSource[]
   handler?: string
   from_location?: LocatedSource
   to_location?: LocatedSource
@@ -98,6 +103,7 @@ export interface AnalysisReport {
   api_operations: ApiOperation[]
   lock_dependencies: LockDependency[]
   interrupt_registrations: Array<Record<string, unknown>>
+  interrupt_deregistrations?: Array<Record<string, unknown>>
   interrupt_state_snapshots: Array<Record<string, unknown>>
   interrupt_lock_graph: { nodes: Array<{ lock_identity: string }>; edges: GraphEdge[] }
   interrupt_cycles: Finding[]
