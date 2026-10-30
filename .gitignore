@@ -1,5 +1,6 @@
 /build/
 /cmake-build-*/
+/compile_commands.json
 Testing/
 /CMakeFiles/
 CMakeCache.txt
@@ -21,6 +22,7 @@ coverage.xml
 *.gcno
 /web/node_modules/
 /web/dist/
+/web/coverage/
 /web/tsconfig.tsbuildinfo
 /web/.env
 /web/.env.local

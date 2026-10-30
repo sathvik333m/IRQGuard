@@ -17,8 +17,13 @@ const health = {
 
 describe('IRQGuard workspace states', () => {
   it('renders the no-history dashboard without sample findings or invented metrics', async () => {
+    const latestRun = {
+      aggregate: { files_analyzed: 5, files_requested: 5, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43632 } },
+      uncertainty_summary: { event_count: 43632, unique_record_count: 4922, by_category: { lock_identity: { unique_record_count: 89 } } },
+    }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
-      ? jsonResponse(health) : jsonResponse({ analyses: [] })))
+      ? jsonResponse(health)
+      : String(input).includes('/evaluations/linux-v6.6.87') ? jsonResponse({ phase15_latest_run: latestRun }) : jsonResponse({ analyses: [] })))
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Start with a C source file' })).toBeInTheDocument()
     expect(screen.queryByText(/candidate lock-order cycles/i)).not.toBeInTheDocument()
@@ -28,6 +33,8 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByRole('heading', { name: /One source file becomes a traceable lock model/ })).toBeInTheDocument()
     expect(screen.getByText(/does not reproduce Archerfish/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /See measurements and build limits/ })).toBeInTheDocument()
+    expect(screen.getByText(/0 dependencies · 0 candidate cycles · 43,632 uncertainty events · 4,922 unique records/)).toBeInTheDocument()
+    expect(screen.getByText(/89 unresolved lock-identity records/)).toBeInTheDocument()
   })
 
   it('shows a useful error when the local API cannot be reached', async () => {

@@ -51,9 +51,23 @@ the architecture, and limitations.
 The [Phase 14 dependency-generation report](docs/phase14-dependency-generation.md)
 explains why the saved pre-fix kernel run contained unresolved self-edges,
 validates directed dependencies and negative cases with focused fixtures, and
-records why a fresh kernel rerun remains pending the pinned source checkout.
+records the saved before/after evidence and the dependency-generation tests.
 
-The [Phase 15 symbolic-identity report](docs/phase15-symbolic-identity.md) documents conservative pointer-alias canonicalization, call-site summary substitution, saved IRQ-state propagation, and uncertainty grouping. It includes the archived uncertainty baseline and controlled before/after tests; it does not claim a fresh kernel rerun because the pinned source checkout is unavailable.
+The [Phase 15 symbolic-identity report](docs/phase15-symbolic-identity.md) documents conservative pointer-alias canonicalization, call-site summary substitution, saved IRQ-state propagation, uncertainty grouping, controlled regression tests, and the fresh pinned-kernel rerun described below.
+
+Phase 15 also completed a fresh rerun against the pinned Linux `v6.6.87`
+checkout at `third_party/linux-v6.6.87/` (commit
+`814637ca257f4faf57a73fd4e38888cce88b5911`). It analyzed all five selected
+e1000e translation units and extracted 396 functions and 12 lock operations,
+including both `spin_lock_irqsave` acquisitions and matching saved-flags
+restores. It reported 43,632 uncertainty events / 4,922 unique records, of
+which 118 events / 89 unique records concern unresolved lock identity in
+propagated pointer contexts. No dependency edges or cycles were reported for
+this selected set; that is not evidence of deadlock freedom. Selected object
+compilation and objtool/ORC checks succeeded; full kernel and final module
+linking were not attempted, and separate stack validation was not configured.
+See the [fresh Phase 15 measurements](evaluation/results/linux-v6.6.87/phase15-report.md)
+and [machine-readable comparison](evaluation/results/linux-v6.6.87/phase15-comparison.json).
 
 ## Graphical interface (Phase 8)
 
@@ -101,7 +115,7 @@ In **New analysis**, enter an absolute Linux path such as `/home/user/project/ex
 
 The Node.js API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, bounded source snippets, runtime evidence, and the recorded Linux v6.6.87 evaluation summary. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Run metadata is stored in `history.json`; reports are separate JSON files. Existing history from the retired Python API remains in `history.sqlite3` and is not automatically imported. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
 
-The **Project guide** explains the research problem, Clang-to-finding pipeline, modeled scope, Archerfish relationship, userspace runtime extension, and real-kernel evaluation. The Kernel evaluation page also explains the Phase 14 identity mismatch behind the earlier self-edges and shows the saved before/after interpretation alongside its rerun limitation. The Overview remains a graph-centered workspace with a finding inspector, report metrics, lock API counts, run history, diagnostics, and uncertainties. Search filters files, functions, lock identities, and findings within the selected report. Runtime Evidence invokes controlled userspace pthread scenarios; these do not emulate hardware interrupts. The Kernel evaluation page is a bounded report view, not a Linux source browser. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
+The **Project guide** explains the research problem, Clang-to-finding pipeline, modeled scope, Archerfish relationship, userspace runtime extension, and real-kernel evaluation. The Kernel evaluation page explains the Phase 14 identity mismatch behind the earlier self-edges and shows the historical baseline, Phase 13 comparison, and fresh Phase 15 measurements. It also displays the unresolved lock-identity records and build stages that were not run. The Overview remains a graph-centered workspace with a finding inspector, report metrics, lock API counts, run history, diagnostics, and uncertainties. Search filters files, functions, lock identities, and findings within the selected report. Runtime Evidence invokes controlled userspace pthread scenarios; these do not emulate hardware interrupts. The Kernel evaluation page is a bounded report view, not a Linux source browser. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
 
 Run the GUI checks after installing backend and frontend dependencies:
 
