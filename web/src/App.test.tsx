@@ -11,19 +11,20 @@ function jsonResponse(payload: unknown, status = 200) {
 
 const health = {
   api_version: '1', status: 'ok', analyzer_path: '/tmp/deadlock-analyzer', analyzer_available: true,
-  analyzer_report_schema: 3, workspace_roots: ['/tmp/irqguard-test'], data_directory: '/tmp/irqguard-test/data',
+  analyzer_report_schema: 4, workspace_roots: ['/tmp/irqguard-test'], data_directory: '/tmp/irqguard-test/data',
   runtime_evidence_available: false, benchmarks_available: false,
 }
 
 describe('IRQGuard workspace states', () => {
   it('renders the no-history dashboard without sample findings or invented metrics', async () => {
     const latestRun = {
-      aggregate: { files_analyzed: 5, files_requested: 5, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43632 } },
-      uncertainty_summary: { event_count: 43632, unique_record_count: 4922, by_category: { lock_identity: { unique_record_count: 89 } } },
+      controlled_fixture_passed: 8, controlled_fixture_failed: 0,
+      real_kernel_aggregate: { files_analyzed: 5, files_requested: 5, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43632 } },
+      real_kernel_cases: Array.from({ length: 5 }, (_, index) => ({ measurements: { unique_uncertainty_records: index === 4 ? 986 : 984, uncertainty_by_category: { lock_identity: { unique_record_count: index === 4 ? 21 : 17 } } } })),
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
       ? jsonResponse(health)
-      : String(input).includes('/evaluations/linux-v6.6.87') ? jsonResponse({ phase15_latest_run: latestRun }) : jsonResponse({ analyses: [] })))
+      : String(input).includes('/evaluations/linux-v6.6.87') ? jsonResponse({ phase17_evaluation: latestRun }) : jsonResponse({ analyses: [] })))
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Start with a C source file' })).toBeInTheDocument()
     expect(screen.queryByText(/candidate lock-order cycles/i)).not.toBeInTheDocument()
@@ -33,8 +34,9 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByRole('heading', { name: /One source file becomes a traceable lock model/ })).toBeInTheDocument()
     expect(screen.getByText(/does not reproduce Archerfish/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /See measurements and build limits/ })).toBeInTheDocument()
-    expect(screen.getByText(/0 dependencies · 0 candidate cycles · 43,632 uncertainty events · 4,922 unique records/)).toBeInTheDocument()
-    expect(screen.getByText(/89 unresolved lock-identity records/)).toBeInTheDocument()
+    const currentResult = document.querySelector('.guide-current-result')
+    expect(currentResult?.textContent).toContain('0 dependencies · 0 candidate cycles · 43,632 uncertainty events · 4,922 per-file unique records')
+    expect(currentResult?.textContent).toContain('89 unresolved lock-identity records')
   })
 
   it('shows a useful error when the local API cannot be reached', async () => {
@@ -43,12 +45,52 @@ describe('IRQGuard workspace states', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/local irqguard api is unavailable/i)
   })
 
+  it('shows empty and unsupported runtime evidence states without inventing events', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
+      ? jsonResponse({ ...health, runtime_evidence_available: false })
+      : String(input).includes('/runtime/runs') ? jsonResponse({ runs: [] }) : jsonResponse({ analyses: [] })))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Runtime evidence' }))
+    expect(await screen.findByRole('heading', { name: 'Runtime evidence' })).toBeInTheDocument()
+    expect(screen.getByText(/Runtime tools are unavailable/)).toBeInTheDocument()
+    expect(screen.getByText('No runtime runs yet.')).toBeInTheDocument()
+    expect(screen.queryByText(/Observed in controlled userspace process/)).not.toBeInTheDocument()
+  })
+
+  it('compares saved report semantics and reports changed lock identity without claiming deadlock confirmation', async () => {
+    const provenance = { input_fingerprints: { source_sha256: 'same-source', compile_commands_sha256: 'same-compile', api_config_sha256: 'same-api', analyzer_sha256: 'same-analyzer' } }
+    const runs = ['before', 'after'].map((id) => ({ id, created_at: new Date().toISOString(), status: 'completed',
+      source_path: '/tmp/irqguard-test/demo.c', analyzer_report_schema_version: 3, analysis_provenance: provenance,
+      summary: { functions: 2, graph_edges: id === 'before' ? 2 : 3, candidate_cycles: 1 } }))
+    const laterReport = { ...fixture, interrupt_lock_graph: { ...fixture.interrupt_lock_graph,
+      edges: [...fixture.interrupt_lock_graph.edges, { ...fixture.interrupt_lock_graph.edges[0], from_lock: 'lock-C', to_lock: 'lock-D' }] } }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: runs })
+      if (url.endsWith('/before/report')) return jsonResponse(fixture)
+      if (url.endsWith('/after/report')) return jsonResponse(laterReport)
+      return jsonResponse({ analysis: runs[0] })
+    }))
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Analysis history' }))
+    const selectors = await screen.findAllByRole('checkbox')
+    fireEvent.click(selectors[0]); fireEvent.click(selectors[1])
+    fireEvent.click(screen.getByRole('button', { name: 'Compare report semantics' }))
+    expect(await screen.findByRole('region', { name: 'Semantic report comparison' })).toBeInTheDocument()
+    const semanticDiff = screen.getByRole('region', { name: 'Semantic report comparison' })
+    expect(semanticDiff).toHaveTextContent(/semantic changes/)
+    expect(semanticDiff).toHaveTextContent(/Recorded inputs match/)
+    expect(semanticDiff).toHaveTextContent(/Identity changed: lock-A → lock-B became lock-C → lock-D/)
+    expect(screen.getByText(/Static candidates are evidence for review, not confirmed deadlocks/)).toBeInTheDocument()
+  })
+
   it('shows current irqsave extraction status in the CLI guide caveat', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
       ? jsonResponse(health) : jsonResponse({ analyses: [] })))
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'CLI & reports' }))
-    expect(await screen.findByText(/extracted both `spin_lock_irqsave` acquisitions/)).toBeInTheDocument()
+    expect(await screen.findByText(/Phase 15 extraction regression evidence found both `spin_lock_irqsave` acquisitions/)).toBeInTheDocument()
     expect(screen.getByText(/does not prove the driver is deadlock-free/)).toBeInTheDocument()
     expect(screen.queryByText(/pinned kernel run missed some/)).not.toBeInTheDocument()
     expect(screen.getByText(/Schema v4 · archived v3 supported/)).toBeInTheDocument()
@@ -105,6 +147,16 @@ describe('IRQGuard workspace states', () => {
           { function: 'e1000e_systim_to_hwtstamp', acquire_line: 501, release_line: 503, lock_identity: 'unary(&,member(@param[0]->e1000_adapter::systim_lock))', lock_identity_status: 'symbolic', saved_flags_identity: 'flags', restore_matches_flags: true },
         ],
       },
+      phase17_evaluation: {
+        schema_version: 1, dataset_id: 'irqguard-eval-v1', analyzer_sha256: '1234567890abcdef',
+        kernel_pin: { release: 'v6.6.87', commit: '814637ca257f' }, kernel_pin_validation: { status: 'matched' },
+        controlled_fixture_passed: 8, controlled_fixture_failed: 0,
+        controlled_fixture_cases: [{ case_id: 'known-positive', group: 'synthetic-positive', status: 'passed' }],
+        real_kernel_cases: [{ case_id: 'netdev', source: 'drivers/net/e1000e/netdev.c', measurements: { functions: 154, lock_operations: 10, lock_dependencies: 0, candidate_cycles: 0, uncertainty_events: 100 }, elapsed_seconds: 2.7, peak_rss_kib: 100000 }],
+        real_kernel_aggregate: { files_requested: 1, files_analyzed: 1, counts_sum_across_translation_units: { functions: 154, lock_operations: 10, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 100 } },
+        kernel_configuration: { config_sha256: 'config-hash' }, kernel_validation: { kernel_object_compilation: 'succeeded', objtool_object_checks: 'succeeded', orc_sections_present: true, kernel_module_link: 'not_attempted', stack_validation: 'not_configured' },
+        ground_truth: { independent_bug_cases: 0, precision: null, recall: null, reason: 'No independently labeled kernel bug set.' },
+      },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
       ? jsonResponse(health)
@@ -112,6 +164,9 @@ describe('IRQGuard workspace states', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'Kernel evaluation' }))
     expect(await screen.findByRole('heading', { name: 'Candidate validation' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Fresh kernel run and controlled cases' })).toBeInTheDocument()
+    expect(document.querySelector('.phase17-kernel-table')?.textContent).toContain('netdev.c')
+    expect(screen.getByText(/Zero dependencies or cycles do not show deadlock freedom/)).toBeInTheDocument()
     expect(screen.getByText('inconclusive')).toBeInTheDocument()
     expect(screen.getByText(/rx_cleaner → clock_helper/)).toBeInTheDocument()
     expect(screen.getByText(/U-1 lock_identity/)).toBeInTheDocument()

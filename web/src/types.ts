@@ -170,6 +170,17 @@ export interface AnalysisMetadata {
   status: 'queued' | 'running' | 'completed' | 'failed' | string
   source_path: string
   configuration?: Record<string, unknown>
+  analysis_provenance?: {
+    captured_at?: string
+    input_fingerprints?: {
+      source_sha256?: string | null
+      compile_commands_sha256?: string | null
+      api_config_sha256?: string | null
+      analyzer_sha256?: string | null
+    } | null
+    kernel_revision?: string | null
+    toolchain?: string | null
+  } | null
   analyzer_schema_version?: number | null
   analysis_kind?: string | null
   duration_ms?: number | null
@@ -205,15 +216,46 @@ export interface RuntimeRun {
   termination?: string | null
   deadlock_reproduction?: string | null
   event_count?: number | null
+  analysis_id?: string | null
+  runtime_run_ids?: string[]
   error?: string | null
 }
 
 export interface RuntimeEvidence {
   run: RuntimeRun
   summary: Record<string, any> | null
-  events: Array<Record<string, any>>
+  events: RuntimeEvent[]
   comparison: Record<string, any> | null
   benchmark: Record<string, any> | null
+}
+
+export interface RuntimeEvent {
+  schema_version?: number
+  run_id?: string
+  sequence?: number
+  timestamp_monotonic_ns?: number
+  process_id?: number
+  thread_id?: number | string
+  lock_id?: string
+  event?: 'acquire_attempt' | 'contention_observed' | 'acquire_success' | 'release' | string
+  [key: string]: unknown
+}
+
+export interface Phase17Evaluation {
+  schema_version: number
+  dataset_id: string
+  analyzer_sha256: string
+  kernel_pin: { release?: string; commit?: string; subsystem?: string }
+  kernel_pin_validation: { status: string; path?: string; expected_commit?: string; actual_commit?: string | null }
+  controlled_fixture_passed: number
+  controlled_fixture_failed: number
+  controlled_fixture_cases: Array<Record<string, any>>
+  real_kernel_cases: Array<Record<string, any>>
+  real_kernel_aggregate: Record<string, any> | null
+  kernel_configuration?: Record<string, any> | null
+  kernel_validation?: Record<string, any> | null
+  archived_kernel_environment?: Record<string, any> | null
+  ground_truth: { independent_bug_cases: number; precision: number | null; recall: number | null; reason: string }
 }
 
 export interface SourceSnippet {
@@ -308,6 +350,7 @@ export interface KernelEvaluation {
     comparison_to_phase13: Record<string, any>
     irqsave_pairs: Array<Record<string, any>>
   } | null
+  phase17_evaluation?: Phase17Evaluation | null
   phase12_validation?: {
     full_validation: {
       status: string

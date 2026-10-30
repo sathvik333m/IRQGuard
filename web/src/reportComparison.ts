@@ -42,7 +42,9 @@ function canonicalCycle(finding: Finding) {
   const locks = [...(finding.lock_sequence ?? [])]
   if (locks.length > 1 && locks[0] === locks[locks.length - 1]) locks.pop()
   if (!locks.length) return `${finding.category}|empty`
-  const rotations = locks.map((_, index) => locks.slice(index).concat(locks.slice(0, index)).join('>'))
+  const edgeContexts = finding.edges?.map((edge) => `${edge.from_context ?? '?'}>${edge.to_context ?? '?'}`) ?? []
+  const sequence = locks.map((lock, index) => `${lock}@${edgeContexts[index] ?? '?'}`)
+  const rotations = sequence.map((_, index) => sequence.slice(index).concat(sequence.slice(0, index)).join('>'))
   return rotations.sort()[0]
 }
 
@@ -91,6 +93,12 @@ function comparability(before: AnalysisMetadata, after: AnalysisMetadata) {
       else if (left !== right) reasons.push(`${label} changed.`)
     }
   }
+  const revisionA = before.analysis_provenance?.kernel_revision
+  const revisionB = after.analysis_provenance?.kernel_revision
+  const toolchainA = before.analysis_provenance?.toolchain
+  const toolchainB = after.analysis_provenance?.toolchain
+  if (revisionA && revisionB && revisionA !== revisionB) reasons.push('Kernel revision changed.')
+  if (toolchainA && toolchainB && toolchainA !== toolchainB) reasons.push('Toolchain changed.')
   if (before.analyzer_schema_version !== after.analyzer_schema_version) reasons.push('Analyzer report schemas differ.')
   if (reasons.some((reason) => reason.includes('changed') || reason.includes('differ'))) return { status: 'inputs_differ' as const, reasons }
   if (reasons.length) return { status: 'unknown' as const, reasons }
@@ -101,21 +109,37 @@ export function compareReports(beforeMeta: AnalysisMetadata, before: AnalysisRep
   afterMeta: AnalysisMetadata, after: AnalysisReport): SemanticComparison {
   const beforeEdges = before.interrupt_lock_graph.edges
   const afterEdges = after.interrupt_lock_graph.edges
-  const beforeByKey = new Map(beforeEdges.map((edge) => [edgeKey(edge), edge]))
-  const afterByKey = new Map(afterEdges.map((edge) => [edgeKey(edge), edge]))
-  const removed = beforeEdges.filter((edge) => !afterByKey.has(edgeKey(edge)))
-  const added = afterEdges.filter((edge) => !beforeByKey.has(edgeKey(edge)))
-  const beforeAnchors = new Map(beforeEdges.map((edge) => [edgeIdentityAnchor(edge), edge]))
-  const afterAnchors = new Map(afterEdges.map((edge) => [edgeIdentityAnchor(edge), edge]))
-  const changedLockIdentity = [...beforeAnchors.entries()].flatMap(([anchor, left]) => {
-    const right = afterAnchors.get(anchor)
-    return right && (left.from_lock !== right.from_lock || left.to_lock !== right.to_lock) ? [{ before: left, after: right }] : []
-  })
-  const changedProvenance = [...beforeByKey.entries()].flatMap(([key, left]) => {
-    const right = afterByKey.get(key)
-    if (!right) return []
-    const leftEvidence = edgeProvenance(left)
-    const rightEvidence = edgeProvenance(right)
+  const groupEdges = (edges: GraphEdge[]) => {
+    const result = new Map<string, GraphEdge[]>()
+    for (const edge of edges) result.set(edgeKey(edge), [...(result.get(edgeKey(edge)) ?? []), edge])
+    return result
+  }
+  const beforeByKey = groupEdges(beforeEdges)
+  const afterByKey = groupEdges(afterEdges)
+  const beforeAnchors = new Map<string, GraphEdge[]>()
+  const afterAnchors = new Map<string, GraphEdge[]>()
+  for (const edge of beforeEdges) beforeAnchors.set(edgeIdentityAnchor(edge), [...(beforeAnchors.get(edgeIdentityAnchor(edge)) ?? []), edge])
+  for (const edge of afterEdges) afterAnchors.set(edgeIdentityAnchor(edge), [...(afterAnchors.get(edgeIdentityAnchor(edge)) ?? []), edge])
+  const pairedBefore = new Set<string>()
+  const pairedAfter = new Set<string>()
+  const changedLockIdentity: Array<{ before: GraphEdge; after: GraphEdge }> = []
+  for (const [anchor, leftEdges] of beforeAnchors) {
+    const rightEdges = [...(afterAnchors.get(anchor) ?? [])]
+    for (const left of leftEdges) {
+      const matchIndex = rightEdges.findIndex((right) => left.from_lock !== right.from_lock || left.to_lock !== right.to_lock)
+      if (matchIndex < 0) continue
+      const [right] = rightEdges.splice(matchIndex, 1)
+      changedLockIdentity.push({ before: left, after: right })
+      pairedBefore.add(edgeKey(left)); pairedAfter.add(edgeKey(right))
+    }
+  }
+  const removed = [...beforeByKey.entries()].filter(([key]) => !afterByKey.has(key) && !pairedBefore.has(key)).map(([, values]) => values[0])
+  const added = [...afterByKey.entries()].filter(([key]) => !beforeByKey.has(key) && !pairedAfter.has(key)).map(([, values]) => values[0])
+  const changedProvenance = [...beforeByKey.entries()].flatMap(([key, leftEdges]) => {
+    const rightEdges = afterByKey.get(key)
+    if (!rightEdges) return []
+    const leftEvidence = [...new Set(leftEdges.flatMap(edgeProvenance))].sort()
+    const rightEvidence = [...new Set(rightEdges.flatMap(edgeProvenance))].sort()
     return sameSet(leftEvidence, rightEvidence) ? [] : [{ edge: key, before: leftEvidence, after: rightEvidence }]
   })
 

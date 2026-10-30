@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { spawn } from 'node:child_process'
-import { randomUUID } from 'node:crypto'
-import { constants, accessSync } from 'node:fs'
+import { createHash, randomUUID } from 'node:crypto'
+import { constants, accessSync, createReadStream } from 'node:fs'
 import { mkdir, readFile, realpath, rename, stat, writeFile, unlink } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -14,7 +14,9 @@ const dataDir = path.resolve(process.env.IRQGUARD_DATA_DIR || path.join(os.homed
 const reportDir = path.join(dataDir, 'reports')
 const historyPath = path.join(dataDir, 'history.json')
 const apiVersion = '1'
-const reportSchema = 3
+// The bundled C++ analyzer emits schema 4. Older stored schema-3 reports are
+// still served as historical data, but new analyzer invocations must match 4.
+const reportSchema = 4
 const runtimeScript = path.join(repoRoot, 'runtime/runtime_evidence.py')
 const runtimeProgram = path.join(repoRoot, 'build/irqguard-runtime-demo')
 const runtimeDir = path.join(dataDir, 'runtime')
@@ -108,6 +110,16 @@ function parseJson(text, message) {
   try { return JSON.parse(text) } catch { throw new HttpError(500, message) }
 }
 
+function sha256File(file) {
+  return new Promise((resolve, reject) => {
+    const hash = createHash('sha256')
+    const input = createReadStream(file)
+    input.on('data', (chunk) => hash.update(chunk))
+    input.on('error', reject)
+    input.on('end', () => resolve(hash.digest('hex')))
+  })
+}
+
 function rowReport(row) {
   if (!row.report_json) return null
   const report = parseJson(row.report_json, 'Stored analysis report is malformed')
@@ -149,6 +161,7 @@ function metadata(row) {
     status: row.status,
     source_path: row.source_path,
     configuration: parseJson(row.config_json, 'Stored analysis configuration is malformed'),
+    analysis_provenance: row.analysis_provenance ?? null,
     analyzer_schema_version: report?.schema_version ?? null,
     analysis_kind: report?.analysis_kind ?? null,
     duration_ms: row.duration_ms,
@@ -444,6 +457,7 @@ async function route(request, response) {
     const phase13ComparisonPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13-before-after.json')
     const phase13LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13/latest-rerun-measurements.json')
     const phase15LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase15-comparison.json')
+    const phase17SummaryPath = path.join(repoRoot, 'evaluation/results/phase17/summary.json')
     let measurement
     try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
     catch (error) {
@@ -478,6 +492,11 @@ async function route(request, response) {
     try { phase15LatestRun = JSON.parse(await readFile(phase15LatestRunPath, 'utf8')) }
     catch (error) {
       if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the latest Phase 15 run: ${error.message}`)
+    }
+    let phase17Evaluation = null
+    try { phase17Evaluation = JSON.parse(await readFile(phase17SummaryPath, 'utf8')) }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the Phase 17 evaluation report: ${error.message}`)
     }
     const readPhase12Measurement = async (filename) => {
       try { return JSON.parse(await readFile(path.join(phase12Directory, filename), 'utf8')) }
@@ -540,6 +559,7 @@ async function route(request, response) {
       phase13_comparison: phase13Comparison,
       phase13_latest_rerun: phase13LatestRun,
       phase15_latest_run: phase15LatestRun,
+      phase17_evaluation: phase17Evaluation,
       phase12_validation: fullValidation || sourceOnlyValidation ? {
         full_validation: fullValidation ? {
           status: fullValidation.status,
@@ -652,12 +672,19 @@ async function route(request, response) {
     if (activeRuns.size >= 2) throw new HttpError(429, 'Two analyses are already running; retry when one finishes')
     const body = await readBody(request)
     const { source, compilation, apiConfig } = await validateRequest(body)
+    const inputFingerprints = {
+      source_sha256: await sha256File(source),
+      compile_commands_sha256: compilation ? await sha256File(path.join(compilation, 'compile_commands.json')) : null,
+      api_config_sha256: apiConfig ? await sha256File(apiConfig) : null,
+      analyzer_sha256: await sha256File(analyzerPath),
+    }
     const id = randomUUID().replaceAll('-', '')
     const createdAt = new Date().toISOString()
     const config = { source_path: source, compile_commands_path: compilation, api_config_path: apiConfig, format: 'json' }
     analyses.push({
       id, created_at: createdAt, status: 'queued', source_path: source,
       compile_commands_path: compilation, api_config_path: apiConfig,
+      analysis_provenance: { captured_at: createdAt, input_fingerprints: inputFingerprints, kernel_revision: null, toolchain: null },
       config_json: JSON.stringify(config), return_code: null, duration_ms: null,
       report_path: null, report_json: null, error: null,
     })

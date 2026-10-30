@@ -1031,3 +1031,48 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
   .guide-research-map { grid-template-columns: 1fr; gap: 13px; margin: -40px 0 44px 27px; }
   .guide-research-map > div, .guide-research-map > div:last-child { padding: 0 0 12px; border: 0; border-bottom: 1px solid var(--line-soft); }
 }
+
+/* Phase 18: semantic comparison and Phase 17 evidence */
+.semantic-compare-action { margin: 14px 12px 0; }
+.comparison-help { margin: 8px 12px; color: var(--text-dim); font-size: 11px; line-height: 1.5; }
+.semantic-diff { margin: 14px 12px 12px; padding-top: 13px; border-top: 1px solid var(--line); }
+.semantic-diff-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.semantic-diff-heading h3 { margin: 4px 0 0; font-size: 14px; }
+.semantic-metadata { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 8px 0 12px; color: var(--text-dim); font-size: 10px; }
+.semantic-diff-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+.semantic-diff-grid article { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line-soft); }
+.semantic-diff-grid article > strong { color: var(--text); font-size: 11px; }
+.semantic-diff-grid article > p { margin: 0; color: var(--text-secondary); font-size: 10px; }
+.semantic-diff-grid article > small { color: var(--text-dim); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+.runtime-provenance { display: flex; flex-wrap: wrap; gap: 7px 15px; padding: 9px 15px; border-bottom: 1px solid var(--line-soft); color: var(--text-dim); font-size: 10px; }
+.runtime-provenance > span:first-child { color: var(--blue); }
+.evidence-comparison-row { grid-template-columns: 90px minmax(0, 1fr); }
+.evidence-comparison-row > small, .evidence-comparison-row > code { grid-column: 2; color: var(--text-dim); font-size: 10px; overflow-wrap: anywhere; }
+.evidence-comparison-row > code { color: var(--text-secondary); }
+.evidence-comparison-row .runtime-run-provenance { padding-left: 9px; border-left: 1px solid var(--line); }
+.phase17-evaluation { margin-top: 17px; overflow: hidden; }
+.phase17-provenance { display: flex; flex-wrap: wrap; gap: 7px 18px; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); color: var(--text-dim); font-size: 10px; }
+.phase17-provenance code { color: var(--text-secondary); }
+.phase17-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--line-soft); }
+.phase17-kpis > div { min-width: 0; padding: 12px 13px; border-right: 1px solid var(--line-soft); display: grid; gap: 4px; }
+.phase17-kpis > div:last-child { border-right: 0; }
+.phase17-kpis strong { font-size: 18px; letter-spacing: -.03em; }
+.phase17-kpis span { color: var(--text-dim); font-size: 10px; }
+.phase17-kernel-table { min-width: 0; }
+.phase17-kernel-table .runtime-table-wrap { max-height: 300px; }
+.phase17-kernel-table .data-table { min-width: 930px; font-size: 10px; }
+.phase17-kernel-table td code { font-size: 10px; }
+.phase17-kernel-table .status-pill { padding: 2px 5px; font-size: 9px; }
+.phase17-details { padding: 11px 14px; border-top: 1px solid var(--line-soft); color: var(--text-secondary); font-size: 11px; }
+.phase17-details summary { color: var(--blue); cursor: pointer; }
+.phase17-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 11px; }
+.phase17-detail-grid > div { display: flex; flex-direction: column; gap: 6px; }
+.phase17-detail-grid strong { color: var(--text); font-size: 10px; }
+.phase17-detail-grid small { color: var(--text-dim); font-size: 10px; overflow-wrap: anywhere; }
+.phase17-caveat { margin: 0; padding: 10px 14px 12px; border-top: 1px solid var(--line-soft); color: var(--text-dim); font-size: 10px; line-height: 1.5; }
+@media (max-width: 900px) {
+  .semantic-diff-grid { grid-template-columns: 1fr; gap: 5px; }
+  .phase17-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .phase17-kpis > div:nth-child(3n) { border-right: 0; }
+  .phase17-detail-grid { grid-template-columns: 1fr; }
+}
