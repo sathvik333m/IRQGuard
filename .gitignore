@@ -42,6 +42,9 @@ coverage.xml
 # Generated Phase 14 kernel reruns are disposable; keep curated docs/ and tests/ tracked.
 /evaluation/results/linux-v6.6.87/phase14-rerun/
 /evaluation/results/linux-v6.6.87/phase15-rerun/
+# Ad hoc Phase 17 kernel build and per-file reports are reproducible outputs;
+# the compact raw measurements and summary are preserved under results/phase17/.
+/evaluation/results/linux-v6.6.87/phase17-rerun/
 # Keep REPORT.md and raw-measurements.json tracked; ignore only generated kernel artifacts.
 # Ad hoc Phase 15 reruns are disposable; curated baseline/after evidence is tracked.
 /evaluation/results/phase15/rerun/
