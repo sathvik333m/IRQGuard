@@ -290,6 +290,18 @@ export interface KernelEvaluation {
     validation: Record<string, any>
     aggregate: Record<string, any>
   } | null
+  phase15_latest_run?: {
+    status: string
+    kernel: { release_tag: string; commit: string }
+    source_files: string[]
+    configuration: Record<string, any>
+    environment: Record<string, any>
+    aggregate: Record<string, any>
+    validation: Record<string, any>
+    uncertainty_summary: Record<string, any>
+    comparison_to_phase13: Record<string, any>
+    irqsave_pairs: Array<Record<string, any>>
+  } | null
   phase12_validation?: {
     full_validation: {
       status: string

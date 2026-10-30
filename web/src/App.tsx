@@ -224,7 +224,7 @@ export default function App() {
         <main className="main-content" key={page}>
           {backendError && <div className="alert alert-error" role="alert"><AlertCircle size={17} /><span>{backendError}</span><button className="icon-button alert-close" aria-label="Dismiss error" onClick={() => setBackendError('')}><X size={15} /></button></div>}
 
-          {page === 'guide' && <ProjectGuidePage latestRun={kernelEvaluation?.phase13_latest_rerun ?? null} onOpenWorkspace={() => navigate('overview')} onNew={() => navigate('new')} onKernel={() => navigate('kernel')} onRuntime={() => navigate('runtime')} onCli={() => navigate('cli')} />}
+          {page === 'guide' && <ProjectGuidePage latestRun={kernelEvaluation?.phase15_latest_run ?? null} onOpenWorkspace={() => navigate('overview')} onNew={() => navigate('new')} onKernel={() => navigate('kernel')} onRuntime={() => navigate('runtime')} onCli={() => navigate('cli')} />}
           {page === 'overview' && <OverviewPage
             active={active} report={report} history={history} health={health} loading={loadingReport}
             onNew={() => navigate('new')} onOpenHistory={() => navigate('history')} onOpenGuide={() => navigate('guide')}
@@ -351,7 +351,7 @@ function WorkspaceSearch({ report, onOpenSource, onOpenFinding, onOpenGraph }: {
 }
 
 function ProjectGuidePage({ latestRun, onOpenWorkspace, onNew, onKernel, onRuntime, onCli }: {
-  latestRun: NonNullable<KernelEvaluation['phase13_latest_rerun']> | null
+  latestRun: NonNullable<KernelEvaluation['phase15_latest_run']> | null
   onOpenWorkspace: () => void; onNew: () => void; onKernel: () => void; onRuntime: () => void; onCli: () => void
 }) {
   const counts = latestRun?.aggregate.counts_sum_across_translation_units ?? {}
@@ -790,7 +790,7 @@ function CliGuidePage() {
     { title: 'Validate API registry', detail: 'Check custom API names, event kinds, and argument indexes.', command: './irqguard api-registry validate --config config/apis.example.json' },
     { title: 'Run runtime evidence', detail: 'Run a controlled userspace scenario; this does not emulate kernel IRQs.', command: './irqguard runtime run --scenario deadlock --timeout 1.5 --trace /tmp/deadlock.jsonl' },
     { title: 'Measure runtime overhead', detail: 'Compare the wrapped pthread loop with its uninstrumented baseline.', command: './irqguard benchmark runtime --iterations 1000 --repeats 5 --output /tmp/overhead.json' },
-    { title: 'Evaluate pinned kernel source', detail: 'Reproduce the selected Linux v6.6.87 e1000e evaluation.', command: './irqguard benchmark kernel --kernel /tmp/linux-v6.6.87 --output evaluation/results/linux-v6.6.87' },
+    { title: 'Evaluate pinned kernel source', detail: 'Reproduce the selected Linux v6.6.87 e1000e evaluation.', command: './irqguard benchmark kernel --kernel third_party/linux-v6.6.87 --output evaluation/results/linux-v6.6.87/phase15-rerun' },
   ]
   const copyCommand = async (title: string, command: string) => {
     setCopyError('')
@@ -807,7 +807,7 @@ function CliGuidePage() {
       <aside className="cli-guide-aside">
         <section className="cli-note"><span className="eyebrow">REPORT CONTRACT</span><strong>Schema v4 · archived v3 supported</strong><p>JSON includes extracted functions, calls, lock operations, dependencies, IRQ contexts, findings, source locations, uncertainty, and diagnostics.</p></section>
         <section className="cli-note"><span className="eyebrow">FINDING CATEGORIES</span><dl><dt>Lock-order candidate</dt><dd>Process-context dependency cycle.</dd><dt>Interrupt-aware candidate</dt><dd>Cycle involving modeled hardirq preemption.</dd><dt>Rejected candidate</dt><dd>Modeled IRQ state rejects the cycle shape.</dd><dt>Inconclusive</dt><dd>Analysis lacks enough information to decide feasibility.</dd></dl></section>
-        <section className="cli-caveat"><AlertCircle size={15} /><p>A candidate is not a confirmed deadlock, and IRQGuard does not report a severity score. The pinned Linux v6.6.87 e1000e run extracted both `spin_lock_irqsave` acquisitions and resolved their lock identities symbolically. It still found no dependency edges or cycles in the selected files; that limited result does not prove the driver is free of deadlocks. The run did not build the full kernel or final module.</p></section>
+        <section className="cli-caveat"><AlertCircle size={15} /><p>A candidate is not a confirmed deadlock, and IRQGuard does not report a severity score. The fresh Phase 15 Linux v6.6.87 e1000e run extracted both `spin_lock_irqsave` acquisitions with matching symbolic lock and saved-flags identities. It also surfaced 89 unresolved lock-identity records in propagated pointer contexts. No dependency edges or cycles were reported in these selected files; that does not prove the driver is deadlock-free. The run did not build the full kernel or final module.</p></section>
       </aside>
     </div>
   </>
@@ -826,16 +826,16 @@ function KernelEvaluationPage({ evaluation, loading, error }: { evaluation: Kern
     ['Peak memory', aggregate.peak_rss_kib_max == null ? '—' : `${(aggregate.peak_rss_kib_max / 1024).toFixed(1)} MiB`],
   ]
   return <>
-    <PageHeading eyebrow="PHASE 6 / REAL SOURCE EVALUATION" title={`Linux ${kernel.release_tag}`} subtitle={`${configuration.subsystem} · pinned kernel revision ${kernel.commit}`} action={<span className={`status-pill ${evaluation.status === 'completed' ? 'good' : 'muted'}`}>{evaluation.status}</span>} />
+    <PageHeading eyebrow="PHASE 6 ARCHIVE / PHASE 15 CURRENT" title={`Linux ${kernel.release_tag}`} subtitle={`${configuration.subsystem} · pinned kernel revision ${kernel.commit} · latest Phase 15 rerun shown below`} action={<span className={`status-pill ${evaluation.status === 'completed' ? 'good' : 'muted'}`}>{evaluation.status}</span>} />
     <div className="kernel-eval-warning" role="note"><AlertCircle size={17} /><div><strong>Coverage limitation</strong><p>{evaluation.interpretation}</p></div></div>
-    <section className="kernel-eval-metrics" aria-label="Kernel evaluation measurements">
+    <section className="kernel-eval-metrics" aria-label="Archived Phase 6 kernel evaluation measurements">
       {metrics.map(([label, value]) => <div className="kernel-eval-metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}
     </section>
-    <section className="panel kernel-eval-panel"><div className="panel-heading"><div><div className="eyebrow">PER TRANSLATION UNIT</div><h2>Selected e1000e source files</h2></div><span className="runtime-scope">{aggregate.files_skipped_or_failed} skipped or failed</span></div>
+    <section className="panel kernel-eval-panel"><div className="panel-heading"><div><div className="eyebrow">PHASE 6 ARCHIVE · PER TRANSLATION UNIT</div><h2>Historical e1000e measurements</h2></div><span className="runtime-scope">{aggregate.files_skipped_or_failed} skipped or failed</span></div>
       <div className="runtime-table-wrap"><table className="data-table kernel-eval-table"><thead><tr><th>Source file</th><th>Status</th><th>Functions</th><th>Lock ops</th><th>Dependencies</th><th>Time</th><th>Peak RSS</th></tr></thead><tbody>{evaluation.translation_units.map((unit) => <tr key={unit.file}><td><code>{unit.file}</code></td><td><span className={`status-pill ${statusTone(unit.status)}`}>{unit.status}</span></td><td>{unit.counts.functions}</td><td>{unit.counts.lock_operations}</td><td>{unit.counts.lock_dependencies}</td><td>{unit.elapsed_seconds?.toFixed(3) ?? '—'} s</td><td>{unit.peak_rss_kib == null ? '—' : `${(unit.peak_rss_kib / 1024).toFixed(1)} MiB`}</td></tr>)}</tbody></table></div>
     </section>
     <section className="kernel-eval-details"><div><span className="eyebrow">ANALYSIS SIGNALS</span><dl><dt>Interrupt graph edges</dt><dd>{aggregate.interrupt_graph_edges}</dd><dt>Candidate cycles</dt><dd>{aggregate.interrupt_cycles}</dd><dt>Uncertainties</dt><dd>{aggregate.uncertainties.toLocaleString()}</dd><dt>Parser diagnostics</dt><dd>{aggregate.diagnostics}</dd></dl></div><div><span className="eyebrow">BUILD CONFIGURATION</span><dl><dt>Architecture</dt><dd>{configuration.architecture}</dd><dt>Base config</dt><dd>{configuration.config_base}</dd><dt>Compiler</dt><dd>{configuration.compiler_mode}</dd><dt>Revision</dt><dd><code>{kernel.commit}</code></dd></dl></div></section>
-    {evaluation.phase13_latest_rerun && <Phase13LatestRun run={evaluation.phase13_latest_rerun} />}
+    {evaluation.phase15_latest_run && <Phase15LatestRun run={evaluation.phase15_latest_run} />}
     {evaluation.phase13_comparison && <Phase13Comparison comparison={evaluation.phase13_comparison} />}
     <Phase14DependencyReview />
     {evaluation.phase12_validation && <Phase12Validation evidence={evaluation.phase12_validation} />}
@@ -853,13 +853,22 @@ function Phase14DependencyReview() {
       <div><span>BASELINE · IDENTITY MISMATCH</span><p><code>acquire: unresolved</code><b aria-hidden="true">→</b><code>release: symbolic</code></p><small>Release transfer compares lock identities, so it could not clear these held facts.</small></div>
       <div><span>POST-FIX · MATCHED IDENTITY</span><p><code>acquire: symbolic</code><b aria-hidden="true">=</b><code>release: symbolic</code></p><small>The prior same-site self-edges and their three inconclusive cycles are absent.</small></div>
     </div>
-    <p className="phase14-evidence-limit"><Info size={14} />This explains the saved before/after reports; the pinned kernel source checkout is unavailable for a fresh Phase 14 rerun. Controlled tests verify direct and reversed lock orders, helper-summary provenance, and negative cases. Zero edges do not prove deadlock freedom.</p>
+    <p className="phase14-evidence-limit"><Info size={14} />This explains the saved before/after reports. Phase 14 used the saved comparison; Phase 15 reran the analysis using the located pinned checkout. Controlled tests verify direct and reversed lock orders, helper-summary provenance, and negative cases. Zero edges do not prove deadlock freedom.</p>
   </section>
 }
 
-function Phase13LatestRun({ run }: { run: NonNullable<KernelEvaluation['phase13_latest_rerun']> }) {
+function Phase15LatestRun({ run }: { run: NonNullable<KernelEvaluation['phase15_latest_run']> }) {
   const counts = run.aggregate.counts_sum_across_translation_units ?? {}
-  return <section className="panel phase13-comparison"><div className="panel-heading"><div><div className="eyebrow">PHASE 13 · LATEST KERNEL RERUN</div><h2>Current analyzer results</h2></div><span className={`status-pill ${run.status === 'completed' ? 'good' : 'muted'}`}>{run.status.replaceAll('_', ' ')}</span></div><p>{run.aggregate.files_analyzed}/{run.aggregate.files_requested} files · {counts.functions} functions · {counts.lock_operations} lock operations · {counts.lock_dependencies} dependencies · {counts.interrupt_cycles} candidate cycles</p><div className="kernel-eval-details"><div><span className="eyebrow">ANALYSIS</span><dl><dt>Uncertainty events</dt><dd>{Number(counts.uncertainties ?? 0).toLocaleString()}</dd><dt>Diagnostics</dt><dd>{counts.diagnostics}</dd><dt>Elapsed time</dt><dd>{run.aggregate.analysis_elapsed_seconds_sum}s</dd><dt>Peak RSS</dt><dd>{Math.round((run.aggregate.peak_rss_kib_max_across_separate_runs ?? 0) / 1024)} MiB</dd></dl></div><div><span className="eyebrow">BUILD VALIDATION</span><dl><dt>Objtool</dt><dd>{String(run.validation.objtool_object_checks ?? 'not recorded')}</dd><dt>ORC sections</dt><dd>{String(run.validation.orc_sections_present ?? 'not recorded')}</dd><dt>Stack validation</dt><dd>{String(run.validation.stack_validation ?? 'not recorded')}</dd><dt>Final module link</dt><dd>{String(run.validation.kernel_module_link ?? 'not recorded')}</dd></dl></div></div></section>
+  const summary = run.uncertainty_summary
+  const compare = run.comparison_to_phase13
+  const shortLock = (value: string) => value?.split('::').at(-1)?.replace(/[)}]/g, '') ?? 'unknown lock'
+  return <section className="panel phase13-comparison"><div className="panel-heading"><div><div className="eyebrow">PHASE 15 · FRESH PINNED KERNEL RERUN</div><h2>Current analyzer results</h2></div><span className={`status-pill ${run.status === 'completed' ? 'good' : 'muted'}`}>{run.status.replaceAll('_', ' ')}</span></div>
+    <p>{run.aggregate.files_analyzed}/{run.aggregate.files_requested} files · {counts.functions} functions · {counts.lock_operations} lock operations · {counts.lock_dependencies} dependencies · {counts.interrupt_cycles} candidate cycles</p>
+    <div className="kernel-eval-details"><div><span className="eyebrow">ANALYSIS AND UNCERTAINTY</span><dl><dt>Raw uncertainty events</dt><dd>{Number(summary.event_count ?? counts.uncertainties ?? 0).toLocaleString()}</dd><dt>Unique records</dt><dd>{Number(summary.unique_record_count ?? 0).toLocaleString()}</dd><dt>Lock identity records</dt><dd>{Number(summary.by_category?.lock_identity?.unique_record_count ?? 0).toLocaleString()} ({Number(summary.lock_identity_events ?? 0).toLocaleString()} events)</dd><dt>Change from Phase 13</dt><dd>+{Number(compare.deltas?.uncertainty_events ?? 0).toLocaleString()} events / +{Number(compare.deltas?.unique_uncertainty_records ?? 0).toLocaleString()} unique</dd><dt>Time / peak RSS</dt><dd>{run.aggregate.analysis_elapsed_seconds_sum}s / {Math.round((run.aggregate.peak_rss_kib_max_across_separate_runs ?? 0) / 1024)} MiB</dd></dl></div><div><span className="eyebrow">BUILD VALIDATION</span><dl><dt>Selected objects</dt><dd>{String(run.validation.kernel_object_compilation ?? 'not recorded')}</dd><dt>Objtool checks</dt><dd>{String(run.validation.objtool_object_checks ?? 'not recorded')}</dd><dt>ORC sections</dt><dd>{String(run.validation.orc_sections_present ?? 'not recorded')}</dd><dt>Stack validation</dt><dd>{String(run.validation.stack_validation ?? 'not recorded')}</dd><dt>Final module link</dt><dd>{String(run.validation.kernel_module_link ?? 'not recorded')}</dd></dl></div></div>
+    <p className="phase12-validation-note">Compared with Phase 13, the run used the same kernel commit, source set, config hash, Clang version, and normalized compiler command arguments. The new lock-identity records surface pointer contexts the analyzer cannot resolve; they are not evidence of a newly found deadlock. Zero edges/cycles do not prove deadlock freedom.</p>
+    <div className="runtime-table-wrap"><table className="data-table"><thead><tr><th>Function</th><th>irqsave / irqrestore</th><th>Lock identity</th><th>Saved flags</th></tr></thead><tbody>{run.irqsave_pairs.map((pair, index) => <tr key={`${pair.function}-${index}`}><td>{pair.function}</td><td>netdev.c:{pair.acquire_line} / {pair.release_line}</td><td>{pair.lock_identity_status}: {shortLock(pair.lock_identity)}</td><td>{pair.restore_matches_flags ? 'matched' : 'unresolved'} ({String(pair.saved_flags_identity).split(':').slice(-1)[0]})</td></tr>)}</tbody></table></div>
+    <small className="kernel-review-provenance">Linux {run.kernel.release_tag} · {run.source_files.join(', ')} · config {run.configuration.config_sha256}</small>
+  </section>
 }
 
 function Phase13Comparison({ comparison }: { comparison: NonNullable<KernelEvaluation['phase13_comparison']> }) {

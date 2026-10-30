@@ -100,6 +100,11 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/dependency_generation.c
     )
+    add_test(NAME analyzer_symbolic_identity
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_symbolic_identity.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/symbolic_identity.c
+    )
     add_test(NAME analyzer_interrupt_aware
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_interrupts.py
                 $<TARGET_FILE:deadlock-analyzer>

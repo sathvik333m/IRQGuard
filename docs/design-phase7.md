@@ -77,8 +77,8 @@ revision and retains the Phase 6 limitation that objtool validation is skipped
 in this environment:
 
 ```sh
-./irqguard benchmark kernel --kernel /tmp/linux-v6.6.87 \
-  --output evaluation/results/linux-v6.6.87
+./irqguard benchmark kernel --kernel third_party/linux-v6.6.87 \
+  --output evaluation/results/linux-v6.6.87/phase15-rerun
 ```
 
 The full source-evaluation protocol and current raw data are in

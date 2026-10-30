@@ -63,6 +63,27 @@ void wrapped_macro_lock_operations(void) {
     spin_unlock(&lock_c);
 }
 
+void nested_wrapped_saved_states(void) {
+    unsigned long first_flags, second_flags;
+    save_lock_wrapper(&lock_a, &first_flags);
+    save_lock_wrapper(&lock_b, &second_flags);
+    restore_lock_wrapper(&lock_b, &second_flags);
+    spin_lock(&lock_c);
+    spin_unlock(&lock_c);
+    restore_lock_wrapper(&lock_a, &first_flags);
+    spin_lock(&lock_c);
+    spin_unlock(&lock_c);
+}
+
+void unresolved_wrapper_flags(int choose) {
+    unsigned long first_flags, second_flags;
+    unsigned long *flags = &first_flags;
+    if (choose)
+        flags = &second_flags;
+    save_lock_wrapper(&lock_a, flags);
+    restore_lock_wrapper(&lock_a, flags);
+}
+
 void separate_flags_variables(void) {
     unsigned long first_flags, second_flags;
     spin_lock_irqsave(&lock_a, first_flags);

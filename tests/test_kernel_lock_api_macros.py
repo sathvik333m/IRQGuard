@@ -46,7 +46,9 @@ assert not any(o["api"] in {"_raw_spin_lock_irqsave", "raw_spin_lock_irqsave",
 # IRQs disabled; only the matching outer restore returns to enabled.
 def snapshots(function, needle):
     return [s for s in report["interrupt_state_snapshots"]
-            if s["source_function"] == function and needle in s["lock_identity"]]
+            if s["source_function"] == function and
+            (f":{needle})" in s["lock_identity"] or
+             f":{needle}|" in s["lock_identity"])]
 assert [s["irq_state"] for s in snapshots("nested_macro_lock_operations", "lock_a")
         if s["location"]["expansion"]["line"] == 40] == ["disabled"]
 assert all(s["irq_state"] == "disabled" for s in snapshots("nested_macro_lock_operations", "lock_b"))
@@ -60,6 +62,26 @@ for name in ("save_lock_wrapper", "restore_lock_wrapper"):
 assert snapshots("wrapped_macro_lock_operations", "lock_b")
 assert [s["irq_state"] for s in snapshots("wrapped_macro_lock_operations", "lock_c")
         if s["location"]["expansion"]["line"] == 62] == ["enabled"]
+
+# Reusing summary wrappers at two sites with distinct lock and flags arguments
+# preserves nesting: the inner restore stays disabled; only the outer restore
+# returns to the caller's original enabled state.
+wrapped_nested = [s for s in snapshots("nested_wrapped_saved_states", "lock_c")]
+assert [s["irq_state"] for s in wrapped_nested] == ["disabled", "enabled"], wrapped_nested
+first_wrapped_lock = snapshots("nested_wrapped_saved_states", "lock_a")
+second_wrapped_lock = snapshots("nested_wrapped_saved_states", "lock_b")
+assert first_wrapped_lock and second_wrapped_lock
+assert all(s["irq_state"] == "disabled" for s in first_wrapped_lock + second_wrapped_lock)
+assert {s["lock_identity"] for s in first_wrapped_lock}.isdisjoint(
+    {s["lock_identity"] for s in second_wrapped_lock})
+
+# A pointer-to-flags value reassigned across paths is not a definite saved-state
+# identity. The wrapper summary must surface both the unresolved save output and
+# the unmatched restoration at its caller.
+assert any("irqsave flags argument unresolved through call 'save_lock_wrapper'" in u
+           and "unresolved_wrapper_flags" in u for u in report["uncertainties"])
+assert any("irqrestore has no matching saved state through call 'restore_lock_wrapper'" in u
+           and "unresolved_wrapper_flags" in u for u in report["uncertainties"])
 
 # Independent flag objects are not conflated. A branch-dependent saved state
 # yields an uncertainty; an arbitrary lock-return expression remains unresolved.

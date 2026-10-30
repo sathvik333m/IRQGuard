@@ -72,6 +72,30 @@ def classify(message: str) -> dict[str, str]:
     }
 
 
+def grouped_records(records: Any, field: str, fallback: str) -> dict[str, dict[str, Any]]:
+    buckets: dict[str, dict[str, Any]] = {}
+    for item in records:
+        if field == "source_location":
+            key = (f"{item['source_file']}:{item['line']}:{item['column']}"
+                   if item["source_file"] and item["line"] != "0" else fallback)
+        else:
+            key = item.get(field) or fallback
+        bucket = buckets.setdefault(key, {
+            "event_count": 0, "unique_record_count": 0,
+            "by_category": {}, "by_stage": {},
+        })
+        bucket["event_count"] += item["event_count"]
+        bucket["unique_record_count"] += 1
+        for table_name, value in (("by_category", item["category"]),
+                                  ("by_stage", item["analysis_stage"])):
+            counts = bucket[table_name].setdefault(value, {
+                "event_count": 0, "unique_record_count": 0,
+            })
+            counts["event_count"] += item["event_count"]
+            counts["unique_record_count"] += 1
+    return {key: buckets[key] for key in sorted(buckets)}
+
+
 def summarize(report: dict[str, Any]) -> dict[str, Any]:
     events = report.get("uncertainties", [])
     grouped: dict[str, dict[str, Any]] = {}
@@ -154,6 +178,8 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
         "proven_non_affecting_event_count": 0,
         "non_affecting_count_note": "No uncertainty is marked non-affecting unless that can be established; none are proven non-affecting by this classifier.",
         "by_category": grouped_counts("category"), "by_stage": grouped_counts("analysis_stage"),
+        "by_function": grouped_records(records, "enclosing_function", "<unknown-function>"),
+        "by_source_location": grouped_records(records, "source_location", "<unknown-location>"),
         "records": records,
     }
 
@@ -214,6 +240,8 @@ def main() -> int:
                 "non_affecting_count_note": "None proven; the classifier does not infer that a warning is harmless.",
                 "by_category": {k: {"event_count": v[0], "unique_record_count": v[1]} for k, v in sorted(categories.items())},
                 "by_stage": {k: {"event_count": v[0], "unique_record_count": v[1]} for k, v in sorted(stages.items())},
+                "by_function": grouped_records(all_records.values(), "enclosing_function", "<unknown-function>"),
+                "by_source_location": grouped_records(all_records.values(), "source_location", "<unknown-location>"),
             },
             "translation_units": reports,
             "candidate_affecting_records": candidate_records,

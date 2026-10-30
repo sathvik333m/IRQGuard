@@ -42,7 +42,7 @@ describe('IRQGuard workspace states', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'CLI & reports' }))
     expect(await screen.findByText(/extracted both `spin_lock_irqsave` acquisitions/)).toBeInTheDocument()
-    expect(screen.getByText(/does not prove the driver is free of deadlocks/)).toBeInTheDocument()
+    expect(screen.getByText(/does not prove the driver is deadlock-free/)).toBeInTheDocument()
     expect(screen.queryByText(/pinned kernel run missed some/)).not.toBeInTheDocument()
     expect(screen.getByText(/Schema v4 · archived v3 supported/)).toBeInTheDocument()
   })
@@ -86,6 +86,18 @@ describe('IRQGuard workspace states', () => {
         validation: { objtool_object_checks: 'succeeded', orc_sections_present: true, stack_validation: 'not_configured_by_defconfig', kernel_module_link: 'not_attempted; composite object target only' },
         aggregate: { files_analyzed: 5, files_requested: 5, analysis_elapsed_seconds_sum: 6.491, peak_rss_kib_max_across_separate_runs: 192924, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43514, diagnostics: 2 } },
       },
+      phase15_latest_run: {
+        status: 'completed', kernel: { release_tag: 'v6.6.87', commit: '814637ca257f4faf57a73fd4e38888cce88b5911' },
+        source_files: ['netdev.c', 'ethtool.c', 'ich8lan.c', 'phy.c', 'nvm.c'],
+        configuration: { config_sha256: 'config-hash' }, environment: { clang: 'Clang 20.1.2', analyzer_sha256: 'phase15' },
+        aggregate: { files_analyzed: 5, files_requested: 5, analysis_elapsed_seconds_sum: 7.744, peak_rss_kib_max_across_separate_runs: 237700, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43632, diagnostics: 2 } },
+        validation: { kernel_object_compilation: 'succeeded', objtool_object_checks: 'succeeded', orc_sections_present: true, stack_validation: 'not_configured_by_defconfig', kernel_module_link: 'not_attempted; composite object target only' },
+        uncertainty_summary: { event_count: 43632, unique_record_count: 4922, lock_identity_events: 118, by_category: { lock_identity: { unique_record_count: 89 } } },
+        comparison_to_phase13: { deltas: { uncertainty_events: 118, unique_uncertainty_records: 89 } },
+        irqsave_pairs: [
+          { function: 'e1000e_systim_to_hwtstamp', acquire_line: 501, release_line: 503, lock_identity: 'unary(&,member(@param[0]->e1000_adapter::systim_lock))', lock_identity_status: 'symbolic', saved_flags_identity: 'flags', restore_matches_flags: true },
+        ],
+      },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
       ? jsonResponse(health)
@@ -102,10 +114,14 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByRole('heading', { name: 'Current analyzer results' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Why the edge count changed' })).toBeInTheDocument()
     expect(screen.getByText(/six dependencies were same-site self-edges/)).toBeInTheDocument()
-    expect(screen.getByText(/pinned kernel source checkout is unavailable for a fresh Phase 14 rerun/)).toBeInTheDocument()
-    expect(screen.getByText(/6.491s/)).toBeInTheDocument()
+    expect(screen.getByText(/Phase 14 used the saved comparison; Phase 15 reran the analysis using the located pinned checkout/)).toBeInTheDocument()
+    expect(screen.getByText(/7.744s/)).toBeInTheDocument()
+    expect(screen.getByText('43,632')).toBeInTheDocument()
+    expect(screen.getByText('4,922')).toBeInTheDocument()
+    expect(screen.getByText(/netdev.c:501 \/ 503/)).toBeInTheDocument()
+    expect(screen.getByText(/\+118 events \/ \+89 unique/)).toBeInTheDocument()
     expect(screen.getAllByText('43,705')).toHaveLength(2)
-    expect(screen.getAllByText('43,514')).toHaveLength(2)
+    expect(screen.getAllByText('43,514')).toHaveLength(1)
     expect(screen.getByText(/Earlier pre-install attempt/)).toBeInTheDocument()
     expect(screen.getByText(/missing libelf headers/)).toBeInTheDocument()
     expect(screen.getByText(/C object compilation/)).toBeInTheDocument()

@@ -1,0 +1,30 @@
+{
+  "phase": "15 baseline",
+  "repository_revision_before_edits": "8a27098eefc9d0501b01230b39db660dbe5fd201",
+  "working_tree_before_edits": "clean",
+  "clang_llvm_version": "20.1.2",
+  "kernel_release": "v6.6.87",
+  "kernel_commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+  "kernel_source_available_for_fresh_run": true,
+  "kernel_source_expected_path": "/tmp/linux-v6.6.87",
+  "saved_phase13_analyzer_sha256": "c9d2b43cd2cf1abfb1680cc5e4adc9c6a9df65316ad6a958e0bb8ad5fa858332",
+  "saved_kernel_scope": [
+    "drivers/net/ethernet/intel/e1000e/netdev.c",
+    "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+    "drivers/net/ethernet/intel/e1000e/ethtool.c",
+    "drivers/net/ethernet/intel/e1000e/phy.c",
+    "drivers/net/ethernet/intel/e1000e/80003es2lan.c"
+  ],
+  "saved_baseline_commands": [
+    "python3 evaluation/compare_phase13.py",
+    "python3 evaluation/summarize_uncertainties.py evaluation/results/linux-v6.6.87/phase13-rerun/reports evaluation/results/phase15/baseline/linux-v6.6.87-saved-uncertainty.json"
+  ],
+  "note": "Archived Phase 13 output was reclassified; no fresh Linux source analysis was possible in Phase 15.",
+  "kernel_source_path_at_baseline_inspection": "/home/sathvik/linux-v6.6.87",
+  "kernel_source_later_found_at": "/home/sathvik/linux-v6.6.87",
+  "kernel_source_moved_to": "third_party/linux-v6.6.87",
+  "kernel_source_final_commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+  "phase15_fresh_run_completed": true,
+  "phase15_measurements": "evaluation/results/linux-v6.6.87/phase15-raw-measurements.json",
+  "initial_lookup_note": "The checkout was present but initially missed because the inspection focused on the old /tmp path; this was an inspection error, not an unavailable source tree."
+}

@@ -110,10 +110,57 @@ std::string declarationIdentity(const clang::ValueDecl *declaration,
            ":" + declaration->getQualifiedNameAsString();
 }
 
-std::string canonicalExpression(const clang::Expr *expression,
-                               clang::ASTContext &context,
-                               const clang::FunctionDecl *function,
-                               bool &resolved) {
+using SafePointerAliases = std::unordered_map<const clang::VarDecl *, const clang::Expr *>;
+
+class PointerAliasCollector : public clang::RecursiveASTVisitor<PointerAliasCollector> {
+public:
+    bool VisitVarDecl(clang::VarDecl *variable) {
+        if (variable->isLocalVarDecl() && variable->hasLocalStorage() &&
+            !variable->isStaticLocal() && variable->getType()->isPointerType() &&
+            variable->hasInit())
+            candidates[variable->getCanonicalDecl()] = variable->getInit();
+        return true;
+    }
+
+    bool VisitBinaryOperator(clang::BinaryOperator *binary) {
+        if (!binary->isAssignmentOp()) return true;
+        const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(
+            binary->getLHS()->IgnoreParenImpCasts());
+        const auto *variable = reference
+            ? llvm::dyn_cast<clang::VarDecl>(reference->getDecl()) : nullptr;
+        if (variable) modified.insert(variable->getCanonicalDecl());
+        return true;
+    }
+
+    bool VisitUnaryOperator(clang::UnaryOperator *unary) {
+        if (unary->getOpcode() != clang::UO_AddrOf) return true;
+        const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(
+            unary->getSubExpr()->IgnoreParenImpCasts());
+        const auto *variable = reference
+            ? llvm::dyn_cast<clang::VarDecl>(reference->getDecl()) : nullptr;
+        if (variable) addressEscaped.insert(variable->getCanonicalDecl());
+        return true;
+    }
+
+    SafePointerAliases safeCandidates() const {
+        SafePointerAliases output;
+        for (const auto &candidate : candidates)
+            if (!modified.count(candidate.first) && !addressEscaped.count(candidate.first))
+                output.emplace(candidate);
+        return output;
+    }
+
+private:
+    std::unordered_map<const clang::VarDecl *, const clang::Expr *> candidates;
+    std::unordered_set<const clang::VarDecl *> modified;
+    std::unordered_set<const clang::VarDecl *> addressEscaped;
+};
+
+std::string canonicalExpressionImpl(
+    const clang::Expr *expression, clang::ASTContext &context,
+    const clang::FunctionDecl *function, bool &resolved,
+    const SafePointerAliases &aliases,
+    std::unordered_set<const clang::VarDecl *> &activeAliases) {
     const clang::SourceManager &manager = context.getSourceManager();
     if (!expression) {
         resolved = false;
@@ -130,42 +177,90 @@ std::string canonicalExpression(const clang::Expr *expression,
                 }
             }
         }
+        if (const auto *variable = llvm::dyn_cast_or_null<clang::VarDecl>(value)) {
+            const auto *canonical = variable->getCanonicalDecl();
+            auto alias = aliases.find(canonical);
+            if (alias != aliases.end()) {
+                if (!activeAliases.insert(canonical).second) {
+                    resolved = false;
+                    return "unknown-alias-cycle@" + locationIdentity(variable->getLocation(), manager);
+                }
+                auto identity = canonicalExpressionImpl(alias->second, context, function,
+                                                        resolved, aliases, activeAliases);
+                activeAliases.erase(canonical);
+                return identity;
+            }
+            // A pointer variable stores a value that may change or alias an
+            // unknown object. Parameters are handled symbolically above.
+            if (variable->getType()->isPointerType()) {
+                resolved = false;
+                return "unknown-pointer@" + locationIdentity(variable->getLocation(), manager);
+            }
+        }
         if (value)
             return declarationIdentity(value, manager);
     }
     if (const auto *member = llvm::dyn_cast<clang::MemberExpr>(expression)) {
+        const clang::Expr *baseExpression = member->getBase();
+        bool throughPointer = member->isArrow();
+        if (!throughPointer) {
+            const auto *base = llvm::dyn_cast<clang::UnaryOperator>(
+                baseExpression->IgnoreParenImpCasts());
+            if (base && base->getOpcode() == clang::UO_Deref) {
+                baseExpression = base->getSubExpr();
+                throughPointer = true;
+            }
+        }
         bool baseResolved = true;
-        std::string base = canonicalExpression(member->getBase(), context, function, baseResolved);
+        std::string base = canonicalExpressionImpl(baseExpression, context, function,
+                                                   baseResolved, aliases, activeAliases);
         resolved &= baseResolved;
+        if (member->getType()->isPointerType()) resolved = false;
         const auto *field = llvm::dyn_cast<clang::ValueDecl>(member->getMemberDecl());
         std::string fieldName = field ? field->getQualifiedNameAsString() : "<member>";
-        return "member(" + base + (member->isArrow() ? "->" : ".") + fieldName + ")";
+        return "member(" + base + (throughPointer ? "->" : ".") + fieldName + ")";
     }
     if (const auto *subscript = llvm::dyn_cast<clang::ArraySubscriptExpr>(expression)) {
         bool baseResolved = true, indexResolved = true;
-        auto base = canonicalExpression(subscript->getBase(), context, function, baseResolved);
-        auto index = canonicalExpression(subscript->getIdx(), context, function, indexResolved);
+        auto base = canonicalExpressionImpl(subscript->getBase(), context, function,
+                                            baseResolved, aliases, activeAliases);
+        auto index = canonicalExpressionImpl(subscript->getIdx(), context, function,
+                                             indexResolved, aliases, activeAliases);
         resolved &= baseResolved && indexResolved;
+        if (subscript->getType()->isPointerType()) resolved = false;
         return "index(" + base + "," + index + ")";
     }
     if (const auto *unary = llvm::dyn_cast<clang::UnaryOperator>(expression)) {
+        const auto *inner = llvm::dyn_cast<clang::UnaryOperator>(
+            unary->getSubExpr()->IgnoreParenImpCasts());
+        if ((unary->getOpcode() == clang::UO_AddrOf && inner && inner->getOpcode() == clang::UO_Deref) ||
+            (unary->getOpcode() == clang::UO_Deref && inner && inner->getOpcode() == clang::UO_AddrOf))
+            return canonicalExpressionImpl(inner->getSubExpr(), context, function,
+                                            resolved, aliases, activeAliases);
         bool operandResolved = true;
-        auto operand = canonicalExpression(unary->getSubExpr(), context, function, operandResolved);
+        auto operand = canonicalExpressionImpl(unary->getSubExpr(), context, function,
+                                               operandResolved, aliases, activeAliases);
         resolved &= operandResolved;
         return "unary(" + unary->getOpcodeStr(unary->getOpcode()).str() + "," + operand + ")";
     }
     if (const auto *binary = llvm::dyn_cast<clang::BinaryOperator>(expression)) {
         bool leftResolved = true, rightResolved = true;
-        auto left = canonicalExpression(binary->getLHS(), context, function, leftResolved);
-        auto right = canonicalExpression(binary->getRHS(), context, function, rightResolved);
+        auto left = canonicalExpressionImpl(binary->getLHS(), context, function,
+                                            leftResolved, aliases, activeAliases);
+        auto right = canonicalExpressionImpl(binary->getRHS(), context, function,
+                                             rightResolved, aliases, activeAliases);
         resolved &= leftResolved && rightResolved;
+        if (binary->getType()->isPointerType()) resolved = false;
         return "binary(" + binary->getOpcodeStr().str() + "," + left + "," + right + ")";
     }
     if (const auto *conditional = llvm::dyn_cast<clang::ConditionalOperator>(expression)) {
         bool conditionResolved = true, trueResolved = true, falseResolved = true;
-        auto condition = canonicalExpression(conditional->getCond(), context, function, conditionResolved);
-        auto yes = canonicalExpression(conditional->getTrueExpr(), context, function, trueResolved);
-        auto no = canonicalExpression(conditional->getFalseExpr(), context, function, falseResolved);
+        auto condition = canonicalExpressionImpl(conditional->getCond(), context, function,
+                                                 conditionResolved, aliases, activeAliases);
+        auto yes = canonicalExpressionImpl(conditional->getTrueExpr(), context, function,
+                                           trueResolved, aliases, activeAliases);
+        auto no = canonicalExpressionImpl(conditional->getFalseExpr(), context, function,
+                                          falseResolved, aliases, activeAliases);
         resolved = false; // It may identify either arm; no alias/branch proof is available.
         (void)conditionResolved;
         (void)trueResolved;
@@ -174,12 +269,25 @@ std::string canonicalExpression(const clang::Expr *expression,
     }
     if (const auto *cast = llvm::dyn_cast<clang::ExplicitCastExpr>(expression)) {
         bool childResolved = true;
-        auto child = canonicalExpression(cast->getSubExpr(), context, function, childResolved);
-        resolved &= childResolved;
+        auto child = canonicalExpressionImpl(cast->getSubExpr(), context, function,
+                                             childResolved, aliases, activeAliases);
+        resolved = false;
+        (void)childResolved;
         return "cast(" + cast->getTypeAsWritten().getAsString() + "," + child + ")";
     }
     resolved = false;
     return "unknown@" + locationIdentity(expression->getExprLoc(), manager);
+}
+
+std::string canonicalExpression(const clang::Expr *expression,
+                                clang::ASTContext &context,
+                                const clang::FunctionDecl *function,
+                                bool &resolved,
+                                const SafePointerAliases *aliases = nullptr) {
+    static const SafePointerAliases noAliases;
+    std::unordered_set<const clang::VarDecl *> activeAliases;
+    return canonicalExpressionImpl(expression, context, function, resolved,
+                                   aliases ? *aliases : noAliases, activeAliases);
 }
 
 const clang::FunctionDecl *referencedFunction(const clang::Expr *expression) {
@@ -218,8 +326,20 @@ public:
         const std::string previous = currentFunction_;
         const std::string previousId = currentFunctionId_;
         const clang::FunctionDecl *previousDecl = currentFunctionDecl_;
+        const SafePointerAliases previousAliases = safeAliases_;
         currentFunction_ = function->getQualifiedNameAsString();
         currentFunctionDecl_ = function;
+        PointerAliasCollector aliasCollector;
+        aliasCollector.TraverseStmt(function->getBody());
+        const auto aliasCandidates = aliasCollector.safeCandidates();
+        safeAliases_.clear();
+        for (const auto &candidate : aliasCandidates) {
+            bool resolved = true;
+            canonicalExpression(candidate.second, context_, function, resolved,
+                                &aliasCandidates);
+            if (resolved)
+                safeAliases_.emplace(candidate);
+        }
         std::optional<std::size_t> infoIndex;
         if (isMainFile(function->getLocation())) {
             FunctionInfo info;
@@ -242,6 +362,7 @@ public:
         currentFunction_ = previous;
         currentFunctionId_ = previousId;
         currentFunctionDecl_ = previousDecl;
+        safeAliases_ = previousAliases;
         return traversed;
     }
 
@@ -280,7 +401,12 @@ public:
         info.resolution = direct ? "direct_pending" : "unresolved_indirect";
         for (const auto *argument : call->arguments()) {
             bool resolved = true;
-            info.argumentIdentities.push_back(canonicalExpression(argument, context_, currentFunctionDecl_, resolved));
+            auto identity = canonicalExpression(argument, context_, currentFunctionDecl_,
+                                                 resolved, &safeAliases_);
+            if (!resolved)
+                identity = "unknown-argument@" +
+                    locationIdentity(argument->getExprLoc(), manager_) + "|" + identity;
+            info.argumentIdentities.push_back(std::move(identity));
         }
         const std::size_t callIndex = result_.calls.size();
         result_.calls.push_back(std::move(info));
@@ -345,7 +471,8 @@ public:
                 lock.text = expressionText(argument, context_);
                 lock.syntax = expressionSyntax(argument);
                 bool resolved = true;
-                lock.identityTemplate = canonicalExpression(argument, context_, currentFunctionDecl_, resolved);
+                lock.identityTemplate = canonicalExpression(
+                    argument, context_, currentFunctionDecl_, resolved, &safeAliases_);
                 lock.identityStatus = resolved ? "symbolic" : "unresolved";
                 lock.location = makeLocated(argument->getExprLoc(), manager_);
                 operation.lock = std::move(lock);
@@ -370,7 +497,7 @@ public:
             operation.stateExpression = expressionText(stateExpression, context_);
             bool stateResolved = true;
             operation.stateIdentity = canonicalExpression(
-                stateExpression, context_, currentFunctionDecl_, stateResolved);
+                stateExpression, context_, currentFunctionDecl_, stateResolved, &safeAliases_);
             operation.stateIdentityStatus = stateResolved ? "symbolic" : "unresolved";
         }
         if (spec->handlerArgument >= 0) {
@@ -654,6 +781,7 @@ private:
     std::string currentFunction_;
     std::string currentFunctionId_;
     const clang::FunctionDecl *currentFunctionDecl_ = nullptr;
+    SafePointerAliases safeAliases_;
     std::unordered_map<const clang::CallExpr *, std::size_t> callIndices_;
     std::unordered_map<std::size_t, unsigned> callEndOffsets_;
     std::unordered_map<std::string, std::vector<std::size_t>> functionCallIndices_;

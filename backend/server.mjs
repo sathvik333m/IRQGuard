@@ -443,6 +443,7 @@ async function route(request, response) {
     const phase12Directory = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase12')
     const phase13ComparisonPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13-before-after.json')
     const phase13LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13/latest-rerun-measurements.json')
+    const phase15LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase15-comparison.json')
     let measurement
     try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
     catch (error) {
@@ -472,6 +473,11 @@ async function route(request, response) {
       }
     } catch (error) {
       if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the latest Phase 13 run: ${error.message}`)
+    }
+    let phase15LatestRun = null
+    try { phase15LatestRun = JSON.parse(await readFile(phase15LatestRunPath, 'utf8')) }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the latest Phase 15 run: ${error.message}`)
     }
     const readPhase12Measurement = async (filename) => {
       try { return JSON.parse(await readFile(path.join(phase12Directory, filename), 'utf8')) }
@@ -533,6 +539,7 @@ async function route(request, response) {
       cycle_review: cycleReview,
       phase13_comparison: phase13Comparison,
       phase13_latest_rerun: phase13LatestRun,
+      phase15_latest_run: phase15LatestRun,
       phase12_validation: fullValidation || sourceOnlyValidation ? {
         full_validation: fullValidation ? {
           status: fullValidation.status,

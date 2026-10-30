@@ -23,6 +23,8 @@ assert summary["non_affecting_count_note"]
 assert sum(v["event_count"] for v in summary["by_category"].values()) == summary["event_count"]
 assert sum(v["unique_record_count"] for v in summary["by_category"].values()) == summary["unique_record_count"]
 assert sum(v["event_count"] for v in summary["by_stage"].values()) == summary["event_count"]
+assert sum(v["event_count"] for v in summary["by_function"].values()) == summary["event_count"]
+assert sum(v["unique_record_count"] for v in summary["by_source_location"].values()) == summary["unique_record_count"]
 
 body = [r for r in records if r["category"] == "unresolved_call"
         and r["reason"] == "missing_body"]
@@ -39,6 +41,8 @@ assert issue["severity"] == "medium"
 assert issue["analysis_stage"] == "interprocedural"
 assert issue["impact"] == "potential_lock_or_irq_effect"
 assert issue["example_events"]
+assert summary["by_function"]["uncertain_helper"]["event_count"] >= issue["event_count"]
+assert any(key.endswith(":4:5") for key in summary["by_source_location"])
 
 category = summary["by_category"]["unresolved_call"]
 assert category["event_count"] == sum(r["event_count"] for r in body)
@@ -61,5 +65,7 @@ with tempfile.TemporaryDirectory(prefix="irqguard-uncertainty-test-") as tempora
     assert offline_summary["event_count"] == summary["event_count"]
     assert offline_summary["unique_record_count"] == summary["unique_record_count"]
     assert offline_summary["propagated_event_count"] == summary["propagated_event_count"]
+    assert offline_summary["by_function"] == summary["by_function"]
+    assert offline_summary["by_source_location"] == summary["by_source_location"]
     assert {r["id"] for r in offline_report["records"]} == {r["id"] for r in records}
 print("all uncertainty reporting tests passed")

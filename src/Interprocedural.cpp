@@ -115,6 +115,14 @@ bool instantiateIdentity(const std::string &identity,
                 instantiated = fallback;
                 return false;
             }
+            if (arguments[parameter].rfind("unknown@", 0) == 0 ||
+                arguments[parameter].rfind("unknown-argument@", 0) == 0 ||
+                arguments[parameter].rfind("unknown-pointer@", 0) == 0 ||
+                arguments[parameter].rfind("unknown-alias-cycle@", 0) == 0 ||
+                arguments[parameter] == "unknown-identity") {
+                instantiated = fallback;
+                return false;
+            }
             instantiated += arguments[parameter];
             index = end + 1;
         } else {
@@ -160,7 +168,10 @@ AcquisitionFact instantiateFact(const AcquisitionFact &fact, const CallInfo &cal
         identity = "unknown-context@" + sourceKey(fact.location) + "|call@" + sourceKey(call.location);
     result.lockIdentity = std::move(identity);
     prependCall(result.throughCalls, result.provenanceTruncated, call);
-    if (result.lockIdentity.find("local@") != std::string::npos) {
+    // Scope automatic objects created by the summarized callee. A local object
+    // supplied by the caller belongs to the caller's activation and must keep
+    // its identity across helper calls and call sites.
+    if (fact.lockIdentity.find("local@") != std::string::npos) {
         result.lockIdentity = scopeLocalActivation(result.lockIdentity, result.throughCalls,
                                                    result.provenanceTruncated);
         if (result.provenanceTruncated)
@@ -179,7 +190,7 @@ ReleaseFact instantiateRelease(const ReleaseFact &fact, const CallInfo &call) {
         identity = "unknown-context@" + sourceKey(fact.location) + "|call@" + sourceKey(call.location);
     result.lockIdentity = std::move(identity);
     prependCall(result.throughCalls, result.provenanceTruncated, call);
-    if (result.lockIdentity.find("local@") != std::string::npos) {
+    if (fact.lockIdentity.find("local@") != std::string::npos) {
         result.lockIdentity = scopeLocalActivation(result.lockIdentity, result.throughCalls,
                                                    result.provenanceTruncated);
         if (result.provenanceTruncated)
@@ -211,13 +222,15 @@ LockDependency instantiateDependency(const LockDependency &dependency,
         result.throughCalls.resize(MaxCallChain);
         result.provenanceTruncated = true;
     }
-    result.fromLock = scopeLocalActivation(result.fromLock, result.throughCalls,
-                                           result.provenanceTruncated);
-    result.toLock = scopeLocalActivation(result.toLock, result.throughCalls,
-                                         result.provenanceTruncated);
-    if (result.provenanceTruncated &&
-        (result.fromLock.find("local@") != std::string::npos ||
-         result.toLock.find("local@") != std::string::npos))
+    const bool fromIsCalleeLocal = dependency.fromLock.find("local@") != std::string::npos;
+    const bool toIsCalleeLocal = dependency.toLock.find("local@") != std::string::npos;
+    if (fromIsCalleeLocal)
+        result.fromLock = scopeLocalActivation(result.fromLock, result.throughCalls,
+                                               result.provenanceTruncated);
+    if (toIsCalleeLocal)
+        result.toLock = scopeLocalActivation(result.toLock, result.throughCalls,
+                                             result.provenanceTruncated);
+    if (result.provenanceTruncated && (fromIsCalleeLocal || toIsCalleeLocal))
         result.certainty = "unresolved_identity";
     return result;
 }
@@ -414,6 +427,11 @@ SummaryData summarizeFunction(
                     for (const auto &dependencyEntry : candidate->dependencies) {
                         auto dependency = instantiateDependency(dependencyEntry.second, call,
                                                                 function.qualifiedName);
+                        if (dependency.certainty == "unresolved_identity")
+                            summary.uncertainties.insert("lock identity unresolved in dependency propagated through call '" +
+                                call.callee + "' for acquisition at " +
+                                sourceKey(dependency.toAcquisition) + " (call site " +
+                                sourceKey(call.location) + ")");
                         summary.dependencies.emplace(dependencyKey(dependency), std::move(dependency));
                     }
                     for (const auto &uncertainty : candidate->uncertainties)
@@ -421,6 +439,10 @@ SummaryData summarizeFunction(
                                                      sourceKey(call.location) + ": " + uncertainty);
                     for (const auto &acquisitionEntry : candidate->acquisitions) {
                         auto fact = instantiateFact(acquisitionEntry.second, call);
+                        if (fact.identityStatus == "unresolved")
+                            summary.uncertainties.insert("lock identity unresolved for operation at " +
+                                sourceKey(fact.location) + " through call '" + call.callee +
+                                "' at " + sourceKey(call.location));
                         const auto key = factKey(fact);
                         allFacts[key] = fact;
                         summary.acquisitions[key] = fact;
@@ -432,6 +454,10 @@ SummaryData summarizeFunction(
                     }
                     for (const auto &releaseEntry : candidate->releases) {
                         auto release = instantiateRelease(releaseEntry.second, call);
+                        if (release.identityStatus == "unresolved")
+                            summary.uncertainties.insert("lock identity unresolved for release at " +
+                                sourceKey(release.location) + " through call '" + call.callee +
+                                "' at " + sourceKey(call.location));
                         summary.releases[releaseKey(release)] = std::move(release);
                     }
                     for (const auto &heldEntry : candidate->heldOnReturn) {

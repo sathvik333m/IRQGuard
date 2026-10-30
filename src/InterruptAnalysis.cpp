@@ -90,6 +90,14 @@ std::string instantiateIdentity(const std::string &identity,
                 resolved = false;
                 return "unknown-identity";
             }
+            if (arguments[index].rfind("unknown@", 0) == 0 ||
+                arguments[index].rfind("unknown-argument@", 0) == 0 ||
+                arguments[index].rfind("unknown-pointer@", 0) == 0 ||
+                arguments[index].rfind("unknown-alias-cycle@", 0) == 0 ||
+                arguments[index] == "unknown-identity") {
+                resolved = false;
+                return "unknown-identity";
+            }
             position = end + 1;
             const std::string addressPrefix = "unary(&,";
             const std::string dereferencePrefix = "unary(*,";
@@ -232,6 +240,32 @@ std::string instantiateTerm(const std::string &term, const std::string &irq,
                             found == flags.end() ? "unknown" : found->second);
     }
     return output.find("$in_flag[") == std::string::npos ? output : "unknown";
+}
+
+bool hasUnresolvedFlagReference(const std::string &term,
+                                const std::vector<std::string> &arguments,
+                                const std::map<std::string, std::string> &flags) {
+    for (std::size_t i = 0; i < arguments.size(); ++i) {
+        const std::string marker = "$in_flag[" + std::to_string(i) + "]";
+        if (term.find(marker) == std::string::npos) continue;
+        const std::string &argument = arguments[i];
+        if (argument.rfind("unknown@", 0) == 0 ||
+            argument.rfind("unknown-argument@", 0) == 0 ||
+            argument.rfind("unknown-pointer@", 0) == 0 ||
+            argument.rfind("unknown-alias-cycle@", 0) == 0 ||
+            argument == "unknown-identity")
+            return true;
+        auto found = flags.find(argument);
+        const std::string addressPrefix = "unary(&,";
+        if (found == flags.end() && argument.compare(0, addressPrefix.size(), addressPrefix) == 0 &&
+            argument.size() > addressPrefix.size() && argument.back() == ')') {
+            const std::string pointee = argument.substr(
+                addressPrefix.size(), argument.size() - addressPrefix.size() - 1);
+            found = flags.find(pointee);
+        }
+        if (found == flags.end() || found->second == "unknown") return true;
+    }
+    return false;
 }
 
 std::string evaluateEntryTerm(const std::string &term, const std::string &entryIRQ) {
@@ -424,6 +458,11 @@ IRQSummary summarizeFunction(
             std::string mergedIRQ = "unknown";
             std::map<std::string, std::string> mergedFlags;
             for (const IRQSummary *target : targetSummaries) {
+                if (hasUnresolvedFlagReference(target->irqOut, call->argumentIdentities,
+                                               state.flags))
+                    summary.uncertainties.insert(
+                        "irqrestore has no matching saved state through call '" + call->callee +
+                        "' at " + sourceKey(call->location));
                 const std::string targetIRQ = instantiateTerm(target->irqOut, state.irq,
                                                                call->argumentIdentities, state.flags);
                 mergedIRQ = firstTarget ? targetIRQ : mergeTerm(mergedIRQ, targetIRQ);
@@ -431,6 +470,15 @@ IRQSummary summarizeFunction(
                 for (const auto &entry : target->flagOut) {
                     bool resolved = false;
                     std::string key = instantiateIdentity(entry.first, call->argumentIdentities, resolved);
+                    if (!resolved && entry.first.find("@param[") != std::string::npos)
+                        summary.uncertainties.insert(
+                            "irqsave flags argument unresolved through call '" + call->callee +
+                            "' at " + sourceKey(call->location));
+                    if (hasUnresolvedFlagReference(entry.second, call->argumentIdentities,
+                                                   state.flags))
+                        summary.uncertainties.insert(
+                            "irqrestore has no matching saved state through call '" + call->callee +
+                            "' at " + sourceKey(call->location));
                     if (resolved && entry.first.find("@param[") != std::string::npos)
                         targetFlags[key] = instantiateTerm(entry.second, state.irq,
                                                            call->argumentIdentities, state.flags);
@@ -451,15 +499,29 @@ IRQSummary summarizeFunction(
                 }
                 for (const auto &entry : target->snapshots) {
                     LockSnapshot nested = entry.second;
+                    const bool snapshotLockIsCalleeLocal =
+                        entry.second.lock.find("local@") != std::string::npos;
                     bool identityResolved = false;
                     nested.lock = instantiateIdentity(nested.lock, call->argumentIdentities,
                                                       identityResolved);
                     nested.irqTerm = instantiateTerm(nested.irqTerm, state.irq,
                                                      call->argumentIdentities, state.flags);
-                    if (!identityResolved) nested.identityStatus = "unresolved";
+                    if (hasUnresolvedFlagReference(entry.second.irqTerm,
+                                                   call->argumentIdentities, state.flags))
+                        summary.uncertainties.insert(
+                            "irqsave flags argument unresolved for lock snapshot through call '" +
+                            call->callee + "' at " + sourceKey(call->location));
+                    if (!identityResolved) {
+                        nested.identityStatus = "unresolved";
+                        summary.uncertainties.insert(
+                            "lock identity unresolved for IRQ snapshot at " +
+                            sourceKey(nested.location) + " through call '" + call->callee +
+                            "' at " + sourceKey(call->location));
+                    }
                     prependCall(nested.throughCalls, nested.provenanceTruncated, *call);
-                    nested.lock = scopeAutomaticLock(nested.lock, nested.throughCalls,
-                                                     nested.provenanceTruncated);
+                    if (snapshotLockIsCalleeLocal)
+                        nested.lock = scopeAutomaticLock(nested.lock, nested.throughCalls,
+                                                        nested.provenanceTruncated);
                     nested.reportingFunction = function.qualifiedName;
                     mergeSnapshot(summary.snapshots, std::move(nested));
                 }

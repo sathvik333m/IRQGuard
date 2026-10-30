@@ -1,5 +1,14 @@
 # Linux v6.6.87 evaluation report
 
+> **Current Phase 15 result:** a fresh rerun is recorded in
+> [`phase15-report.md`](phase15-report.md), using the same pinned source,
+> configuration hash, Clang version, and normalized compile commands as the
+> saved Phase 13 run. It analyzed all five selected files, emitted 12 lock
+> operations and zero dependencies/cycles, and surfaced 118 lock-identity
+> uncertainty events (89 unique records). Zero cycles do not prove that the
+> selected driver is deadlock-free. The source checkout now lives at
+> `third_party/linux-v6.6.87/` and is excluded from Git.
+
 ## Result
 
 This section preserves the archived Phase 6 analyzer run; it is not the fresh
@@ -87,8 +96,7 @@ including SHA-256 hashes of the five input reports. This is a retrospective
 classification of the schema-v3 saved reports. The original report files,
 43,705 raw strings, counts, cycle results, and Phase 9.0 checksums remain
 unchanged. The Phase 10 schema-v4 analyzer adds the same structured fields to
-new runs, but a fresh post-fix kernel run was not possible because the pinned
-source checkout is no longer present in this environment.
+new runs, but no fresh run was made in that phase because the expected checkout path was not verified. Phase 15 later located the clean checkout under the user home, moved it under `third_party/`, and reran the analysis; see the Phase 15 report.
 
 ## Target and scope
 
@@ -119,17 +127,18 @@ From the repository root, with Git, GNU make, GCC, Clang/LLVM, Python 3, and
 `/usr/bin/time` installed:
 
 ```sh
+mkdir -p third_party
 git clone --depth 1 --branch v6.6.87 \
   https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git \
-  /tmp/linux-v6.6.87
-git -C /tmp/linux-v6.6.87 rev-parse HEAD
+  third_party/linux-v6.6.87
+git -C third_party/linux-v6.6.87 rev-parse HEAD
 # Expected: 814637ca257f4faf57a73fd4e38888cce88b5911
 cmake --build build -j2
 python3 evaluation/run_kernel_eval.py \
-  --kernel /tmp/linux-v6.6.87 \
+  --kernel third_party/linux-v6.6.87 \
   --analyzer build/deadlock-analyzer \
   --llvm /usr/lib/llvm-20/bin \
-  --output evaluation/results/linux-v6.6.87 --jobs 2
+  --output evaluation/results/linux-v6.6.87/phase15-rerun --jobs 2
 ```
 
 The script rejects a different kernel commit. It builds out of tree, records
@@ -164,3 +173,14 @@ to 12 symbolic identities, 3 inconclusive cycles to no reported cycles, and
 uncertainty counts with their counting rules. These changes are not accuracy
 metrics. See the [Phase 13 report](phase13-report.md) and
 [machine-readable comparison](phase13-before-after.json).
+
+
+## Phase 15 fresh rerun
+
+The current pinned-source run, macro AST evidence, before/after uncertainty
+breakdown, build stages, and limitations are documented in
+[`phase15-report.md`](phase15-report.md). Machine-readable data are in
+[`phase15-raw-measurements.json`](phase15-raw-measurements.json) and
+[`phase15-comparison.json`](phase15-comparison.json); full per-file reports
+are archived in `phase15-analyzer-reports.tar.gz`, with grouped uncertainty
+records in `phase15-uncertainty-summary.json.gz`.

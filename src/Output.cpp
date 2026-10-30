@@ -417,8 +417,16 @@ void interruptEdgeJson(std::ostringstream &out, const InterruptLockEdge &edge) {
 std::string toJson(const AnalysisResult &result) {
     std::ostringstream out;
     const auto uncertaintyReport = uncertaintyRecords(result);
+    using Counts = std::pair<std::size_t, std::size_t>;
+    struct GroupCounts {
+        Counts total{0, 0};
+        std::map<std::string, Counts> byCategory;
+        std::map<std::string, Counts> byStage;
+    };
     std::map<std::string, std::pair<std::size_t, std::size_t>> byUncertaintyCategory;
     std::map<std::string, std::pair<std::size_t, std::size_t>> byUncertaintyStage;
+    std::map<std::string, GroupCounts> byUncertaintyFunction;
+    std::map<std::string, GroupCounts> byUncertaintyLocation;
     std::size_t highImpactRecords = 0;
     std::size_t lockIdentityEvents = 0;
     std::size_t interruptStateEvents = 0;
@@ -433,6 +441,23 @@ std::string toJson(const AnalysisResult &result) {
         auto &stage = byUncertaintyStage[record.stage];
         stage.first += record.events;
         ++stage.second;
+        const std::string functionKey = record.function.empty()
+            ? "<unknown-function>" : record.function;
+        const std::string locationKey = record.sourceFile.empty() || record.line == 0
+            ? "<unknown-location>"
+            : record.sourceFile + ":" + std::to_string(record.line) + ":" +
+                  std::to_string(record.column);
+        for (auto *group : {&byUncertaintyFunction[functionKey],
+                            &byUncertaintyLocation[locationKey]}) {
+            group->total.first += record.events;
+            ++group->total.second;
+            auto &categoryCount = group->byCategory[record.category];
+            categoryCount.first += record.events;
+            ++categoryCount.second;
+            auto &stageCount = group->byStage[record.stage];
+            stageCount.first += record.events;
+            ++stageCount.second;
+        }
         if (record.severity == "high") ++highImpactRecords;
         if (record.category == "lock_identity") lockIdentityEvents += record.events;
         if (record.category == "interrupt_state") interruptStateEvents += record.events;
@@ -640,7 +665,38 @@ std::string toJson(const AnalysisResult &result) {
         out << quote(entry.first) << ":{\"event_count\":" << entry.second.first
             << ",\"unique_record_count\":" << entry.second.second << '}';
     }
-    out << "}},\n  \"uncertainty_records\":[";
+    auto emitGroupedUncertainties = [&](const std::map<std::string, GroupCounts> &groups) {
+        out << '{';
+        bool firstGroup = true;
+        for (const auto &entry : groups) {
+            if (!firstGroup) out << ',';
+            firstGroup = false;
+            out << quote(entry.first) << ":{\"event_count\":" << entry.second.total.first
+                << ",\"unique_record_count\":" << entry.second.total.second
+                << ",\"by_category\":";
+            auto emitCounts = [&](const std::map<std::string, Counts> &counts) {
+                out << '{';
+                bool first = true;
+                for (const auto &count : counts) {
+                    if (!first) out << ',';
+                    first = false;
+                    out << quote(count.first) << ":{\"event_count\":" << count.second.first
+                        << ",\"unique_record_count\":" << count.second.second << '}';
+                }
+                out << '}';
+            };
+            emitCounts(entry.second.byCategory);
+            out << ",\"by_stage\":";
+            emitCounts(entry.second.byStage);
+            out << '}';
+        }
+        out << '}';
+    };
+    out << "},\"by_function\":";
+    emitGroupedUncertainties(byUncertaintyFunction);
+    out << ",\"by_source_location\":";
+    emitGroupedUncertainties(byUncertaintyLocation);
+    out << "},\n  \"uncertainty_records\":[";
     for (std::size_t i = 0; i < uncertaintyReport.size(); ++i) {
         const auto &record = uncertaintyReport[i];
         if (i) out << ',';

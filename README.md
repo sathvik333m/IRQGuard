@@ -53,6 +53,8 @@ explains why the saved pre-fix kernel run contained unresolved self-edges,
 validates directed dependencies and negative cases with focused fixtures, and
 records why a fresh kernel rerun remains pending the pinned source checkout.
 
+The [Phase 15 symbolic-identity report](docs/phase15-symbolic-identity.md) documents conservative pointer-alias canonicalization, call-site summary substitution, saved IRQ-state propagation, and uncertainty grouping. It includes the archived uncertainty baseline and controlled before/after tests; it does not claim a fresh kernel rerun because the pinned source checkout is unavailable.
+
 ## Graphical interface (Phase 8)
 
 The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads schema-v3 historical reports and schema-v4 analyzer JSON through a small Node.js API; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
@@ -188,10 +190,31 @@ The control-construct list includes `if`, `switch`, loops, and the ternary opera
 
 ## Real Linux source evaluation (Phase 6)
 
-The archived Phase 6 evaluation target is pinned to Linux stable `v6.6.87` at commit `814637ca257f4faf57a73fd4e38888cce88b5911`. It analyzed five selected `e1000e` driver translation units using out-of-tree Kbuild compile commands. That archived run parsed all five files and extracted 396 functions, 12 lock operations, and 6 dependencies. It emitted 3 inconclusive cycles involving unresolved lock identities; these are not validated bugs. The two macro-expanded irqsave acquisitions were extracted, but their lock identity and saved-flags state remained unknown. These results do not establish whether the subsystem is deadlock-free. The **Kernel evaluation** page displays the archived Phase 6 measurements separately from Phase 12 results. See [Phase 6 design](docs/design-phase6.md), the [evaluation report](evaluation/results/linux-v6.6.87/REPORT.md), the [runner](evaluation/run_kernel_eval.py), and the [controlled benchmark labels](evaluation/benchmark-set.json).
+The pinned Linux stable `v6.6.87` source is kept locally at `third_party/linux-v6.6.87/` and ignored by Git; clone it separately after obtaining IRQGuard. The saved Phase 6 run analyzed five `e1000e` translation units and reported 6 dependencies and 3 inconclusive cycles, caused by unresolved irqsave identities. The fresh Phase 15 rerun on the same commit/config/source set analyzed all five files, extracted 396 functions and 12 lock operations, and reported zero dependencies/cycles. Its 118 lock-identity uncertainty events (89 unique records) remain high impact and are not treated as harmless. Zero cycles do not establish deadlock freedom. The Kernel evaluation page shows the historical Phase 6 result, the Phase 13 comparison, and the fresh Phase 15 measurements. See [Phase 6 design](docs/design-phase6.md), the [evaluation report](evaluation/results/linux-v6.6.87/REPORT.md), the [Phase 15 report](evaluation/results/linux-v6.6.87/phase15-report.md), the [runner](evaluation/run_kernel_eval.py), and the [controlled benchmark labels](evaluation/benchmark-set.json).
+
+Restore the pinned source checkout when needed:
+
+```sh
+mkdir -p third_party
+git clone --depth 1 --branch v6.6.87 \
+  https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git \
+  third_party/linux-v6.6.87
+git -C third_party/linux-v6.6.87 rev-parse HEAD
+```
+
+Verify the commit is `814637ca257f4faf57a73fd4e38888cce88b5911`, then reproduce Phase 15 with:
+
+```sh
+python3 evaluation/run_kernel_eval.py \
+  --kernel third_party/linux-v6.6.87 \
+  --analyzer build/deadlock-analyzer \
+  --llvm /usr/lib/llvm-20/bin \
+  --output evaluation/results/linux-v6.6.87/phase15-rerun \
+  --jobs 2
+```
 
 Phase 12 rechecked the kernel build stages after `libelf-dev` was installed. The bounded full validation compiled the five selected files, built the e1000e composite object, ran the deferred objtool checks (`--orc`, `--ibt`, `--retpoline`), and verified ORC sections. It did not link a final `.ko` or build the full kernel; separate stack validation is not configured. The analyzer emitted zero dependencies and cycles, which is not proof of deadlock freedom. Kbuild's `SKIP_STACK_VALIDATION=1` variable is unsupported for this kernel revision; GNU `HOSTLD=/usr/bin/ld` avoids an `lld-20` dependency. See the [Phase 12 report](evaluation/results/linux-v6.6.87/phase12-report.md) and preserved [build evidence](evaluation/results/linux-v6.6.87/phase12/).
 
-Phase 13 compares the latest post-fix rerun with the preserved Phase 9.0 baseline on the same five source files, pinned kernel commit, Clang version, and generated config hash. It records lock identities, dependencies, cycle and uncertainty counts, and regression results. Phase 14 traces the six baseline edges to unresolved irqsave acquisition identities that did not match symbolic irqrestore identities, then adds direct, reversed, interprocedural, and negative dependency-generation tests. The pinned source is not available for a fresh Phase 14 rerun, so the comparison remains based on saved reports. The original compilation database was not preserved, so byte-for-byte flag equivalence cannot be checked. This is not a precision/recall evaluation; no independently labeled Linux bug dataset exists. Recreate the Phase 13 JSON with `python3 evaluation/compare_phase13.py`; see the [Phase 13 report](evaluation/results/linux-v6.6.87/phase13-report.md), [Phase 14 report](docs/phase14-dependency-generation.md), and [machine-readable comparison](evaluation/results/linux-v6.6.87/phase13-before-after.json). The Kernel evaluation page displays this explanation with the baseline comparison and latest rerun.
+Phase 13 compares the latest post-fix rerun with the preserved Phase 9.0 baseline on the same five source files, pinned kernel commit, Clang version, and generated config hash. It records lock identities, dependencies, cycle and uncertainty counts, and regression results. Phase 14 traces the six baseline edges to unresolved irqsave acquisition identities that did not match symbolic irqrestore identities, then adds direct, reversed, interprocedural, and negative dependency-generation tests. Phase 14 initially relied on saved reports. Phase 15 later located and pinned the checkout inside `third_party/`, then reran the same five files. Its generated compile database has the same 11 normalized command argument sets as Phase 13; the config hash and Clang version also match. The older Phase 9.0 compilation database was not preserved. This is not a precision/recall evaluation; no independently labeled Linux bug dataset exists. See the [Phase 13 report](evaluation/results/linux-v6.6.87/phase13-report.md), [Phase 14 report](docs/phase14-dependency-generation.md), [Phase 15 report](evaluation/results/linux-v6.6.87/phase15-report.md), and [Phase 15 machine-readable comparison](evaluation/results/linux-v6.6.87/phase15-comparison.json). The Kernel evaluation page displays the historical baseline and fresh Phase 15 measurements.
 
 The summarizer regression test can be run with `python3 evaluation/test_summarize.py build/deadlock-analyzer tests/fixtures/interrupts.c`; `ctest` also runs it.

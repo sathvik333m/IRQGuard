@@ -85,26 +85,30 @@ ctest --test-dir build --output-on-failure
 ```
 
 Results: the focused dependency-generation test passed. The complete suite
-passed **15/15** tests after adding the new regression test. The kernel source
-checkout `/tmp/linux-v6.6.87` is absent in this environment; the kernel
-analysis runner requires that exact checkout at commit
-`814637ca257f4faf57a73fd4e38888cce88b5911`. Therefore Phase 14 did not claim
-a fresh kernel rerun. The archived Phase 9.0 and Phase 13 measurements remain
-the before/after evidence.
+passed **15/15** tests after adding the new regression test. Phase 14 did not
+run a fresh kernel analysis because its expected `/tmp/linux-v6.6.87` path was
+not found. A later search located the pinned checkout under `/home/sathvik/`;
+therefore the old path check must not be read as proof that the source tree was
+absent from the machine. The Phase 15 rerun is documented below.
 
-To repeat the kernel analysis when the pinned source is available:
+To repeat the kernel analysis with the in-project checkout:
 
 ```sh
 python3 evaluation/run_kernel_eval.py \
-  --kernel /path/to/linux-v6.6.87 \
+  --kernel third_party/linux-v6.6.87 \
   --analyzer build/deadlock-analyzer \
   --llvm /usr/lib/llvm-20/bin \
-  --output /tmp/irqguard-phase14-kernel-rerun --jobs 2
+  --output evaluation/results/linux-v6.6.87/phase15-rerun --jobs 2
 ```
 
 The runner checks the pinned commit and writes reports to the specified output
 directory. Review the resulting `raw-measurements.json` and per-file reports;
 do not interpret a zero edge count as proof of absence of bugs.
+
+**Follow-up:** `/home/sathvik/linux-v6.6.87` was found and moved into the
+repository's ignored `third_party/linux-v6.6.87/` directory. The fresh Phase 15
+run is documented in
+[`phase15-report.md`](../evaluation/results/linux-v6.6.87/phase15-report.md).
 
 ## Files changed and limitations
 
