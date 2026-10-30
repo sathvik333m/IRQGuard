@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import fixture from './test-data/report.fixture.json'
-import { getSource, parseReport } from './api'
+import { deleteAnalysis, getSource, parseReport } from './api'
 
 describe('schema-v3/v4 report adapter', () => {
   it('accepts optional missing collections as empty lists', () => {
@@ -32,5 +32,13 @@ it('shows a useful source error when a source snippet is unavailable', async () 
     ok: false, status: 404, json: async () => ({ detail: 'Requested source line is unavailable' }),
   }))
   await expect(getSource('run-1', '/tmp/irqguard-test/demo.c', 999)).rejects.toThrow(/source line is unavailable/i)
+  vi.unstubAllGlobals()
+})
+
+it('explains when the running backend does not support analysis deletion', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: false, status: 404, json: async () => ({ detail: 'Not found' }),
+  }))
+  await expect(deleteAnalysis('run-1')).rejects.toThrow(/backend serving this page does not recognize analysis deletion/i)
   vi.unstubAllGlobals()
 })

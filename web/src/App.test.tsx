@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import App from './App'
 import fixture from './test-data/report.fixture.json'
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); localStorage.clear() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear() })
 
 function jsonResponse(payload: unknown, status = 200) {
   return { ok: status >= 200 && status < 300, status, json: async () => payload } as Response
@@ -298,5 +298,33 @@ describe('IRQGuard workspace states', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Highlight in lock graph' }))
     expect(await screen.findByRole('heading', { name: 'Lock dependency graph' })).toBeInTheDocument()
     expect(await screen.findByText(/Highlighting interrupt aware candidate/)).toBeInTheDocument()
+  })
+
+  it('removes an already-deleted analysis when the backend returns not found', async () => {
+    const analysis = {
+      id: 'delete-run-123', created_at: new Date().toISOString(), status: 'completed',
+      source_path: '/tmp/irqguard-test/demo.c', analyzer_report_schema_version: 4,
+      summary: { functions: 4, graph_edges: 2, candidate_cycles: 1 },
+    }
+    let deleted = false
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/health')) return jsonResponse(health)
+      if (url.endsWith('/analyses/delete-run-123') && init?.method === 'DELETE') { deleted = true; return jsonResponse({ detail: 'Analysis was not found' }, 404) }
+      if (url.endsWith('/analyses')) return jsonResponse({ analyses: deleted ? [] : [analysis] })
+      if (url.endsWith('/report')) return jsonResponse(fixture)
+      return jsonResponse({ analysis })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Analysis history' }))
+    expect((await screen.findAllByText('/tmp/irqguard-test/demo.c')).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete analysis demo.c' }))
+
+    expect(await screen.findByRole('heading', { name: 'No saved analyses' })).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith('/analyses/delete-run-123') && init?.method === 'DELETE')).toBe(true)
+    expect(screen.queryByRole('button', { name: 'Delete analysis demo.c' })).not.toBeInTheDocument()
   })
 })

@@ -86,6 +86,16 @@ export async function getReport(id: string): Promise<AnalysisReport> {
   return parseReport(await request<unknown>(`/api/v1/analyses/${encodeURIComponent(id)}/report`))
 }
 
+export async function deleteAnalysis(id: string): Promise<{ id: string; deleted: boolean }> {
+  try { return await request(`/api/v1/analyses/${encodeURIComponent(id)}`, { method: 'DELETE' }) }
+  catch (error) {
+    if (error instanceof ApiError && error.status === 404 && error.message.trim().toLowerCase() === 'not found') {
+      throw new ApiError('The backend serving this page does not recognize analysis deletion yet. Stop the old Node server and restart it from this IRQGuard checkout.', 404)
+    }
+    throw error
+  }
+}
+
 export async function startAnalysis(input: {
   source_path: string
   compile_commands_path?: string

@@ -5,9 +5,9 @@ import {
   Database, FileCode2, FileJson2, FileSearch, GitBranch, Gauge,
   HardDrive, History, Info, LayoutDashboard, LoaderCircle, LockKeyhole,
   Menu, Moon, PanelLeftClose, PanelLeftOpen, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck,
-  Sun, TerminalSquare, X, Timer, ListChecks,
+  Sun, TerminalSquare, Trash2, X, Timer, ListChecks,
 } from 'lucide-react'
-import { compareRuntimeEvidence, getAnalyses, getAnalysis, getHealth, getKernelEvaluation, getReport, getRuntimeEvidence, getRuntimeRuns, getSource, startAnalysis, startRuntimeBenchmark, startRuntimeScenario } from './api'
+import { ApiError, compareRuntimeEvidence, deleteAnalysis, getAnalyses, getAnalysis, getHealth, getKernelEvaluation, getReport, getRuntimeEvidence, getRuntimeRuns, getSource, startAnalysis, startRuntimeBenchmark, startRuntimeScenario } from './api'
 import type { AnalysisMetadata, AnalysisReport, Finding, Health, KernelEvaluation, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
 
 const LockGraph = lazy(() => import('./components/LockGraph').then((module) => ({ default: module.LockGraph })))
@@ -133,6 +133,23 @@ export default function App() {
       setLoadingReport(false)
     }
   }, [])
+
+  const removeAnalysis = useCallback(async (metadata: AnalysisMetadata) => {
+    try { await deleteAnalysis(metadata.id) }
+    catch (error) {
+      const alreadyMissing = error instanceof ApiError && error.status === 404 && /analysis was not found/i.test(error.message)
+      if (!alreadyMissing) throw error
+    }
+    const refreshed = await getAnalyses().catch(() => null)
+    if (refreshed) setHistory(refreshed.filter((item) => item.id !== metadata.id))
+    else setHistory((current) => current.filter((item) => item.id !== metadata.id))
+    setCompareIds((current) => current.filter((id) => id !== metadata.id))
+    if (active?.id === metadata.id) {
+      setActive(null)
+      setReport(null)
+      setSelectedFindingIndex(null)
+    }
+  }, [active?.id])
 
   const bootstrap = useCallback(async () => {
     try {
@@ -263,6 +280,7 @@ export default function App() {
             history={history} activeId={active?.id} compareIds={compareIds}
             onRefresh={() => void refreshHistory().catch((error) => setBackendError(error.message))}
             onOpen={openAnalysis}
+            onDelete={removeAnalysis}
             onToggleCompare={(id) => setCompareIds((old) => old.includes(id) ? old.filter((item) => item !== id) : old.length < 2 ? [...old, id] : [old[1], id])}
           />}
           {page === 'findings' && <FindingsPage
@@ -536,12 +554,23 @@ function NewAnalysisPage({ health, status, onStart }: { health: Health | null; s
   </>
 }
 
-function HistoryPage({ history, activeId, compareIds, onRefresh, onOpen, onToggleCompare }: {
-  history: AnalysisMetadata[]; activeId?: string; compareIds: string[]; onRefresh: () => void; onOpen: (metadata: AnalysisMetadata) => void; onToggleCompare: (id: string) => void;
+function HistoryPage({ history, activeId, compareIds, onRefresh, onOpen, onDelete, onToggleCompare }: {
+  history: AnalysisMetadata[]; activeId?: string; compareIds: string[]; onRefresh: () => void; onOpen: (metadata: AnalysisMetadata) => void; onDelete: (metadata: AnalysisMetadata) => Promise<void>; onToggleCompare: (id: string) => void;
 }) {
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
   const selected = history.filter((item) => compareIds.includes(item.id))
+  const remove = async (item: AnalysisMetadata) => {
+    if (!window.confirm(`Delete the saved analysis for ${basename(item.source_path)}? Its report and history entry will be removed. The source file will stay untouched.`)) return
+    setDeletingId(item.id)
+    setDeleteError('')
+    try { await onDelete(item) }
+    catch (error) { setDeleteError(error instanceof Error ? error.message : 'Could not delete this analysis.') }
+    finally { setDeletingId(null) }
+  }
   return <>
     <PageHeading eyebrow="LOCAL RUNS" title="Analysis history" subtitle="Completed reports and failures are stored in your local IRQGuard data directory." action={<button className="button button-secondary" onClick={onRefresh}><RefreshCw size={14} />Refresh</button>} />
+    {deleteError && <div className="alert alert-error" role="alert"><AlertCircle size={16} /><span>{deleteError}</span><button className="icon-button alert-close" aria-label="Dismiss delete error" onClick={() => setDeleteError('')}><X size={15} /></button></div>}
     {!history.length ? <div className="empty-panel"><History size={20} /><h2>No saved analyses</h2><p>Completed reports and failed run metadata will appear here.</p></div> : <div className="history-surface">
       <div className="table-toolbar"><div><strong>{history.length}</strong> stored runs <span className="muted">· newest first</span></div><span className="muted">Select up to two compatible reports to compare summary counts.</span></div>
       <div className="history-list">
@@ -551,6 +580,7 @@ function HistoryPage({ history, activeId, compareIds, onRefresh, onOpen, onToggl
           <div className="history-main"><div className="history-title"><strong>{basename(item.source_path)}</strong><code>{item.source_path}</code></div><div className="history-meta"><span>{new Date(item.created_at).toLocaleString()}</span><span>schema {item.analyzer_schema_version ?? 'not available'}</span>{item.duration_ms != null && <span>{formatDuration(item.duration_ms)}</span>}</div></div>
           <div className="history-counts"><span><Braces size={13} />{item.summary?.functions ?? '—'}</span><span><GitBranch size={13} />{item.summary?.graph_edges ?? '—'}</span><span><ShieldAlert size={13} />{item.summary?.candidate_cycles ?? '—'}</span></div>
           <span className={`status-pill ${statusTone(item.status)}`}>{item.status}</span>
+          <button className="icon-button delete-run" onClick={() => void remove(item)} disabled={item.status === 'queued' || item.status === 'running' || deletingId !== null} aria-label={`Delete analysis ${basename(item.source_path)}`} title={item.status === 'queued' || item.status === 'running' ? 'Wait for this analysis to finish before deleting it' : 'Delete saved analysis'}>{deletingId === item.id ? <LoaderCircle size={14} className="spin" /> : <Trash2 size={14} />}</button>
           <button className="icon-button open-run" onClick={() => onOpen(item)} aria-label={`Open analysis ${basename(item.source_path)}`}><ArrowRight size={15} /></button>
         </div>)}
       </div>

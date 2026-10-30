@@ -674,6 +674,23 @@ async function route(request, response) {
     }).finally(() => activeRuns.delete(id))
     return
   }
+  const deleteAnalysisMatch = pathname.match(/^\/api\/v1\/analyses\/([^/]+)$/)
+  if (request.method === 'DELETE' && deleteAnalysisMatch) {
+    const id = decodeURIComponent(deleteAnalysisMatch[1])
+    if (!/^[a-f0-9-]{1,64}$/i.test(id)) throw new HttpError(404, 'Analysis was not found')
+    const row = analyses.find((item) => item.id === id)
+    if (activeRuns.has(id)) throw new HttpError(409, 'A queued or running analysis cannot be deleted')
+    if (!row) { json(response, 200, { api_version: apiVersion, id, deleted: true, already_deleted: true }); return }
+    const previousAnalyses = analyses
+    analyses = analyses.filter((item) => item.id !== id)
+    try { await saveHistory() }
+    catch (error) { analyses = previousAnalyses; throw error }
+    await Promise.all([
+      unlink(path.join(reportDir, `${id}.json`)).catch(() => undefined),
+      unlink(path.join(reportDir, `${id}.json.tmp`)).catch(() => undefined),
+    ])
+    json(response, 200, { api_version: apiVersion, id, deleted: true, had_report: Boolean(row.report_path) }); return
+  }
   const match = pathname.match(/^\/api\/v1\/analyses\/([^/]+)(?:\/(report|findings|graph|source))?$/)
   if (request.method === 'GET' && match) {
     const id = decodeURIComponent(match[1])

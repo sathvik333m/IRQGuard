@@ -523,6 +523,9 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .history-counts { display: flex; gap: 12px; color: var(--text-secondary); font-size: 11px; }
 .history-counts span { display: flex; align-items: center; gap: 5px; }
 .history-counts svg { color: var(--text-dim); }
+.delete-run { flex: 0 0 auto; color: var(--text-dim); border-color: transparent; }
+.delete-run:hover:not(:disabled) { color: var(--red); border-color: color-mix(in srgb, var(--red) 32%, var(--line)); background: color-mix(in srgb, var(--red) 8%, transparent); }
+.delete-run:disabled { opacity: .45; cursor: not-allowed; }
 .open-run { border-color: var(--line-soft); }
 .compare-panel { margin-top: 18px; border: 1px solid var(--line-soft); border-radius: 6px; background: var(--surface); overflow: hidden; }
 .compare-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; }
@@ -897,7 +900,8 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
   .compare-check { order: 0; }
   .history-counts { margin-left: 24px; order: 3; }
   .history-row > .status-pill { order: 4; margin-left: auto; }
-  .history-row .open-run { order: 5; }
+  .history-row .delete-run { order: 5; margin-left: auto; }
+  .history-row .open-run { order: 6; }
   .history-title { flex-direction: column; gap: 3px; }
   .history-title code { max-width: 100%; }
   .table-toolbar { align-items: flex-start; flex-direction: column; gap: 8px; }
