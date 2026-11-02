@@ -71,6 +71,48 @@ The backend uses Node.js built-in modules and requires Node.js 20 or newer. Chec
 
 ## How the analyzer works
 
+### Project architecture
+
+This view shows how users and the web interface reach the analyzer, and where reports and runtime evidence are stored. The frontend can also run in demo mode using bundled reports, without the backend.
+
+```mermaid
+flowchart LR
+    User[User]
+    CLI["irqguard CLI<br/>Python orchestration"]
+    UI["Web UI<br/>React + TypeScript"]
+    API["Local API<br/>Node.js"]
+    Analyzer["Static analyzer<br/>C++17 + Clang"]
+    Runtime["Runtime evidence<br/>C++ pthread harness + Python"]
+    KernelEval["Kernel evaluation<br/>Kbuild scripts"]
+    Saved["Local reports and history<br/>JSON / JSONL"]
+    Demo["Bundled demo reports"]
+    Source["C source + compilation database"]
+    Kernel["Pinned Linux source selection"]
+
+    User --> CLI
+    User --> UI
+    CLI --> Analyzer
+    CLI --> Runtime
+    CLI --> KernelEval
+    UI -->|HTTP /api/v1| API
+    API -->|fixed arguments| Analyzer
+    API --> Runtime
+    API --> Saved
+    UI -->|static demo mode| Demo
+    Source --> CLI
+    Source --> API
+    Kernel --> KernelEval
+    KernelEval --> Analyzer
+    Analyzer -->|text / JSON / DOT| CLI
+    Analyzer -->|JSON report| API
+    Runtime -->|traces / summaries| CLI
+    Runtime -->|traces / summaries| API
+```
+
+The Node API is a local integration layer: it applies workspace and input limits, launches fixed project tools, and stores results. It does not implement lock analysis. The kernel evaluator prepares bounded compilation inputs and invokes the same analyzer on selected translation units; it does not create a whole-kernel call graph.
+
+### Analysis pipeline
+
 ```text
 C translation unit + compiler flags + API registry
                      │
