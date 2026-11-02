@@ -24,14 +24,31 @@ coverage.xml
 /web/dist/
 /web/coverage/
 /web/tsconfig.tsbuildinfo
+/web/.vite/
 /web/.env
 /web/.env.local
 /web/.env.*.local
+/backend/node_modules/
 /backend/.env
 /backend/.env.local
 /backend/.env.*.local
 /.venv/
 *.sqlite3
+
+# Logs and package manager debug logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# System and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
 /evaluation/results/linux-v6.6.87/kbuild/
 /evaluation/results/linux-v6.6.87/reports/
 /evaluation/results/linux-v6.6.87/build.log

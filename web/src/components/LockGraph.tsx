@@ -153,7 +153,36 @@ export function LockGraph({ report, selectedFinding, onSelectFinding, onOpenSour
       {focusedEdge && <EdgeInspector edge={focusedEdge} onClose={() => setFocusedEdge(null)} onOpenSource={onOpenSource} />}
       {focusedLock && <NodeInspector lock={focusedLock} apiTypes={[...(lockApis.get(focusedLock) ?? [])]} edges={filteredEdges.filter((edge) => edge.from_lock === focusedLock || edge.to_lock === focusedLock)} onClose={() => setFocusedLock(null)} onSelectEdge={(edge) => { setFocusedLock(null); setFocusedEdge(edge) }} onOpenSource={onOpenSource} />}
       {selectedFinding && !selectedFinding.edges?.some((edge) => highlighted.has(edgeKey(edge)) && visibleNodeIds.has(edge.from_lock) && visibleNodeIds.has(edge.to_lock)) && <div className="graph-filter-note"><Info size={13} />The selected finding is outside the current graph filters.</div>}
-      {!compact && <div className="graph-legend"><span><i className="legend-line normal-line" />Lock order</span><span><i className="legend-line irq-line" />Interrupt preemption</span><span><i className="legend-line candidate-line" />Selected candidate</span><span><i className="legend-line rejected-line" />Rejected shape</span></div>}
+      {!compact && (
+        <div className="graph-legend-container">
+          <div className="graph-legend" aria-label="Graph edge legend">
+            <span className="legend-title">Edges:</span>
+            <span><i className="legend-line normal-line" />Lock order (process)</span>
+            <span><i className="legend-line irq-line" />Interrupt preemption</span>
+            <span><i className="legend-line candidate-line" />Selected candidate</span>
+            <span><i className="legend-line rejected-line" />Rejected shape</span>
+          </div>
+          <div className="graph-legend graph-legend-nodes" aria-label="Lock types legend">
+            <span className="legend-title">Locks:</span>
+            <span className="legend-badge-item"><span className="legend-dot dot-mutex" />Mutex</span>
+            <span className="legend-badge-item"><span className="legend-dot dot-spin" />Spinlock</span>
+            <span className="legend-badge-item"><span className="legend-dot dot-rwlock" />RWLock</span>
+          </div>
+        </div>
+      )}
+      <details className="graph-accessible-list" aria-label="Text alternative of graph edges">
+        <summary>Accessible text view ({filteredEdges.length} lock relationships)</summary>
+        <ul className="accessible-edge-items">
+          {filteredEdges.map((edge, i) => (
+            <li key={`acc-edge-${i}`}>
+              <strong>{lockLabel(edge.from_lock)}</strong> → <strong>{lockLabel(edge.to_lock)}</strong>
+              {' '}[{edge.kind}, {edge.from_context ?? 'unknown'} → {edge.to_context ?? 'unknown'}]
+              {edge.source_function && <span> in {edge.source_function}</span>}
+              {edge.feasibility === 'rejected' && <em className="text-muted"> (rejected: {edge.feasibility_reason || 'infeasible'})</em>}
+            </li>
+          ))}
+        </ul>
+      </details>
     </div>}
   </ReactFlowProvider>
 }

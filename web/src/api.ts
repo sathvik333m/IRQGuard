@@ -1,4 +1,13 @@
 import type { AnalysisMetadata, AnalysisReport, Health, KernelEvaluation, RuntimeEvidence, RuntimeRun, SourceSnippet } from './types'
+import {
+  DEMO_KERNEL_EVALUATION,
+  DEMO_METADATA_LIST,
+  getDemoMetadata,
+  getDemoReport,
+  getDemoSource,
+} from './demo/demoData'
+
+export const IS_STATIC_MODE = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.VITE_STATIC)
 
 export class ApiError extends Error {
   status: number
@@ -11,6 +20,9 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (IS_STATIC_MODE) {
+    throw new ApiError('Static mode: backend requests are disabled.')
+  }
   let response: Response
   try {
     response = await fetch(path, init)
@@ -68,21 +80,50 @@ export function parseReport(value: unknown): AnalysisReport {
   } as AnalysisReport
 }
 
-export const getHealth = () => request<Health>('/api/v1/health')
+export const getHealth = () => {
+  if (IS_STATIC_MODE) {
+    return Promise.resolve({
+      api_version: '1',
+      status: 'static_mode',
+      analyzer_path: 'bundled_demo',
+      analyzer_available: false,
+      analyzer_report_schema: 4,
+      workspace_roots: [],
+      data_directory: '',
+      runtime_evidence_available: false,
+      benchmarks_available: false,
+    } as Health)
+  }
+  return request<Health>('/api/v1/health')
+}
 
-export const getKernelEvaluation = () => request<KernelEvaluation>('/api/v1/evaluations/linux-v6.6.87')
+export const getKernelEvaluation = () => {
+  if (IS_STATIC_MODE) {
+    return Promise.resolve(DEMO_KERNEL_EVALUATION)
+  }
+  return request<KernelEvaluation>('/api/v1/evaluations/linux-v6.6.87')
+}
 
 export async function getAnalyses(): Promise<AnalysisMetadata[]> {
+  if (IS_STATIC_MODE) {
+    return DEMO_METADATA_LIST
+  }
   const result = await request<{ analyses: AnalysisMetadata[] }>('/api/v1/analyses')
   return result.analyses
 }
 
 export async function getAnalysis(id: string): Promise<AnalysisMetadata> {
+  if (id.startsWith('demo-') || IS_STATIC_MODE) {
+    return getDemoMetadata(id)
+  }
   const result = await request<{ analysis: AnalysisMetadata }>(`/api/v1/analyses/${encodeURIComponent(id)}`)
   return result.analysis
 }
 
 export async function getReport(id: string): Promise<AnalysisReport> {
+  if (id.startsWith('demo-') || IS_STATIC_MODE) {
+    return getDemoReport(id)
+  }
   return parseReport(await request<unknown>(`/api/v1/analyses/${encodeURIComponent(id)}/report`))
 }
 
@@ -109,11 +150,21 @@ export async function startAnalysis(input: {
 }
 
 export async function getSource(id: string, file: string, line: number): Promise<SourceSnippet> {
+  if (id.startsWith('demo-') || IS_STATIC_MODE) {
+    return getDemoSource(file, line)
+  }
   const query = new URLSearchParams({ file, line: String(line), context: '10' })
   return request(`/api/v1/analyses/${encodeURIComponent(id)}/source?${query}`)
 }
 
 export async function getGraph(id: string) {
+  if (id.startsWith('demo-') || IS_STATIC_MODE) {
+    const report = getDemoReport(id)
+    return {
+      nodes: report.interrupt_lock_graph.nodes,
+      edges: report.interrupt_lock_graph.edges,
+    }
+  }
   return request<{ nodes: Array<{ lock_identity: string }>; edges: AnalysisReport['interrupt_lock_graph']['edges'] }>(
     `/api/v1/analyses/${encodeURIComponent(id)}/graph`,
   )

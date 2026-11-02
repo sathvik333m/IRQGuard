@@ -1,269 +1,216 @@
-# Interrupt-Aware Deadlock Analyzer
+# IRQGuard: Static Deadlock Analyzer for C and Linux-Kernel-Style Locking
 
-The analyzer uses Clang LibTooling to extract C source facts, computes bounded interprocedural lock summaries, and adds a scoped process/hardirq model. It reports context-labelled lock edges and possible cycle candidates with provenance. A candidate is not a confirmed or runtime deadlock, and the implementation is not equivalent to Archerfish.
+IRQGuard is a static concurrency analysis tool built on Clang LibTooling (C++17/20) that detects potential lock-order inversions crossing hardware interrupt boundaries in C and Linux driver code. By extracting interprocedural lock acquisition summaries and modeling same-CPU top-half interrupt preemption (`request_irq`), IRQGuard flags cycles between process-level execution and hard-IRQ handlers. All static findings are surfaced as candidate cycles rather than confirmed deadlocks, zero reported cycles does not prove deadlock freedom, and unresolved pointer aliases, external kernel functions, and unknown states are tracked explicitly as uncertainty events.
 
-## Build on Ubuntu 24.04 / WSL 2
+## 60-Second Demo
 
-Install the C++ build tools and matching LLVM/Clang development packages:
-
-```sh
-sudo apt update
-sudo apt install build-essential cmake ninja-build clang-20 llvm-20-dev libclang-20-dev \
-  zlib1g-dev libzstd-dev libedit-dev libcurl4-openssl-dev python3 python3-venv \
-  python3-pip nodejs npm
-```
-
-The graphical backend requires Node.js 20 or newer. Check with `node --version`; Ubuntu's packaged Node.js may be older on some releases. The Node.js backend itself uses only built-in modules.
-
-Build with LLVM 20's CMake package files:
-
-```sh
-cmake -S . -B build -G Ninja \
-  -DLLVM_DIR=/usr/lib/llvm-20/lib/cmake/llvm \
-  -DClang_DIR=/usr/lib/llvm-20/lib/cmake/clang
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-To use a different installed LLVM/Clang version, point `LLVM_DIR` and `Clang_DIR` at that version's `lib/cmake/llvm` and `lib/cmake/clang` directories. The frontend is compiled against the selected development libraries; the Clang executable alone is not sufficient. CMake prefers the dependency development packages above; if only their runtime libraries are present, it can link those directly on common Linux layouts.
-
-## CLI
-
-`./irqguard` is the primary command-line entry point. The C++ analyzer remains
-available as `build/deadlock-analyzer` for direct use.
+Run the command-line interface on the included basic mutex example:
 
 ```sh
 ./irqguard analyze --source examples/basic.c
-./irqguard analyze --source examples/basic.c --format json --output /tmp/basic.json
-./irqguard graph --source tests/fixtures/interrupts.c --output /tmp/interrupts.dot
-./irqguard analyze --source /path/to/file.c --compile-commands /path/to/build
-./irqguard analyze --source file.c --api-config config/apis.example.json \
-  --clang-arg=-Iinclude --clang-arg=-DCONFIG_EXAMPLE=1
-./irqguard api-registry validate --config config/apis.example.json
 ```
 
-JSON output preserves findings, locations and provenance. `graph` emits
-Graphviz DOT. Compilation-database mode uses the command for the requested
-source and does not accept `--clang-arg`. See the [Phase 7 integration guide](docs/design-phase7.md)
-for runtime trace comparison, benchmark commands, stable report categories,
-the architecture, and limitations.
+**Expected terminal output:**
 
-The [Phase 14 dependency-generation report](docs/phase14-dependency-generation.md)
-explains why the saved pre-fix kernel run contained unresolved self-edges,
-validates directed dependencies and negative cases with focused fixtures, and
-records the saved before/after evidence and the dependency-generation tests.
-
-The [Phase 15 symbolic-identity report](docs/phase15-symbolic-identity.md) documents conservative pointer-alias canonicalization, call-site summary substitution, saved IRQ-state propagation, uncertainty grouping, controlled regression tests, and the fresh pinned-kernel rerun described below.
-
-Phase 15 also completed a fresh rerun against the pinned Linux `v6.6.87`
-checkout at `third_party/linux-v6.6.87/` (commit
-`814637ca257f4faf57a73fd4e38888cce88b5911`). It analyzed all five selected
-e1000e translation units and extracted 396 functions and 12 lock operations,
-including both `spin_lock_irqsave` acquisitions and matching saved-flags
-restores. It reported 43,632 uncertainty events / 4,922 unique records, of
-which 118 events / 89 unique records concern unresolved lock identity in
-propagated pointer contexts. No dependency edges or cycles were reported for
-this selected set; that is not evidence of deadlock freedom. Selected object
-compilation and objtool/ORC checks succeeded; full kernel and final module
-linking were not attempted, and separate stack validation was not configured.
-See the [fresh Phase 15 measurements](evaluation/results/linux-v6.6.87/phase15-report.md)
-and [machine-readable comparison](evaluation/results/linux-v6.6.87/phase15-comparison.json).
-
-Phase 16 adds bounded branch-predicate checks for direct same-function lock
-paths and records `free_irq` argument matches without inferring lifecycle
-ordering. Findings distinguish unrefined candidates, potentially feasible
-static scenarios, inconclusive cases, and rejected paths. Interprocedural path
-predicates, general symbolic execution, registration-before-use, interrupt
-delivery, and independent deadlock confirmation remain out of scope. See the
-[Phase 16 feasibility review and limits](docs/phase16-feasibility-review.md)
-and the [cycle/feasibility design](docs/design-phase4.md).
-
-## Graphical interface (Phase 8)
-
-The optional local GUI uses React, TypeScript, Vite, Tailwind CSS, React Flow, and Recharts. It reads schema-v3 historical reports and schema-v4 analyzer JSON through a small Node.js API; the C++ analyzer remains independent. The backend does not parse terminal output or manufacture graph edges.
-
-```mermaid
-flowchart LR
-  Browser[React + TypeScript UI] -->|HTTP /api/v1| API[Local Node.js API]
-  API -->|fixed argv, timeout and output limits| Analyzer[C++ Clang analyzer]
-  Analyzer -->|schema-v4 JSON; v3 history supported| API
-  API -->|metadata + report JSON| DB[(Local JSON history + report files)]
-  API -->|bounded source ranges| Browser
+```text
+Source: examples/basic.c
+Functions (2):
+  update_state at examples/basic.c:10:13 [update_state@examples/basic.c:10:13]
+  worker at examples/basic.c:15:6 [worker@examples/basic.c:15:6]
+Calls (5):
+  update_state -> mutex_lock [modeled_api] at line 11
+  update_state -> mutex_unlock [modeled_api] at line 12
+  worker -> mutex_lock [modeled_api] at line 17
+  worker -> update_state [direct] at line 18
+  worker -> mutex_unlock [modeled_api] at line 19
+Lock dependencies (1):
+  @param[0] -> @param[1] [inferred_through_call, possible] reported in worker
+Interrupt cycle candidates (0):
+Cycle reports are static candidates under the process/hardirq model; they are not confirmed deadlocks.
 ```
 
-Build the analyzer from the repository root. The GUI backend uses Node.js 20 or newer and has no npm package dependencies:
+To export an interactive Graphviz visualization of lock dependencies:
 
 ```sh
+./irqguard graph --source tests/fixtures/interrupts.c --output /tmp/interrupts.dot
+dot -Tsvg /tmp/interrupts.dot -o /tmp/interrupts.svg  # optional SVG rendering
+```
+
+---
+
+## How It Works
+
+IRQGuard processes source code through a transparent, 5-stage explainable pipeline:
+
+```
+[ C Source ] 
+     │
+     ▼ (1) Clang AST & CFG Frontend
+Function records, call sites, macro locations, branch CFG blocks
+     │
+     ▼ (2) API Registry Resolution
+Recognize acquire/release, irqsave/irqrestore, local_irq_disable, and request_irq
+     │
+     ▼ (3) Interprocedural Summaries
+Propagate lock operations and dependencies across calls using symbolic identities (@param[n])
+     │
+     ▼ (4) Execution Context Modeling
+Distinguish process context from hard-IRQ context; model same-CPU preemption when IRQs enabled
+     │
+     ▼ (5) Cycle Detection & Feasibility Refinement
+Detect closed lock paths and verify branch/IRQ-state feasibility:
+  • candidate_lock_order_cycle: Process-only lock order inversion
+  • interrupt_aware_candidate: Feasible process ↔ hardirq cross-context preemption cycle
+  • rejected_candidate: Counterfactual cycle refuted by proven disabled IRQs (irqsave / local_irq_disable)
+  • inconclusive_analysis: Path contains unresolved conditional states or pointer aliases
+```
+
+---
+
+## Scope and Limits
+
+| Area | Status | Implementation Details & Constraints |
+|---|---|---|
+| **Hardware Interrupts (hardirq)** | **Supported** | Models top-half interrupt handlers registered via `request_irq()`. Computes directed `process → hardirq` preemption edges when process state has IRQs enabled. |
+| **IRQ-Safe Lock Primitives** | **Supported** | Extracts `spin_lock_irqsave`, `spin_unlock_irqrestore`, `local_irq_disable`, and `local_irq_enable`. Associates saved flags identities where AST exposes them. |
+| **Bounded Branch Predicates** | **Supported** | Direct same-function CFG branch conditions for simple comparisons. Contradictory paths are rejected; complex expressions remain inconclusive. |
+| **Interprocedural Summaries** | **Supported** | Bounded interprocedural propagation with formal-parameter substitution (`@param[0]`) and symbolic alias canonicalization across single translation units. |
+| **Soft IRQ / Bottom Halves** | *Not supported* | Softirqs, tasklets, workqueues, and timers have distinct preemption rules and run on softirq stacks. They are not currently distinguished from process context. |
+| **Non-Maskable Interrupts (NMI)** | *Not supported* | NMIs cannot be masked by `local_irq_disable()`. General locks are prohibited in NMIs; IRQGuard does not model NMI handlers. |
+| **Whole-Kernel Call Graph** | *Not supported* | Operates on individual C translation units with generated Kbuild compilation databases. Lock relationships crossing translation unit boundaries are not linked. |
+| **General Pointer Aliasing** | *Not supported* | Does not perform whole-program pointer analysis. Heap objects, container_of indirections, and unresolvable pointers are explicitly recorded as uncertainty events. |
+| **General SMT / Path Solving** | *Not supported* | No SMT solver (e.g. Z3) is embedded. The analyzer uses bounded CFG traversal up to 24 frames/blocks. Unsupported guards are kept as unknown rather than unconstrained. |
+| **Lifecycle & Registration Ordering** | *Not supported* | Does not prove that `request_irq` executes before a lock acquisition, or that an interrupt is ever delivered by hardware. Matching `free_irq` is recorded as evidence only. |
+
+### Tool Comparison
+
+- **Linux lockdep (`CONFIG_PROVE_LOCKING`):** Dynamic runtime validator tracking lock acquisition chains in an instrumented running kernel. Covers active execution paths but cannot verify unexercised code. IRQGuard operates statically on source code without requiring running kernels or hardware, but covers a scoped subset.
+- **locktorture:** Dynamic runtime kernel stress-testing module for concurrency primitives. Measures throughput and contention under torture, not general source-level lock-order inversion detection.
+- **KCSAN:** Kernel Concurrency Sanitizer detects dynamic data races using compiler instrumentation and watchpoints. Data races are an orthogonal concurrency property from lock dependency cycles and deadlocks.
+- **Archerfish (USENIX Security 2024):** Academic research static analyzer for interrupt-driven OS kernels. IRQGuard was inspired by concepts in Archerfish but was built independently from scratch as a scoped, transparent tool with explicit uncertainty reporting; it does not reproduce Archerfish or claim equivalent coverage.
+
+---
+
+## Evaluation Summary (Phase 17)
+
+Recorded analysis of the pinned Linux stable kernel (`v6.6.87`, commit `814637ca257f4faf57a73fd4e38888cce88b5911`) across five selected `drivers/net/e1000e` translation units:
+
+- **Files analyzed:** 5 / 5 files requested
+- **Functions analyzed:** 396 functions
+- **Lock operations extracted:** 12 lock operations (including `spin_lock_irqsave` / `spin_unlock_irqrestore` pairs)
+- **Lock dependencies:** 0 dependencies
+- **Candidate cycles:** 0 candidate cycles
+- **Uncertainty events:** 43,632 events (4,922 unique records across translation units, including 89 unresolved lock-identity records)
+- **Honest framing:** Zero reported cycles does *not* prove deadlock freedom in the driver; the five files are exploratory translation units, not a labeled bug benchmark. Independent kernel bug cases: 0 (no precision or recall claims).
+- **Validation stages:** Object compilation and `objtool` checks (`--orc`, `--ibt`) succeeded on the composite object; final `.ko` linking was not attempted and separate stack validation was not defconfig-configured.
+
+---
+
+## Running the Web Interface
+
+The web interface is a standalone React 18 + TypeScript + Vite application featuring a visual project guide, an interactive 4-step walkthrough, a lock dependency graph explorer, findings inspector, and evaluation metrics.
+
+### Option 1: Explore with Bundled Demo Data (No Backend Needed)
+
+The site is fully functional offline without installing the C++ analyzer or running a backend API:
+
+```sh
+cd web
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser. The site defaults to the **Project guide** and allows exploring bundled real reports (`interrupts.c`, `basic.c`, Linux Phase 17 evaluation) with full graph visualization and interactive walkthroughs.
+
+To build a standalone static bundle without the local backend:
+
+```sh
+cd web
+VITE_STATIC=1 npm run build
+# Built files are ready in web/dist/
+```
+
+### Option 2: Live Analysis with Local API Backend
+
+To analyze local C source files and run new analyses through the GUI:
+
+1. **Terminal 1: Start the local API backend**
+   ```sh
+   export IRQGUARD_ANALYZER="$PWD/build/deadlock-analyzer"
+   export IRQGUARD_WORKSPACES="$PWD"
+   export IRQGUARD_DATA_DIR="$HOME/.local/share/irqguard"
+   cd backend
+   npm start
+   ```
+   *(Alternatively, run `node backend/server.mjs` directly from the repository root).*
+
+   - **`IRQGUARD_ANALYZER`**: Absolute path to the compiled C++ `deadlock-analyzer` binary.
+   - **`IRQGUARD_WORKSPACES`**: Colon-separated list of directories the backend is allowed to read. Paths outside these roots are rejected for security.
+   - **`IRQGUARD_DATA_DIR`**: Directory for persisted run metadata and JSON reports (defaults to `~/.local/share/irqguard`).
+
+2. **Terminal 2: Start the frontend dev server**
+   ```sh
+   cd web
+   npm ci
+   npm run dev
+   ```
+
+   Open [http://localhost:5173](http://localhost:5173) in your browser. The frontend automatically proxies `/api/v1` calls to `http://127.0.0.1:8000`.
+
+#### Troubleshooting Local GUI Connection
+
+- **The UI shows "Backend offline":** Confirm the Node.js backend is running on `127.0.0.1:8000` (`cd backend && npm start`).
+- **"Analyzer unavailable":** Build the C++ binary (`cmake --build build`) and ensure `IRQGUARD_ANALYZER` points to `$PWD/build/deadlock-analyzer`.
+- **"Source path outside configured workspace":** Provide an absolute Linux path located inside the directories exported in `IRQGUARD_WORKSPACES`.
+- **WSL 2 networking:** WSL 2 forwards loopback connections automatically. If your Windows browser cannot reach port 5173 or 8000, verify localhost forwarding in `.wslconfig`.
+
+---
+
+## Build Prerequisites and Setup
+
+For native builds on Ubuntu 24.04 LTS or WSL 2:
+
+```sh
+sudo apt update
+sudo apt install -y build-essential cmake ninja-build clang-20 llvm-20-dev libclang-20-dev \
+  zlib1g-dev libzstd-dev libedit-dev libcurl4-openssl-dev python3 python3-pip nodejs npm
+
+# Build C++ analyzer
 cmake -S . -B build -G Ninja \
   -DLLVM_DIR=/usr/lib/llvm-20/lib/cmake/llvm \
   -DClang_DIR=/usr/lib/llvm-20/lib/cmake/clang
 cmake --build build
-```
-
-Start the local API in one WSL terminal from the repository root. Only paths inside `IRQGUARD_WORKSPACES` are accepted. The default root is the repository. Set the variable explicitly to the repository path so the UI displays the intended allowed root; add other existing directories with a colon-separated list.
-
-```sh
-export IRQGUARD_ANALYZER="$PWD/build/deadlock-analyzer"
-export IRQGUARD_WORKSPACES="$PWD"
-export IRQGUARD_DATA_DIR="$HOME/.local/share/irqguard"
-cd backend
-npm start
-```
-
-In another WSL terminal, start the frontend:
-
-```sh
-cd web
-npm ci
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in a Windows browser. WSL 2 localhost forwarding should connect to the development server. If forwarding is unavailable, use the WSL address in the browser while keeping the API bound to loopback and configure the frontend proxy accordingly.
-
-In **New analysis**, enter an absolute Linux path such as `/home/user/project/example.c`. The browser does not browse the WSL filesystem. Optional inputs are a build directory or `compile_commands.json`, and an API-registry JSON file. Raw shell commands and arbitrary Clang arguments are not accepted through the GUI. The backend resolves symlinks before enforcing workspace roots, limits source files to 20 MiB, limits analyzer output streams to 16 MiB each, allows at most two concurrent runs, and terminates a run after 180 seconds by default.
-
-The Node.js API is local-only at `127.0.0.1:8000` and exposes versioned routes under `/api/v1`: health, analysis creation/history, report, findings, graph, bounded source snippets, runtime evidence, and the recorded Linux v6.6.87 evaluation summary. Reports and run metadata are stored under `~/.local/share/irqguard` by default; set `IRQGUARD_DATA_DIR` to change this. Run metadata is stored in `history.json`; reports are separate JSON files. Existing history from the retired Python API remains in `history.sqlite3` and is not automatically imported. Source files themselves are not copied into the history store. The source panel reads a bounded range from a report-referenced file when requested.
-
-The **Project guide** explains the research problem, Clang-to-finding pipeline, modeled scope, Archerfish relationship, userspace runtime extension, and real-kernel evaluation. The Kernel evaluation page explains the Phase 14 identity mismatch behind the earlier self-edges and shows the historical baseline, Phase 13 comparison, and fresh Phase 15 measurements. It also displays the unresolved lock-identity records and build stages that were not run. The Overview remains a graph-centered workspace with a finding inspector, report metrics, lock API counts, run history, diagnostics, and uncertainties. Search filters files, functions, lock identities, and findings within the selected report. Runtime Evidence invokes controlled userspace pthread scenarios; these do not emulate hardware interrupts. The Kernel evaluation page is a bounded report view, not a Linux source browser. The small JSON under `web/src/test-data` is test-only and is never loaded as a real run.
-
-Run the GUI checks after installing backend and frontend dependencies:
-
-```sh
-source .venv/bin/activate
-cmake -S . -B build -G Ninja
-cmake --build build
 ctest --test-dir build --output-on-failure
-cd web
-npm test
-npm run build
 ```
 
-See [Phase 8 architecture and API notes](docs/design-phase8.md) for report mapping, security boundaries, persistence, and current UI limits.
+---
 
-## Controlled runtime evidence (Phase 5)
+## Design History
 
-On Linux, CMake also builds `irqguard-runtime-demo`. The harness records JSONL lock events from controlled pthread programs and can compare per-run observations with a static report using explicit lock-identity mappings. It includes a watchdog-terminated deadlock fixture and a baseline-versus-instrumented timing command. The [recorded overhead sample](examples/runtime-overhead-report.json) is specific to this WSL2 machine and this flush-heavy instrumentation. These are userspace experiments; they do not reproduce kernel interrupt behavior. See [Phase 5 runtime evidence design](docs/design-phase5.md) for event semantics, reports, limitations, and reproduction commands.
+<details>
+<summary>Click to view phase-by-phase design records and historical validation</summary>
 
-The GUI exposes these controls in **Runtime Evidence** and **Benchmarks**. Runtime runs and their JSONL traces are saved in the backend data directory under `runtime/`. The API accepts only named scenarios (`safe`, `contention`, `deadlock`, `opposite-order`, `reverse-only`, and `static-only`) and fixed benchmark bounds; it does not accept executable paths or shell commands. Static/runtime comparison asks for an explicit JSON mapping from exact static lock identity strings to runtime lock IDs. Interrupt-aware findings are labeled not comparable because pthread experiments cannot emulate hard IRQ preemption.
+### Phase 1–4: Core AST Extractor & Cycle Modeling
+- [Phase 2: Source Extraction](docs/design-phase2.md): Traversal of Clang AST, basic blocks in CFG, and source location tracking.
+- [Phase 3: Interprocedural Summaries](docs/design-phase3.md): Formal parameter substitution (`@param[n]`) across call boundaries.
+- [Phase 4: Interrupt Preemption & Feasibility](docs/design-phase4.md): Directed process-to-hardirq graph edges and the 4 finding categories (`candidate_lock_order_cycle`, `interrupt_aware_candidate`, `rejected_candidate`, `inconclusive_analysis`).
 
-### Troubleshooting
+### Phase 5–7: Runtime Harness & CLI Integration
+- [Phase 5: Controlled Runtime Evidence](docs/design-phase5.md): Userspace pthread harness with watchdog-terminated deadlocks and JSONL trace emission. Pthread tests do not emulate kernel hardware interrupts.
+- [Phase 6: Initial Linux Evaluation Baseline](docs/design-phase6.md): Earliest exploratory run on Linux v6.6.87 e1000e resulting in 6 false-positive dependencies due to irqsave identity mismatch.
+- [Phase 7: CLI Integration](docs/design-phase7.md): Python wrapper CLI `./irqguard` uniting analysis, graphing, and runtime tests.
 
-- **The UI says the local API is unavailable:** confirm the backend is running on `127.0.0.1:8000` and that the Vite proxy has not been changed.
-- **The API says the analyzer is unavailable:** rebuild with `cmake --build build` and confirm `IRQGUARD_ANALYZER` points to the executable.
-- **A source path is rejected:** enter an absolute Linux path and add its parent workspace to `IRQGUARD_WORKSPACES`; symlinks resolving outside those roots are intentionally denied.
-- **Windows cannot reach the development server:** first check WSL 2 localhost forwarding. The documented frontend and API bind to loopback; do not expose the API on a public interface.
-- **A report schema is rejected:** this interface accepts analyzer JSON schemas 3 and 4. Update and test the frontend adapter when the analyzer schema changes.
+### Phase 8–13: Web UI & Kernel Validation Stages
+- [Phase 8: Web UI & Node API](docs/design-phase8.md): React Flow dependency graph, findings table, and local Node.js API with workspace boundary enforcement.
+- [Phase 10: Uncertainty Classification](docs/design-phase10.md): Structured uncertainty summary grouping events into stable cause records.
+- [Phase 12: Object Validation](evaluation/results/linux-v6.6.87/phase12-report.md): Objtool and ORC section checks on composite e1000e kernel objects.
+- [Phase 13: Comparative Post-Fix Evaluation](evaluation/results/linux-v6.6.87/phase13-report.md): Pinned kernel comparison between initial baseline and fixed extraction.
 
-API models can be extended or overridden by name with `--api-config config/apis.example.json`. The configuration is JSON with an `apis` array. Each item has `name`, `kind`, and optional zero-based `lock_argument`, `state_argument`, and `handler_argument` indexes. Built-ins include selected mutex/spinlock operations, public and selected raw spinlock helpers, `spin_lock_irqsave`/`spin_unlock_irqrestore`, `local_irq_disable`/`local_irq_enable`, `request_irq`, and `free_irq`. For macro-expanded irqsave helpers that return saved flags, the analyzer uses the expansion-site API token and assignment AST to recover the flags lvalue where possible; otherwise IRQ state remains unknown with an explicit uncertainty. See [Phase 3 design](docs/design-phase3.md) and [Phase 4 design](docs/design-phase4.md) for the modeled semantics and limits.
+### Phase 14–18: Symbolic Identity, Branch Feasibility & Dataset v1
+- [Phase 14: Dependency Generation Review](docs/phase14-dependency-generation.md): Detailed root cause analysis of baseline same-site self-edges.
+- [Phase 15: Symbolic Identity Fix](docs/phase15-symbolic-identity.md): Canonicalization of pointer aliases and matching `spin_lock_irqsave` / `spin_unlock_irqrestore` pairs, resolving self-edges to 0 dependencies.
+- [Phase 16: Bounded Feasibility Refinement](docs/phase16-feasibility-review.md): Direct CFG branch predicate resolution and `free_irq` pairing evidence.
+- [Phase 17: Versioned Evaluation Dataset](docs/phase17-evaluation.md): Curated dataset v1 with controlled positive/negative fixtures and pinned Linux v6.6.87 exploratory cases.
+- [Phase 18: Evidence Review & Semantic Diff](docs/phase18-integration.md): Multi-report semantic diff and runtime trace correlation.
 
-Both human-readable output and JSON preserve expansion and spelling locations. Calls introduced through macros are attributed to their expansion site, with spelling location retained for inspection. Parser errors are printed by Clang and cause a nonzero exit; the analyzer will not emit a successful report for a failed parse.
-
-Schema-v4 JSON keeps every raw uncertainty message in `uncertainties` and adds
-`uncertainty_summary` plus grouped `uncertainty_records`. The grouped records
-include source evidence, category/stage, impact, stable cause ID, propagation
-count, and candidate links where those can be matched. Grouping is heuristic
-and does not prove that each record is an independent bug. See
-[Phase 10 design](docs/design-phase10.md) and the
-[saved Linux uncertainty review](evaluation/results/linux-v6.6.87/REPORT.md).
-To classify archived schema-v3 reports without changing them, run:
-
-```sh
-python3 evaluation/summarize_uncertainties.py \
-  evaluation/results/linux-v6.6.87/reports \
-  evaluation/results/linux-v6.6.87/uncertainty-summary-phase10.json
-```
-
-## JSON example
-
-The report contains `functions`, `calls`, `api_operations`, `call_graph`, `function_summaries`, `lock_dependencies`, `interrupt_registrations`, `interrupt_state_snapshots`, `interrupt_lock_graph`, `interrupt_cycles`, `uncertainties`, and `diagnostics`. A dependency labels itself `direct` when its acquisitions are in one function, or `inferred_through_call` when a summary contributes across a call boundary. Interrupt edges preserve context, source locations, handler registration and call provenance. Cycle findings include a closed lock sequence and one of four categories; use `--format dot` for a Graphviz dependency diagram. These findings are not confirmed runtime deadlocks. The [extraction report](examples/extraction-report.json) and [interrupt fixture report](examples/interrupts-report.json) show the output formats.
-
-An API event retains a symbolic lock identity and location, for example:
-
-```json
-{
-  "api": "spin_lock",
-  "kind": "lock_acquire",
-  "caller": "inner",
-  "arguments": ["(s)"],
-  "lock": {
-    "expression": "(s)",
-    "syntax": "decl_ref",
-    "identity_template": "@param[0]",
-    "identity_status": "symbolic",
-    "location": {"is_macro": false, "expansion": {}, "spelling": {}}
-  },
-  "location": {"is_macro": true, "expansion": {}, "spelling": {}}
-}
-```
-
-Regenerate the report with:
-
-```sh
-build/deadlock-analyzer analyze --source tests/fixtures/extraction.c \
-  --format json --output examples/extraction-report.json
-```
-
-## Current scope
-
-The analyzer parses one requested translation unit and emits AST facts written in that main file. Definitions and calls found only in included headers are treated as unavailable bodies. Direct calls are resolved by declaration. A supported indirect-call pattern is a local/global function-pointer variable initialized or assigned directly to one or more function addresses; targets are unioned conservatively. Other indirect calls are reported as unresolved.
-
-Lock identities use declaration location for variables, structural field/array/unary expressions, and `@param[n]` placeholders for formal parameters. Call-site summaries substitute actual arguments. This does not prove pointer aliasing: structurally different aliases may remain distinct and unknown expressions stay unresolved. Function summaries use Clang CFG blocks, a may-held lock union at joins, and must-release intersection at returns. They do not enumerate paths; branch feasibility and path predicates are not solved. Recursive summaries use a bounded fixed point and cap call-chain provenance at four steps. Limits, unresolved calls, and CFG mapping gaps appear in report uncertainties or diagnostics.
-
-The control-construct list includes `if`, `switch`, loops, and the ternary operator. Macro locations contain expansion and spelling points where Clang exposes them; token-pasting and generated source can produce less intuitive spellings. The interrupt model currently recognizes resolvable `request_irq` registrations and process/hardirq contexts, with path-insensitive enabled/disabled/unknown IRQ-state tracking. Phase 4 rejects counterfactual same-CPU hardirq cycles when the process acquisition is definitely IRQ-disabled; differing branch states remain inconclusive. It does not analyze the full kernel, softirq/NMI contexts, registration lifetime ordering, aliases, or arbitrary Boolean path predicates. See [Phase 2 design](docs/design-phase2.md), [Phase 3 design](docs/design-phase3.md), and [Phase 4 design](docs/design-phase4.md) for details.
-
-## Real Linux source evaluation (Phase 6)
-
-The pinned Linux stable `v6.6.87` source is kept locally at `third_party/linux-v6.6.87/` and ignored by Git; clone it separately after obtaining IRQGuard. The saved Phase 6 run analyzed five `e1000e` translation units and reported 6 dependencies and 3 inconclusive cycles, caused by unresolved irqsave identities. Later runs extracted 396 functions and 12 lock operations. The latest Phase 17 rerun reports zero dependencies/cycles and 43,632 uncertainty events (4,922 per-file unique records, including 89 lock-identity records); zero cycles do not establish deadlock freedom. The Kernel evaluation page separates these newer measurements from the historical Phase 6 and Phase 15/16 records. See [Phase 6 design](docs/design-phase6.md), the [evaluation report](evaluation/results/linux-v6.6.87/REPORT.md), the [Phase 17 report](evaluation/results/phase17/REPORT.md), the [runner](evaluation/run_kernel_eval.py), and the [controlled benchmark labels](evaluation/benchmark-set.json).
-
-Restore the pinned source checkout when needed:
-
-```sh
-mkdir -p third_party
-git clone --depth 1 --branch v6.6.87 \
-  https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git \
-  third_party/linux-v6.6.87
-git -C third_party/linux-v6.6.87 rev-parse HEAD
-```
-
-Verify the commit is `814637ca257f4faf57a73fd4e38888cce88b5911`, then reproduce Phase 15 with:
-
-```sh
-python3 evaluation/run_kernel_eval.py \
-  --kernel third_party/linux-v6.6.87 \
-  --analyzer build/deadlock-analyzer \
-  --llvm /usr/lib/llvm-20/bin \
-  --output evaluation/results/linux-v6.6.87/phase15-rerun \
-  --jobs 2
-```
-
-Phase 12 rechecked the kernel build stages after `libelf-dev` was installed. The bounded full validation compiled the five selected files, built the e1000e composite object, ran the deferred objtool checks (`--orc`, `--ibt`, `--retpoline`), and verified ORC sections. It did not link a final `.ko` or build the full kernel; separate stack validation is not configured. The analyzer emitted zero dependencies and cycles, which is not proof of deadlock freedom. Kbuild's `SKIP_STACK_VALIDATION=1` variable is unsupported for this kernel revision; GNU `HOSTLD=/usr/bin/ld` avoids an `lld-20` dependency. See the [Phase 12 report](evaluation/results/linux-v6.6.87/phase12-report.md) and preserved [build evidence](evaluation/results/linux-v6.6.87/phase12/).
-
-## Research evaluation dataset (Phase 17)
-
-The versioned [Phase 17 dataset](evaluation/dataset-v1.json) separates
-test-backed controlled positives, negatives, edge cases, and five exploratory
-Linux v6.6.87 e1000e files. The real-kernel reports have no independent
-positive/negative labels, so the evaluation reports counts rather than
-precision or recall. The runner reads archived kernel reports without
-rewriting them and refuses to overwrite a non-empty output directory.
-
-```sh
-python3 evaluation/run_phase17.py \
-  --analyzer build/deadlock-analyzer \
-  --output evaluation/results/phase17
-ctest --test-dir build -R evaluation_phase17_dataset --output-on-failure
-```
-
-The [Phase 17 evaluation guide](docs/phase17-evaluation.md) documents dataset
-provenance, kernel pinning, lockdep/locktorture/KCSAN model differences,
-sample results, reproduction commands, and known limitations. The checked-in
-[sample report](evaluation/results/phase17/REPORT.md) records actual fixture
-assertions and explicitly labels archived kernel measurements as exploratory.
-
-Phase 13 compares the post-fix rerun with the preserved Phase 9.0 baseline on the same five source files, pinned kernel commit, Clang version, and generated config hash. Phase 14 traced baseline edges to unresolved irqsave acquisition identities and added dependency-generation tests. Phase 15 located and pinned the checkout inside `third_party/`, then reran the five files. Its generated compile database has the same 11 normalized command argument sets as Phase 13; the config hash and Clang version also match. The older Phase 9.0 compilation database was not preserved. This is not a precision/recall evaluation; no independently labeled Linux bug dataset exists. See the [Phase 13 report](evaluation/results/linux-v6.6.87/phase13-report.md), [Phase 14 report](docs/phase14-dependency-generation.md), [Phase 15 report](evaluation/results/linux-v6.6.87/phase15-report.md), and [Phase 15 machine-readable comparison](evaluation/results/linux-v6.6.87/phase15-comparison.json). The Kernel evaluation page also presents the newer Phase 17 dataset results separately from this historical comparison.
-
-The summarizer regression test can be run with `python3 evaluation/test_summarize.py build/deadlock-analyzer tests/fixtures/interrupts.c`; `ctest` also runs it.
-
-## Evidence review and report comparison (Phase 18)
-
-The Kernel evaluation page displays the Phase 17 dataset pin, controlled assertion results, exploratory per-file kernel measurements, uncertainty totals, and build-validation limits. In **Analysis history**, select two completed runs to compare structured report semantics: dependency edges and provenance, lock identity, finding classifications, uncertainties, and diagnostics. Input fingerprints determine whether two runs are comparable; old reports without fingerprints are marked unknown. Runtime traces display their run provenance and can be associated with static candidates only through an explicit lock identity mapping. Userspace traces do not emulate hardware interrupts or confirm kernel deadlocks. See the [Phase 18 integration guide](docs/phase18-integration.md).
+</details>
