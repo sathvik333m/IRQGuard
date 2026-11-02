@@ -2207,9 +2207,6 @@ body { font-size: 14px; line-height: 1.55; }
   overflow-x: auto;
 }
 
-/* ==========================================================================
-   Responsive Adaptations (390px Mobile & Tablet)
-   ========================================================================== */
 @media (max-width: 1080px) {
   .guide-hero {
     grid-template-columns: 1fr;
