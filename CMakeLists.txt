@@ -135,6 +135,11 @@ if(BUILD_TESTING)
                 $<TARGET_FILE:deadlock-analyzer>
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/uncertainty_propagation.c
     )
+    add_test(NAME analyzer_known_compiler_builtin_effects
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_known_compiler_builtins.py
+                $<TARGET_FILE:deadlock-analyzer>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/known_compiler_builtins.c
+    )
     add_test(NAME evaluation_summarizer
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_summarize.py
                 $<TARGET_FILE:deadlock-analyzer>

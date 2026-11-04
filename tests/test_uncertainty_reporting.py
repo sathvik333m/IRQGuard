@@ -16,6 +16,9 @@ summary = report["uncertainty_summary"]
 records = report["uncertainty_records"]
 assert summary["event_count"] == len(report["uncertainties"])
 assert summary["unique_record_count"] == len(records)
+assert summary["unique_root_cause_count"] == len({r["root_cause_id"] for r in records})
+assert summary["secondary_effect_unique_record_count"] == summary["uncertainty_causal_link_count"]
+assert summary["uncertainty_causal_link_count"] == sum(bool(r["causal_parent_ids"]) for r in records)
 assert summary["event_count"] > summary["unique_record_count"]
 assert summary["propagated_event_count"] > 0
 assert summary["proven_non_affecting_event_count"] == 0
@@ -49,6 +52,14 @@ assert category["event_count"] == sum(r["event_count"] for r in body)
 assert category["unique_record_count"] == len(body)
 assert all(r["id"].startswith("U-") for r in records)
 assert len({r["id"] for r in records}) == len(records)
+irq_causes = [r for r in records if r["reason"] == "unknown_call_irq_effect"]
+unresolved_roots = [r for r in records if r["category"] == "unresolved_call"]
+assert any(r["root_cause_id"] == r["id"] for r in records)
+assert any(r["causal_relation"] == "secondary_irq_effect_of_unresolved_call"
+           and r["causal_parent_ids"] for r in irq_causes)
+assert all(parent in {r["id"] for r in unresolved_roots}
+           for r in irq_causes for parent in r["causal_parent_ids"])
+assert any(r["propagation_examples"] for r in unresolved_roots)
 
 # The offline evaluator uses the same category/cause identity rules as schema 4.
 script = Path(__file__).resolve().parents[1] / "evaluation" / "summarize_uncertainties.py"
@@ -64,7 +75,9 @@ with tempfile.TemporaryDirectory(prefix="irqguard-uncertainty-test-") as tempora
     offline_summary = offline_report["aggregate"]
     assert offline_summary["event_count"] == summary["event_count"]
     assert offline_summary["unique_record_count"] == summary["unique_record_count"]
+    assert offline_summary["unique_root_cause_count"] == summary["unique_root_cause_count"]
     assert offline_summary["propagated_event_count"] == summary["propagated_event_count"]
+    assert offline_summary["uncertainty_causal_link_count"] == sum(bool(r["causal_parent_ids"]) for r in records)
     assert offline_summary["by_function"] == summary["by_function"]
     assert offline_summary["by_source_location"] == summary["by_source_location"]
     assert {r["id"] for r in offline_report["records"]} == {r["id"] for r in records}

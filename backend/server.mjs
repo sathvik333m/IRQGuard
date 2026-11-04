@@ -458,6 +458,7 @@ async function route(request, response) {
     const phase13LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13/latest-rerun-measurements.json')
     const phase15LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase15-comparison.json')
     const phase17SummaryPath = path.join(repoRoot, 'evaluation/results/phase17/summary.json')
+    const phase19_2SummaryPath = path.join(repoRoot, 'web/src/demo/phase19-2-summary.json')
     let measurement
     try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
     catch (error) {
@@ -497,6 +498,11 @@ async function route(request, response) {
     try { phase17Evaluation = JSON.parse(await readFile(phase17SummaryPath, 'utf8')) }
     catch (error) {
       if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the Phase 17 evaluation report: ${error.message}`)
+    }
+    let phase19_2Uncertainty = null
+    try { phase19_2Uncertainty = JSON.parse(await readFile(phase19_2SummaryPath, 'utf8')) }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the Phase 19.2 uncertainty summary: ${error.message}`)
     }
     const readPhase12Measurement = async (filename) => {
       try { return JSON.parse(await readFile(path.join(phase12Directory, filename), 'utf8')) }
@@ -560,6 +566,7 @@ async function route(request, response) {
       phase13_latest_rerun: phase13LatestRun,
       phase15_latest_run: phase15LatestRun,
       phase17_evaluation: phase17Evaluation,
+      phase19_2_uncertainty: phase19_2Uncertainty,
       phase12_validation: fullValidation || sourceOnlyValidation ? {
         full_validation: fullValidation ? {
           status: fullValidation.status,

@@ -246,7 +246,7 @@ The API listens on `127.0.0.1:8000`; Vite serves the UI on `127.0.0.1:5173` and 
 
 The saved research evaluation uses Linux stable **v6.6.87**, commit `814637ca257f4faf57a73fd4e38888cce88b5911`, and five selected `drivers/net/ethernet/intel/e1000e` translation units. These are exploratory source measurements, not labeled ground-truth bug cases.
 
-The recorded Phase 17 run reports:
+The archived Phase 17 run reports:
 
 | Measure | Recorded result |
 |---|---:|
@@ -264,6 +264,8 @@ The recorded Phase 17 run reports:
 Those numbers describe that pinned run and tool configuration. Zero dependencies or cycles do not establish deadlock freedom. The dataset contains no independently verified Linux deadlock labels, so precision and recall are not reported. The detailed report, raw metrics, dataset manifest, build-validation evidence, and limitations are in `evaluation/results/phase17/REPORT.md`, `evaluation/dataset-v1.json`, and `docs/phase17-evaluation.md`.
 
 Phase 19.1 independently inventoried every lock operation from archived and fresh reports. All three snapshots agree on **6 acquisitions and 6 releases**. It traced the earlier “10 acquisitions and 2 releases” statement to a documentation error; no extractor misclassification was found. See [`evaluation/results/phase19.1/REPORT.md`](evaluation/results/phase19.1/REPORT.md) and its machine-readable inventory/comparison artifacts.
+
+The later Phase 19.2 uncertainty investigation reran the same five pinned files. It recorded **36,330 uncertainty events, 4,644 category records, and 2,431 unique root causes**, down from the fresh Phase 19.1 baseline of 43,632 events and 2,570 root causes. The reduction came from seven narrowly modeled, source-verified no-lock/no-IRQ effects; unknown helpers and callbacks remain unresolved. No dependencies or cycles were reported, which does not prove deadlock freedom. The [Phase 19.2 report](docs/phase19.2-uncertainty-root-cause.md) documents the root-cause links, per-file results, and limitations. The kernel evaluation page uses the same compact summary served by the local API.
 
 ### Reproducing the selected kernel run
 
@@ -352,5 +354,6 @@ Archerfish is the research inspiration, not an implementation dependency. IRQGua
 - `docs/phase16-feasibility-review.md` — bounded path feasibility and limitations.
 - `docs/phase17-evaluation.md` — dataset, reproduction, tool comparison, and evaluation limits.
 - `docs/phase18-integration.md` — report comparison, runtime evidence integration, and GUI contract.
+- `docs/phase19.2-uncertainty-root-cause.md` — fresh kernel uncertainty baseline, causal call/IRQ tracing, audited effect summaries, and before/after evidence.
 - `evaluation/results/linux-v6.6.87/REPORT.md` — pinned kernel evaluation record.
 - `evaluation/results/phase17/REPORT.md` — controlled fixture and exploratory kernel run summary.

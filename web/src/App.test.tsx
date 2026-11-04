@@ -24,7 +24,13 @@ describe('IRQGuard workspace states', () => {
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/health')
       ? jsonResponse(health)
-      : String(input).includes('/evaluations/linux-v6.6.87') ? jsonResponse({ phase17_evaluation: latestRun }) : jsonResponse({ analyses: [] })))
+      : String(input).includes('/evaluations/linux-v6.6.87') ? jsonResponse({
+        phase17_evaluation: latestRun,
+        phase19_2_uncertainty: { after: {
+          uncertainty_events: 36330, unique_records: 4644, unique_root_causes: 2431,
+          lock_dependencies: 0, candidate_cycles: 0,
+        } },
+      }) : jsonResponse({ analyses: [] })))
     render(<App initialPage="overview" />)
     expect(await screen.findByRole('heading', { name: 'Start with a C source file' })).toBeInTheDocument()
     expect(screen.queryByText(/candidate lock-order cycles/i)).not.toBeInTheDocument()
@@ -41,8 +47,8 @@ describe('IRQGuard workspace states', () => {
     expect(screen.getByText(/does not reproduce Archerfish/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /See measurements and build limits/ })).toBeInTheDocument()
     const currentResult = document.querySelector('.guide-current-result')
-    expect(currentResult?.textContent).toContain('0 dependencies · 0 candidate cycles · 43,632 uncertainty events · 4,922 per-file unique records')
-    expect(currentResult?.textContent).toContain('89 unresolved lock-identity records')
+    expect(currentResult?.textContent).toContain('0 dependencies · 0 candidate cycles · 36,330 uncertainty events · 4,644 unique records')
+    expect(currentResult?.textContent).toContain('2,431 root causes after linking repeated IRQ-state effects')
   })
 
   it('shows a useful error when the local API cannot be reached', async () => {
@@ -96,72 +102,28 @@ describe('IRQGuard workspace states', () => {
       ? jsonResponse(health) : jsonResponse({ analyses: [] })))
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'CLI & reports' }))
-    expect(await screen.findByText(/Phase 15 extraction regression evidence found both `spin_lock_irqsave` acquisitions/)).toBeInTheDocument()
+    expect(await screen.findByText(/Extraction regression tests find both `spin_lock_irqsave` acquisitions/)).toBeInTheDocument()
     expect(screen.getByText(/does not prove the driver is deadlock-free/)).toBeInTheDocument()
     expect(screen.queryByText(/pinned kernel run missed some/)).not.toBeInTheDocument()
     expect(screen.getByText(/Schema v4 · archived v3 supported/)).toBeInTheDocument()
   })
 
-  it('shows the archived kernel cycle classifications and linked evidence from the review response', async () => {
+  it('shows current kernel results without archived run history or phase labels', async () => {
     const evaluation = {
       status: 'completed',
       kernel: { release_tag: 'v6.6.87', commit: '814637ca257f4faf57a73fd4e38888cce88b5911' },
       configuration: { subsystem: 'e1000e', architecture: 'x86_64', config_base: 'x86_64_defconfig', compiler_mode: 'Clang', build_limitations: [] },
-      aggregate: { files_requested: 5, files_analyzed: 5, files_skipped_or_failed: 0, functions: 396, lock_operations: 12, lock_dependencies: 6, interrupt_graph_edges: 6, interrupt_cycles: 3, uncertainties: 43705, diagnostics: 2, elapsed_seconds_sum: 6.644, peak_rss_kib_max: 192312 },
-      translation_units: [], precision_recall: null,
-      interpretation: 'Archived run predates the lock API fix.',
-      cycle_review: {
-        status: 'archived_review_with_current_source_scan',
-        input: { report: 'netdev.json', schema_version: 3, sha256: 'abc123' },
-        current_analysis: { status: 'completed_with_validation_skips', reason: 'Fresh source-only analysis found no current cycles; objtool was skipped.' },
-        findings: [{
-          finding_id: 'C-1', classification: 'inconclusive', archived_analyzer_category: 'inconclusive_analysis', archived_feasibility: 'inconclusive',
-          cycle_path: ['lock at 501', 'lock at 501'], source_file: '/kernel/netdev.c', functions: { source: 'rx_cleaner', target: 'clock_helper' },
-          call_path: [{ caller: 'rx_cleaner', callee: 'clock_helper', file: '/kernel/netdev.c', line: 1032 }],
-          edges: [{ from_location: { expansion: { file: '/kernel/netdev.c', line: 501 } } }],
-          interrupt_evidence: { from_context: 'process', to_context: 'process', handler: null, interpretation: 'No handler evidence is attached.' },
-          lock_operation_evidence: [], irq_state: { edge_state: 'not_applicable', saved_flags_relation: 'unresolved', interpretation: 'Saved state unknown.' },
-          uncertainties: [{ id: 'U-1', category: 'lock_identity', reason: 'unknown lock', source_file: '/kernel/netdev.c', line: '501', explanation: 'Identity unavailable.' }],
-          reasons: ['Archived edge is an unresolved self-edge.'], manual_validation: ['Rerun with the pinned tree.'],
-        }],
-      },
-      phase12_validation: {
-        full_validation: { status: 'completed', blocker: null, validation: { objtool_build: 'succeeded', objtool_object_checks: 'succeeded', objtool_invocations: 1, objtool_options: ['--orc', '--ibt', '--module', '--link'], orc_sections_present: true, kernel_object_compilation: 'succeeded', source_analysis: 'completed', kernel_module_link: 'not_attempted; composite object target only', stack_validation: 'not_configured_by_defconfig' } },
-        pre_install_attempt: { status: 'kernel_build_failed', blocker: "Kernel build stage 'prepare' failed; missing libelf headers.", validation: { objtool_build: 'failed' } },
-        source_only: { status: 'completed_with_validation_skips', validation: { kernel_object_compilation: 'succeeded', source_analysis: 'completed', objtool_build: 'skipped_by_request', objtool_object_checks: 'skipped_by_request', unwinder_orc_configured: true, stack_validation: 'not_configured_by_defconfig' }, aggregate: { files_requested: 5, files_analyzed: 5, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, interrupt_cycles: 0 } } },
-        build_limitations: ['Final .ko link and full kernel build were not attempted.'],
-      },
-      phase13_comparison: {
-        before: { functions: 396, lock_acquisitions: 6, lock_releases: 6, lock_dependencies: 6, interrupt_graph_edges: 6, candidate_cycles: 3, uncertainty_events: 43705, unique_uncertainty_records: 4872 },
-        after: { functions: 396, lock_acquisitions: 6, lock_releases: 6, lock_dependencies: 0, interrupt_graph_edges: 0, candidate_cycles: 0, uncertainty_events: 43514, unique_uncertainty_records: 4833 },
-        metrics_warning: 'Counts are not accuracy metrics.',
-      },
-      phase13_latest_rerun: {
-        status: 'completed', environment: { analyzer_sha256: 'abc' },
-        validation: { objtool_object_checks: 'succeeded', orc_sections_present: true, stack_validation: 'not_configured_by_defconfig', kernel_module_link: 'not_attempted; composite object target only' },
-        aggregate: { files_analyzed: 5, files_requested: 5, analysis_elapsed_seconds_sum: 6.491, peak_rss_kib_max_across_separate_runs: 192924, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43514, diagnostics: 2 } },
-      },
-      phase15_latest_run: {
-        status: 'completed', kernel: { release_tag: 'v6.6.87', commit: '814637ca257f4faf57a73fd4e38888cce88b5911' },
-        source_files: ['netdev.c', 'ethtool.c', 'ich8lan.c', 'phy.c', 'nvm.c'],
-        configuration: { config_sha256: 'config-hash' }, environment: { clang: 'Clang 20.1.2', analyzer_sha256: 'phase15' },
-        aggregate: { files_analyzed: 5, files_requested: 5, analysis_elapsed_seconds_sum: 7.744, peak_rss_kib_max_across_separate_runs: 237700, counts_sum_across_translation_units: { functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 43632, diagnostics: 2 } },
-        validation: { kernel_object_compilation: 'succeeded', objtool_object_checks: 'succeeded', orc_sections_present: true, stack_validation: 'not_configured_by_defconfig', kernel_module_link: 'not_attempted; composite object target only' },
-        uncertainty_summary: { event_count: 43632, unique_record_count: 4922, lock_identity_events: 118, by_category: { lock_identity: { unique_record_count: 89 } } },
-        comparison_to_phase13: { deltas: { uncertainty_events: 118, unique_uncertainty_records: 89 } },
-        irqsave_pairs: [
-          { function: 'e1000e_systim_to_hwtstamp', acquire_line: 501, release_line: 503, lock_identity: 'unary(&,member(@param[0]->e1000_adapter::systim_lock))', lock_identity_status: 'symbolic', saved_flags_identity: 'flags', restore_matches_flags: true },
-        ],
-      },
-      phase17_evaluation: {
-        schema_version: 1, dataset_id: 'irqguard-eval-v1', analyzer_sha256: '1234567890abcdef',
-        kernel_pin: { release: 'v6.6.87', commit: '814637ca257f' }, kernel_pin_validation: { status: 'matched' },
-        controlled_fixture_passed: 8, controlled_fixture_failed: 0,
-        controlled_fixture_cases: [{ case_id: 'known-positive', group: 'synthetic-positive', status: 'passed' }],
-        real_kernel_cases: [{ case_id: 'netdev', source: 'drivers/net/e1000e/netdev.c', measurements: { functions: 154, lock_operations: 10, lock_dependencies: 0, candidate_cycles: 0, uncertainty_events: 100 }, elapsed_seconds: 2.7, peak_rss_kib: 100000 }],
-        real_kernel_aggregate: { files_requested: 1, files_analyzed: 1, counts_sum_across_translation_units: { functions: 154, lock_operations: 10, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 100 } },
-        kernel_configuration: { config_sha256: 'config-hash' }, kernel_validation: { kernel_object_compilation: 'succeeded', objtool_object_checks: 'succeeded', orc_sections_present: true, kernel_module_link: 'not_attempted', stack_validation: 'not_configured' },
-        ground_truth: { independent_bug_cases: 0, precision: null, recall: null, reason: 'No independently labeled kernel bug set.' },
+      aggregate: { files_requested: 5, files_analyzed: 5, files_skipped_or_failed: 0, functions: 396, lock_operations: 12, lock_dependencies: 0, interrupt_graph_edges: 0, interrupt_cycles: 0, uncertainties: 36330, diagnostics: 2, elapsed_seconds_sum: 6.897, peak_rss_kib_max: 236344 },
+      translation_units: [],
+      phase19_2_uncertainty: {
+        schema_version: 1, phase: '19.2', status: 'completed',
+        kernel: { release_tag: 'v6.6.87', commit: '814637ca257f4faf57a73fd4e38888cce88b5911' },
+        subsystem: 'e1000e', source_files: ['netdev.c'], baseline: {},
+        after: { files_analyzed: 5, files_requested: 5, functions: 396, lock_operations: 12, lock_acquisitions: 6, lock_releases: 6, lock_dependencies: 0, candidate_cycles: 0, uncertainty_events: 36330, unique_records: 4644, unique_root_causes: 2431, parser_diagnostics: 2, analysis_seconds: 6.897, peak_memory_kib: 236344,
+          validation: { kernel_object_compilation: 'succeeded', objtool_object_checks: 'succeeded', orc_sections_present: true, kernel_module_link: 'not_attempted; composite object target only', stack_validation: 'not_configured_by_defconfig' },
+          category_counts: { unresolved_call: { event_count: 18023, unique_record_count: 2213 }, interrupt_state: { event_count: 18023, unique_record_count: 2213 }, lock_identity: { event_count: 118, unique_record_count: 89 } } },
+        per_file: [{ source_file: 'netdev.c', status: 'analyzed', functions: 154, lock_operations: 10, lock_dependencies: 0, interrupt_cycles: 0, uncertainties: 24685, elapsed_seconds: 2.558 }],
+        largest_remaining_unresolved_calls: [], interpretation: 'Unknown calls remain conservative.', classification_note: 'Secondary effects retain their root cause.',
       },
     }
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).endsWith('/health')
@@ -169,33 +131,13 @@ describe('IRQGuard workspace states', () => {
       : String(input).endsWith('/evaluations/linux-v6.6.87') ? jsonResponse(evaluation) : jsonResponse({ analyses: [] })))
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'Kernel evaluation' }))
-    fireEvent.click(await screen.findByRole('button', { name: /Historical Runs/i }))
-    expect(await screen.findByRole('heading', { name: 'Candidate validation' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Fresh kernel run and controlled cases' })).toBeInTheDocument()
-    expect(document.querySelector('.phase17-kernel-table')?.textContent).toContain('netdev.c')
-    expect(screen.getByText(/Zero dependencies or cycles do not show deadlock freedom/)).toBeInTheDocument()
-    expect(screen.getByText('inconclusive')).toBeInTheDocument()
-    expect(screen.getByText(/rx_cleaner → clock_helper/)).toBeInTheDocument()
-    expect(screen.getByText(/U-1 lock_identity/)).toBeInTheDocument()
-    expect(screen.getByText(/Fresh source-only analysis found no current cycles/)).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Kernel validation stages' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Post-fix comparison' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Current analyzer results' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Why the edge count changed' })).toBeInTheDocument()
-    expect(screen.getByText(/six dependencies were same-site self-edges/)).toBeInTheDocument()
-    expect(screen.getByText(/Phase 14 used the saved comparison; Phase 15 reran the analysis using the located pinned checkout/)).toBeInTheDocument()
-    expect(screen.getByText(/7.744s/)).toBeInTheDocument()
-    expect(screen.getByText('43,632')).toBeInTheDocument()
-    expect(screen.getByText('4,922')).toBeInTheDocument()
-    expect(screen.getByText(/netdev.c:501 \/ 503/)).toBeInTheDocument()
-    expect(screen.getByText(/\+118 events \/ \+89 unique/)).toBeInTheDocument()
-    expect(screen.getAllByText('43,705')).toHaveLength(2)
-    expect(screen.getAllByText('43,514')).toHaveLength(1)
-    expect(screen.getByText(/Earlier pre-install attempt/)).toBeInTheDocument()
-    expect(screen.getByText(/missing libelf headers/)).toBeInTheDocument()
-    expect(screen.getByText(/C object compilation/)).toBeInTheDocument()
-    expect(screen.getByText(/objtool was explicitly skipped/)).toBeInTheDocument()
-    expect(screen.getByText(/ORC sections in composite object/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Results by source file' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Why the analyzer remains uncertain' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'What the kernel build checked' })).toBeInTheDocument()
+    expect(screen.getByText('36,330')).toBeInTheDocument()
+    expect(screen.getByText(/2,431 root causes/)).toBeInTheDocument()
+    expect(screen.getByText(/netdev.c/)).toBeInTheDocument()
+    expect(screen.queryByText(/Historical Runs|Archived baseline|Phase [0-9]/i)).not.toBeInTheDocument()
   })
 
   it('allows the desktop sidebar to collapse without hiding its navigation controls', async () => {

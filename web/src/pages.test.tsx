@@ -131,6 +131,15 @@ describe('KernelEvaluationPage', () => {
     expect(screen.getByText('6 acquires · 6 releases')).toBeInTheDocument()
     expect(screen.queryByText('10 acquires · 2 releases')).not.toBeInTheDocument()
   })
+
+  it('shows current root-cause measurements and remaining unresolved calls', () => {
+    render(<KernelEvaluationPage evaluation={DEMO_KERNEL_EVALUATION} />)
+    expect(screen.getByRole('heading', { name: 'Why the analyzer remains uncertain' })).toBeInTheDocument()
+    expect(screen.getByText(/2,213 IRQ-state records are linked to unresolved-call root causes/)).toBeInTheDocument()
+    expect(screen.getByText(/__const_udelay/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Zero cycles do not prove deadlock freedom/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Historical Runs|Archived baseline|Phase [0-9]/i)).not.toBeInTheDocument()
+  })
 })
 
 describe('DemoBadge', () => {

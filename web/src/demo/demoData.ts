@@ -2,6 +2,7 @@ import type { AnalysisMetadata, AnalysisReport, KernelEvaluation, SourceSnippet 
 import interruptsRaw from './interrupts-report.json'
 import basicRaw from './basic-report.json'
 import kernelEvalRaw from './kernel-eval-demo.json'
+import phase19_2Raw from './phase19-2-summary.json'
 import { getDemoSourceSnippet } from './sources'
 
 export interface DemoExample {
@@ -34,7 +35,10 @@ export const DEMO_EXAMPLES: DemoExample[] = [
 
 export const DEMO_INTERRUPTS_REPORT: AnalysisReport = interruptsRaw as unknown as AnalysisReport
 export const DEMO_BASIC_REPORT: AnalysisReport = basicRaw as unknown as AnalysisReport
-export const DEMO_KERNEL_EVALUATION: KernelEvaluation = kernelEvalRaw as unknown as KernelEvaluation
+export const DEMO_KERNEL_EVALUATION: KernelEvaluation = {
+  ...(kernelEvalRaw as unknown as KernelEvaluation),
+  phase19_2_uncertainty: phase19_2Raw as KernelEvaluation['phase19_2_uncertainty'],
+}
 
 export const DEMO_METADATA_LIST: AnalysisMetadata[] = [
   {

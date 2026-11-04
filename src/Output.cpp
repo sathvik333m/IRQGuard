@@ -14,6 +14,7 @@ namespace {
 
 struct UncertaintyRecordView {
     std::string id;
+    std::string rootCauseId;
     std::string category;
     std::string reason;
     std::string stage;
@@ -29,7 +30,10 @@ struct UncertaintyRecordView {
     std::size_t events = 0;
     std::size_t propagated = 0;
     std::vector<std::string> examples;
+    std::vector<std::string> propagationExamples;
     std::set<std::string> findings;
+    std::set<std::string> causalParents;
+    std::string causalRelation;
 };
 
 struct UncertaintyClass {
@@ -179,13 +183,17 @@ std::vector<UncertaintyRecordView> uncertaintyRecords(const AnalysisResult &resu
             record.explanation = classification->explanation;
             record.key = cause;
             record.id = "U-" + stableHash(groupKey);
+            record.rootCauseId = record.id;
             parseIssueLocation(record);
             record.api = quotedOperand(cause);
             representativeScore[groupKey] = std::numeric_limits<std::size_t>::max();
         }
         ++record.events;
-        if (message.find("via call ") != std::string::npos || message.find(": via ") != std::string::npos)
+        if (message.find("via call ") != std::string::npos || message.find(": via ") != std::string::npos) {
             ++record.propagated;
+            if (record.propagationExamples.size() < 8)
+                record.propagationExamples.push_back(message);
+        }
         if (record.examples.size() < 3) record.examples.push_back(message);
         const auto viaCount = static_cast<std::size_t>(std::count(message.begin(), message.end(), ':'));
         const auto score = (message.find("via call ") == std::string::npos ? 0u : 1000u) + viaCount;
@@ -248,6 +256,28 @@ std::vector<UncertaintyRecordView> uncertaintyRecords(const AnalysisResult &resu
                     break;
                 }
             }
+        }
+    }
+
+    // The IRQ-state pass emits a second uncertainty for an unmodeled call at
+    // the same call site. Link that secondary effect to the unresolved-call
+    // root; retain both records and all event counts.
+    for (auto &entry : grouped) {
+        auto &effect = entry.second;
+        if (effect.category != "interrupt_state" ||
+            effect.reason != "unknown_call_irq_effect")
+            continue;
+        for (const auto &candidateEntry : grouped) {
+            const auto &root = candidateEntry.second;
+            if (root.category != "unresolved_call" ||
+                root.sourceFile != effect.sourceFile || root.line != effect.line ||
+                root.column != effect.column || root.api != effect.api)
+                continue;
+            effect.causalParents.insert(root.id);
+        }
+        if (!effect.causalParents.empty()) {
+            effect.rootCauseId = *effect.causalParents.begin();
+            effect.causalRelation = "secondary_irq_effect_of_unresolved_call";
         }
     }
 
@@ -465,7 +495,9 @@ std::string toJson(const AnalysisResult &result) {
     std::size_t unresolvedCallEvents = 0;
     std::size_t candidateAffectingRecords = 0;
     std::size_t candidateRecordAssociations = 0;
+    std::size_t uncertaintyCausalLinks = 0;
     std::set<std::string> affectedCandidates;
+    std::set<std::string> uncertaintyRootCauses;
     for (const auto &record : uncertaintyReport) {
         auto &category = byUncertaintyCategory[record.category];
         category.first += record.events;
@@ -494,6 +526,8 @@ std::string toJson(const AnalysisResult &result) {
         if (record.category == "lock_identity") lockIdentityEvents += record.events;
         if (record.category == "interrupt_state") interruptStateEvents += record.events;
         if (record.category == "unresolved_call") unresolvedCallEvents += record.events;
+        uncertaintyRootCauses.insert(record.rootCauseId);
+        if (!record.causalParents.empty()) ++uncertaintyCausalLinks;
         if (!record.findings.empty()) {
             ++candidateAffectingRecords;
             candidateRecordAssociations += record.findings.size();
@@ -672,6 +706,7 @@ std::string toJson(const AnalysisResult &result) {
     arrayJson(out, result.uncertainties, [&](const std::string &value) { out << quote(value); });
     out << ",\n  \"uncertainty_summary\":{\"event_count\":" << result.uncertainties.size()
         << ",\"unique_record_count\":" << uncertaintyReport.size()
+        << ",\"unique_root_cause_count\":" << uncertaintyRootCauses.size()
         << ",\"propagated_event_count\":";
     std::size_t propagatedEvents = 0;
     for (const auto &record : uncertaintyReport) propagatedEvents += record.propagated;
@@ -682,6 +717,8 @@ std::string toJson(const AnalysisResult &result) {
         << ",\"candidate_affecting_unique_records\":" << candidateAffectingRecords
         << ",\"candidate_record_association_count\":" << candidateRecordAssociations
         << ",\"affected_candidate_count\":" << affectedCandidates.size()
+        << ",\"uncertainty_causal_link_count\":" << uncertaintyCausalLinks
+        << ",\"secondary_effect_unique_record_count\":" << uncertaintyCausalLinks
         << ",\"proven_non_affecting_event_count\":0,\"non_affecting_count_note\":"
         << quote("No uncertainty is marked non-affecting unless that can be established; none are proven non-affecting by this classifier.")
         << ",\"by_category\":{";
@@ -736,6 +773,7 @@ std::string toJson(const AnalysisResult &result) {
         const auto &record = uncertaintyReport[i];
         if (i) out << ',';
         out << "\n    {\"id\":" << quote(record.id)
+            << ",\"root_cause_id\":" << quote(record.rootCauseId)
             << ",\"category\":" << quote(record.category)
             << ",\"reason\":" << quote(record.reason)
             << ",\"analysis_stage\":" << quote(record.stage)
@@ -752,7 +790,12 @@ std::string toJson(const AnalysisResult &result) {
             << ",\"direct_event_count\":" << (record.events - record.propagated)
             << ",\"propagated_event_count\":" << record.propagated
             << ",\"has_repeated_propagation\":" << (record.propagated ? "true" : "false")
-            << ",\"unique_record\":true,\"cause_identity_is_heuristic\":true,\"associated_findings\":[";
+            << ",\"causal_relation\":" << quote(record.causalRelation)
+            << ",\"causal_parent_ids\":";
+        arrayJson(out, record.causalParents, [&](const std::string &value) { out << quote(value); });
+        out << ",\"propagation_examples\":";
+        arrayJson(out, record.propagationExamples, [&](const std::string &value) { out << quote(value); });
+        out << ",\"unique_record\":true,\"cause_identity_is_heuristic\":true,\"associated_findings\":[";
         bool firstFinding = true;
         for (const auto &finding : record.findings) {
             if (!firstFinding) out << ',';

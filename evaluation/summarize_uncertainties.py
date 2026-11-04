@@ -110,6 +110,8 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
             "has_repeated_propagation": False, "unique_record": True,
             "cause_identity_is_heuristic": True,
             "associated_findings": [], "example_events": [],
+            "root_cause_id": stable_id(key), "causal_parent_ids": [],
+            "causal_relation": "", "propagation_examples": [],
         })
         record["event_count"] += 1
         if "via call " in message or ": via " in message:
@@ -118,6 +120,8 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
         record["has_repeated_propagation"] = record["propagated_event_count"] > 0
         if len(record["example_events"]) < 3:
             record["example_events"].append(message)
+        if ("via call " in message or ": via " in message) and len(record["propagation_examples"]) < 8:
+            record["propagation_examples"].append(message)
         candidate_function = message
         if candidate_function.startswith("IRQ state "):
             candidate_function = candidate_function[len("IRQ state "):]
@@ -153,6 +157,25 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
             record["severity"] = "high"
             record["impact"] += "; candidate evidence overlaps this uncertainty source location"
 
+    # These paired records are emitted by separate passes for the same exact
+    # unknown call site. Preserve both roots/counts and expose their causal link.
+    by_callsite: dict[tuple[str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        if record["source_file"] and record["line"] != "0":
+            by_callsite[(record["source_file"], record["line"], record["column"],
+                         record["api_or_expression"])].append(record)
+    for record in records:
+        if record["category"] != "interrupt_state" or record["reason"] != "unknown_call_irq_effect":
+            continue
+        key = (record["source_file"], record["line"], record["column"],
+               record["api_or_expression"])
+        parents = [parent["id"] for parent in by_callsite.get(key, [])
+                   if parent["category"] == "unresolved_call"]
+        if parents:
+            record["causal_parent_ids"] = sorted(set(parents))
+            record["root_cause_id"] = record["causal_parent_ids"][0]
+            record["causal_relation"] = "secondary_irq_effect_of_unresolved_call"
+
     def grouped_counts(field: str) -> dict[str, dict[str, int]]:
         counts: dict[str, list[int]] = defaultdict(lambda: [0, 0])
         for item in records:
@@ -167,6 +190,7 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
     propagated = sum(item["propagated_event_count"] for item in records)
     return {
         "event_count": len(events), "unique_record_count": len(records),
+        "unique_root_cause_count": len({item["root_cause_id"] for item in records}),
         "propagated_event_count": propagated,
         "high_impact_unique_records": sum(item["severity"] == "high" for item in records),
         "lock_identity_events": sum(item["event_count"] for item in records if item["category"] == "lock_identity"),
@@ -175,6 +199,8 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
         "candidate_affecting_unique_records": len(candidate_records),
         "affected_candidate_count": len(candidate_ids),
         "candidate_record_association_count": sum(len(item["associated_findings"]) for item in candidate_records),
+        "uncertainty_causal_links": sum(bool(item["causal_parent_ids"]) for item in records),
+        "secondary_effect_unique_record_count": sum(bool(item["causal_parent_ids"]) for item in records),
         "proven_non_affecting_event_count": 0,
         "non_affecting_count_note": "No uncertainty is marked non-affecting unless that can be established; none are proven non-affecting by this classifier.",
         "by_category": grouped_counts("category"), "by_stage": grouped_counts("analysis_stage"),
@@ -219,7 +245,7 @@ def main() -> int:
                                   for record in candidate_records
                                   for finding in record["associated_findings"]}
         result = {
-            "phase": "10", "input_report_count": len(reports),
+            "phase": "19.2", "schema_version": 2, "input_report_count": len(reports),
             "counting_rules": {
                 "events": "Raw strings in each report's uncertainties array; unchanged and never dropped.",
                 "unique_record": "Same classified category and terminal cause text including API/expression and source location after removing propagation prefixes and presentation suffixes.",
@@ -228,6 +254,9 @@ def main() -> int:
             },
             "aggregate": {
                 "event_count": all_events, "unique_record_count": len(all_records),
+                "unique_root_cause_count": len({
+                    f"{r['translation_unit']}|{r['root_cause_id']}" for r in all_records.values()
+                }),
                 "propagated_event_count": sum(r["propagated_event_count"] for r in all_records.values()),
                 "high_impact_unique_records": sum(r["severity"] == "high" for r in all_records.values()),
                 "lock_identity_events": sum(r["event_count"] for r in all_records.values() if r["category"] == "lock_identity"),
@@ -236,6 +265,8 @@ def main() -> int:
                 "candidate_affecting_unique_records": len(candidate_records),
                 "affected_candidate_count": len(affected_candidate_ids),
                 "candidate_record_association_count": sum(len(r["associated_findings"]) for r in candidate_records),
+                "uncertainty_causal_link_count": sum(bool(r["causal_parent_ids"]) for r in all_records.values()),
+                "secondary_effect_unique_record_count": sum(bool(r["causal_parent_ids"]) for r in all_records.values()),
                 "proven_non_affecting_event_count": 0,
                 "non_affecting_count_note": "None proven; the classifier does not infer that a warning is harmless.",
                 "by_category": {k: {"event_count": v[0], "unique_record_count": v[1]} for k, v in sorted(categories.items())},

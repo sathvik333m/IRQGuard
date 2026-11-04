@@ -1,4 +1,5 @@
 #include "deadlock/InterruptAnalysis.h"
+#include "deadlock/KnownEffects.h"
 
 #include <algorithm>
 #include <cctype>
@@ -439,6 +440,7 @@ IRQSummary summarizeFunction(
                 continue;
             }
             if (!call || call->modeledApi) continue;
+            if (hasKnownNoLockOrIRQEffects(call->callee)) continue;
             bool unknownTarget = call->targetIds.empty();
             std::vector<const IRQSummary *> targetSummaries;
             for (const auto &targetId : call->targetIds) {

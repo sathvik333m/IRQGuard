@@ -553,7 +553,7 @@ export default function App({ initialPage = 'guide' }: { initialPage?: Page } = 
           <div className="content-container">
             {page === 'guide' && (
               <ProjectGuidePage
-                latestRun={kernelEvaluation?.phase17_evaluation ?? null}
+                latestUncertainty={kernelEvaluation?.phase19_2_uncertainty ?? null}
                 onOpenWorkspace={() => navigate('overview')}
                 onNew={() => navigate('new')}
                 onKernel={() => navigate('kernel')}

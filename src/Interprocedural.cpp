@@ -1,4 +1,5 @@
 #include "deadlock/Interprocedural.h"
+#include "deadlock/KnownEffects.h"
 
 #include <algorithm>
 #include <deque>
@@ -386,6 +387,8 @@ SummaryData summarizeFunction(
                     continue;
                 const CallInfo &call = *callIt->second;
                 if (call.modeledApi)
+                    continue;
+                if (hasKnownNoLockOrIRQEffects(call.callee))
                     continue;
                 if (call.targetIds.empty()) {
                     std::string uncertainty = "unresolved call '" + call.calleeExpression +

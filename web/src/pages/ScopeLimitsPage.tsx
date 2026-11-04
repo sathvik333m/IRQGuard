@@ -59,7 +59,7 @@ export function ScopeLimitsPage() {
                 <td><strong>Bounded Branch Predicates</strong></td>
                 <td><span className="badge badge-good"><CheckCircle2 size={13} /> Supported</span></td>
                 <td>
-                  Direct same-function CFG branch conditions for simple comparisons (Phase 16). Contradictory paths are rejected; complex expressions remain inconclusive.
+                  Direct same-function CFG branch conditions for simple comparisons. Contradictory paths are rejected; complex expressions remain inconclusive.
                 </td>
               </tr>
               <tr>

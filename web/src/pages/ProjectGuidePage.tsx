@@ -125,7 +125,7 @@ Checking: same-CPU preemption feasibility & IRQ flags...`,
 ]
 
 export function ProjectGuidePage({
-  latestRun,
+  latestUncertainty,
   onOpenWorkspace,
   onNew,
   onKernel,
@@ -134,7 +134,7 @@ export function ProjectGuidePage({
   onWalkthrough,
   onScope,
 }: {
-  latestRun: NonNullable<KernelEvaluation['phase17_evaluation']> | null
+  latestUncertainty: NonNullable<KernelEvaluation['phase19_2_uncertainty']> | null
   onOpenWorkspace: () => void
   onNew: () => void
   onKernel: () => void
@@ -146,9 +146,7 @@ export function ProjectGuidePage({
   const [activePipelineStep, setActivePipelineStep] = useState<number>(0)
   const currentStep = PIPELINE_STEPS[activePipelineStep]
 
-  const counts = latestRun?.real_kernel_aggregate?.counts_sum_across_translation_units ?? {}
-  const uncertaintyUnique = latestRun?.real_kernel_cases.reduce((sum, item) => sum + Number(item.measurements?.unique_uncertainty_records ?? 0), 0) ?? 4922
-  const identityUnique = latestRun?.real_kernel_cases.reduce((sum, item) => sum + Number(item.measurements?.uncertainty_by_category?.lock_identity?.unique_record_count ?? 0), 0) ?? 89
+  const current = latestUncertainty?.after
 
   return (
     <div className="project-guide">
@@ -465,7 +463,7 @@ export function ProjectGuidePage({
             <HardDrive size={18} />
             <h3>Selected Linux source</h3>
             <p>
-              Linux v6.6.87 e1000e evaluation analyzed five pinned files. The Phase 17 run processed {latestRun ? `${latestRun.real_kernel_aggregate?.files_analyzed ?? 5}/${latestRun.real_kernel_aggregate?.files_requested ?? 5} files, ${counts.functions ?? 396} functions, and ${counts.lock_operations ?? 12} lock operations` : 'five files from a pinned revision'}; objtool and ORC checks ran on the composite object.
+              Linux v6.6.87 e1000e evaluation analyzed five pinned files. The latest run processed {current ? `${current.files_analyzed}/${current.files_requested} files, ${current.functions} functions, and ${current.lock_operations} lock operations` : 'five files from a pinned revision'}; bounded object, objtool, and ORC checks ran, while the final module link and separate stack validation remain incomplete.
             </p>
             <button className="text-button" onClick={onKernel}>
               See measurements and build limits <ArrowRight size={14} />
@@ -474,12 +472,12 @@ export function ProjectGuidePage({
         </div>
         <div className="guide-current-result">
           <span className="status-dot online" />
-          <strong>Phase 17 pinned kernel run</strong>
+          <strong>Latest pinned kernel run</strong>
           <span>
-            {Number(counts.lock_dependencies ?? 0)} dependencies · {Number(counts.interrupt_cycles ?? 0)} candidate cycles · {Number(counts.uncertainties ?? 43632).toLocaleString()} uncertainty events · {uncertaintyUnique.toLocaleString()} per-file unique records
+            {Number(current?.lock_dependencies ?? 0)} dependencies · {Number(current?.candidate_cycles ?? 0)} candidate cycles · {Number(current?.uncertainty_events ?? 36330).toLocaleString()} uncertainty events · {Number(current?.unique_records ?? 4644).toLocaleString()} unique records
           </span>
           <small>
-            {identityUnique.toLocaleString()} unresolved lock-identity records summed across per-file reports. Zero cycles do not prove deadlock freedom; no independently labeled Linux bug set supports accuracy metrics.
+            {Number(current?.unique_root_causes ?? 2431).toLocaleString()} root causes after linking repeated IRQ-state effects. Zero cycles do not prove deadlock freedom; no independently labeled Linux bug set supports accuracy metrics.
           </small>
         </div>
       </section>

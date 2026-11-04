@@ -258,6 +258,21 @@ export interface Phase17Evaluation {
   ground_truth: { independent_bug_cases: number; precision: number | null; recall: number | null; reason: string }
 }
 
+export interface Phase19_2UncertaintySummary {
+  schema_version: number
+  phase: string
+  status: string
+  kernel: { release_tag: string; commit: string }
+  subsystem: string
+  source_files: string[]
+  baseline: Record<string, any>
+  after: Record<string, any>
+  per_file: Array<Record<string, any>>
+  largest_remaining_unresolved_calls: Array<Record<string, any>>
+  interpretation: string
+  classification_note: string
+}
+
 export interface SourceSnippet {
   file: string
   requested_line: number
@@ -351,6 +366,7 @@ export interface KernelEvaluation {
     irqsave_pairs: Array<Record<string, any>>
   } | null
   phase17_evaluation?: Phase17Evaluation | null
+  phase19_2_uncertainty?: Phase19_2UncertaintySummary | null
   phase12_validation?: {
     full_validation: {
       status: string

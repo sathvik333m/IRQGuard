@@ -38,7 +38,7 @@ export function CliGuidePage() {
     },
     {
       title: 'Run the pinned-source evaluation',
-      detail: 'Evaluate the Phase 17 dataset and validate the Linux v6.6.87 source pin.',
+      detail: 'Run the controlled dataset and inspect the latest pinned Linux source measurements.',
       command:
         'python3 evaluation/run_phase17.py --analyzer build/deadlock-analyzer --kernel third_party/linux-v6.6.87 --output evaluation/results/phase17-rerun',
     },
@@ -121,7 +121,7 @@ export function CliGuidePage() {
           <section className="cli-caveat">
             <AlertCircle size={15} />
             <p>
-              A candidate is not a confirmed deadlock, and IRQGuard does not report a severity score. The Phase 15 extraction regression evidence found both `spin_lock_irqsave` acquisitions with matching symbolic lock and saved-flags identities; the Phase 17 pinned-source run reports 89 unresolved lock-identity records across the selected files. No dependency edges or cycles were reported in that selected run; this does not prove the driver is deadlock-free. Kernel object/objtool/ORC checks were bounded; the final module and full kernel were not built.
+              A candidate is not a confirmed deadlock, and IRQGuard does not report a severity score. Extraction regression tests find both `spin_lock_irqsave` acquisitions with matching symbolic lock and saved-flags identities. The selected pinned-source run reports 89 unique unresolved lock-identity records across five files. No dependency edges or cycles were reported; this does not prove the driver is deadlock-free. Kernel object/objtool/ORC checks were bounded; the final module and full kernel were not built.
             </p>
           </section>
         </aside>
