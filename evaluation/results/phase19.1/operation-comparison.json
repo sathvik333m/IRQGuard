@@ -1,0 +1,3518 @@
+{
+  "schema_version": 1,
+  "comparisons": {
+    "phase15_to_phase17": {
+      "summary": {
+        "same_and_consistently_classified": 12
+      },
+      "operations": [
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "ich8lan.json",
+            "function": "e1000_acquire_nvm_ich8lan",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+            "line": 1850,
+            "column": 2,
+            "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_acquire_nvm_ich8lan",
+              "api": "mutex_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "0e2e0b207cc516a81157af34a830df1e9c147254725caf06bb9b4b40782a8851"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_acquire_nvm_ich8lan",
+              "api": "mutex_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "ich8lan.json",
+            "function": "e1000_release_nvm_ich8lan",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+            "line": 1863,
+            "column": 2,
+            "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_release_nvm_ich8lan",
+              "api": "mutex_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "0e2e0b207cc516a81157af34a830df1e9c147254725caf06bb9b4b40782a8851"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_release_nvm_ich8lan",
+              "api": "mutex_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000_watchdog_task",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5334,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000_watchdog_task",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5346,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_down",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 4299,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_down",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 4301,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_get_stats64",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5974,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_get_stats64",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 6005,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_reset",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 3935,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3935,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3935,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_reset",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 3938,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_to_hwtstamp",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 501,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_to_hwtstamp",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 503,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        }
+      ]
+    },
+    "phase17_to_fresh": {
+      "summary": {
+        "same_and_consistently_classified": 12
+      },
+      "operations": [
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "ich8lan.json",
+            "function": "e1000_acquire_nvm_ich8lan",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+            "line": 1850,
+            "column": 2,
+            "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_acquire_nvm_ich8lan",
+              "api": "mutex_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_acquire_nvm_ich8lan",
+              "api": "mutex_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "ich8lan.json",
+            "function": "e1000_release_nvm_ich8lan",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+            "line": 1863,
+            "column": 2,
+            "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_release_nvm_ich8lan",
+              "api": "mutex_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_release_nvm_ich8lan",
+              "api": "mutex_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000_watchdog_task",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5334,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000_watchdog_task",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5346,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_down",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 4299,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_down",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 4301,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_get_stats64",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5974,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_get_stats64",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 6005,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_reset",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 3935,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3935,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3935,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_reset",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 3938,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_to_hwtstamp",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 501,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_to_hwtstamp",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 503,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        }
+      ]
+    },
+    "phase15_to_fresh": {
+      "summary": {
+        "same_and_consistently_classified": 12
+      },
+      "operations": [
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "ich8lan.json",
+            "function": "e1000_acquire_nvm_ich8lan",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+            "line": 1850,
+            "column": 2,
+            "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_acquire_nvm_ich8lan",
+              "api": "mutex_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "0e2e0b207cc516a81157af34a830df1e9c147254725caf06bb9b4b40782a8851"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_acquire_nvm_ich8lan",
+              "api": "mutex_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1850,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1850,
+                  "column": 13,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "ich8lan.json",
+            "function": "e1000_release_nvm_ich8lan",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+            "line": 1863,
+            "column": 2,
+            "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_release_nvm_ich8lan",
+              "api": "mutex_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "0e2e0b207cc516a81157af34a830df1e9c147254725caf06bb9b4b40782a8851"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "ich8lan.json",
+              "function": "e1000_release_nvm_ich8lan",
+              "api": "mutex_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                "line": 1863,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&nvm_mutex",
+              "lock_identity": "unary(&,decl@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c:1840:8:nvm_mutex)",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+                  "line": 1863,
+                  "column": 15,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "b338914bfb67d7bb14cf00afa21dc8b62d919c039ade81d0d56f26f7bf748aa2"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000_watchdog_task",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5334,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5334,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5334,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000_watchdog_task",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5346,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000_watchdog_task",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5346,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5183:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5346,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_down",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 4299,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4299,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4299,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_down",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 4301,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_down",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 4301,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 4301,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_get_stats64",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 5974,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_lock",
+              "classification": "lock_acquire",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 5974,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 5974,
+                  "column": 12,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_get_stats64",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 6005,
+            "column": 2,
+            "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_get_stats64",
+              "api": "spin_unlock",
+              "classification": "lock_release",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 6005,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->stats64_lock",
+              "lock_identity": "unary(&,member(unknown-pointer@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:5972:24->e1000_adapter::stats64_lock))",
+              "lock_identity_status": "unresolved",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 6005,
+                  "column": 14,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": null,
+              "saved_irq_flags_identity": null,
+              "saved_irq_flags_identity_status": "not_applicable",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_reset",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 3935,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3935,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3935,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3935,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_reset",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 3938,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_reset",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 3938,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 3938,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:3910:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_to_hwtstamp",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 501,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_lock_irqsave",
+              "classification": "lock_acquire_irqsave",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 501,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/include/linux/spinlock.h",
+                "line": 244,
+                "column": 11,
+                "valid": true
+              },
+              "is_macro": true,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": true,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 2,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 501,
+                  "column": 20,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        },
+        {
+          "status": "same_and_consistently_classified",
+          "site": {
+            "translation_unit": "netdev.json",
+            "function": "e1000e_systim_to_hwtstamp",
+            "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+            "line": 503,
+            "column": 2,
+            "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))"
+          },
+          "reference_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "8c32a1f7bfc761c3f65cd9edd3de2bb9b586c25144f0e038d9bcca394c1625c8"
+            }
+          ],
+          "current_operations": [
+            {
+              "translation_unit": "netdev.json",
+              "function": "e1000e_systim_to_hwtstamp",
+              "api": "spin_unlock_irqrestore",
+              "classification": "lock_release_irqrestore",
+              "source_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "macro_spelling_location": {
+                "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                "line": 503,
+                "column": 2,
+                "valid": true
+              },
+              "is_macro": false,
+              "lock_expression": "&adapter->systim_lock",
+              "lock_identity": "unary(&,member(@param[0]->e1000_adapter::systim_lock))",
+              "lock_identity_status": "symbolic",
+              "lock_expression_location": {
+                "is_macro": false,
+                "expansion": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                },
+                "spelling": {
+                  "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+                  "line": 503,
+                  "column": 25,
+                  "valid": true
+                }
+              },
+              "saved_irq_flags_expression": "flags",
+              "saved_irq_flags_identity": "local@/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c:499:16:flags",
+              "saved_irq_flags_identity_status": "symbolic",
+              "report_sha256": "2c02b4ba86c25ef760f5cb6f2780dc935b8f787a47f027f163cf722cad48e825"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

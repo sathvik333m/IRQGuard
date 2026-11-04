@@ -277,18 +277,22 @@ def main() -> int:
     lines += ["", "## Linux v6.6.87 exploratory observations", "",
               ("These values come from the fresh Phase 17 kernel run." if kernel_reports_dir else
                "These values come from preserved Phase 15 report files and measurements; this runner does not rerun kernel analysis."), "",
-              "| Case | Status | Functions | Lock ops | Dependencies | Cycles | Uncertainty events | Time | Peak RSS |",
-              "|---|---|---:|---:|---:|---:|---:|---:|---:|"]
+              "| Case | Status | Functions | Lock ops | Acquires | Releases | Dependencies | Cycles | Uncertainty events | Time | Peak RSS |",
+              "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for row in kernel_entries:
         m = row.get("measurements", {})
-        lines.append(f"| `{row.get('case_id', '—')}` | {row['status']} (unlabeled) | {m.get('functions', '—')} | {m.get('lock_operations', '—')} | {m.get('lock_dependencies', '—')} | {m.get('candidate_cycles', '—')} | {m.get('uncertainty_events', '—')} | {row.get('elapsed_seconds', '—')} s | {row.get('peak_rss_kib', '—')} KiB |")
+        lines.append(f"| `{row.get('case_id', '—')}` | {row['status']} (unlabeled) | {m.get('functions', '—')} | {m.get('lock_operations', '—')} | {m.get('lock_acquisitions', '—')} | {m.get('lock_releases', '—')} | {m.get('lock_dependencies', '—')} | {m.get('candidate_cycles', '—')} | {m.get('uncertainty_events', '—')} | {row.get('elapsed_seconds', '—')} s | {row.get('peak_rss_kib', '—')} KiB |")
     lines += ["", "## Interpretation", "", "No precision or recall is calculated: the real-kernel cases have no independent labels. A zero cycle count means only that this bounded analyzer/report contained no cycle for that translation unit. It does not show that the code is deadlock-free. See `docs/phase17-evaluation.md` for tool-model differences, provenance and reproduction steps.", ""]
     if raw_measurements:
         totals = raw_measurements.get("aggregate", {}).get("counts_sum_across_translation_units", {})
+        acquisition_total = sum(row.get("measurements", {}).get("lock_acquisitions", 0)
+                                for row in kernel_entries)
+        release_total = sum(row.get("measurements", {}).get("lock_releases", 0)
+                            for row in kernel_entries)
         unique_sum = sum(row.get("measurements", {}).get("unique_uncertainty_records", 0)
                          for row in kernel_entries)
         lines += ["## Linux aggregate", "",
-                  f"The {('Phase 17 fresh run' if kernel_reports_dir else 'Phase 15 archive')} records {raw_measurements.get('aggregate', {}).get('files_analyzed', '—')}/{raw_measurements.get('aggregate', {}).get('files_requested', '—')} files analyzed; {totals.get('functions', '—')} functions; {totals.get('lock_operations', '—')} lock operations; {totals.get('lock_dependencies', '—')} dependencies; {totals.get('interrupt_cycles', '—')} cycles; {totals.get('uncertainties', '—')} uncertainty events; {totals.get('diagnostics', '—')} diagnostics. Unique uncertainty records summed across translation-unit reports (not cross-file deduplicated): {unique_sum}.", "",
+                  f"The {('Phase 17 fresh run' if kernel_reports_dir else 'Phase 15 archive')} records {raw_measurements.get('aggregate', {}).get('files_analyzed', '—')}/{raw_measurements.get('aggregate', {}).get('files_requested', '—')} files analyzed; {totals.get('functions', '—')} functions; {totals.get('lock_operations', '—')} lock operations ({acquisition_total} acquisitions, {release_total} releases); {totals.get('lock_dependencies', '—')} dependencies; {totals.get('interrupt_cycles', '—')} cycles; {totals.get('uncertainties', '—')} uncertainty events; {totals.get('diagnostics', '—')} diagnostics. Unique uncertainty records summed across translation-unit reports (not cross-file deduplicated): {unique_sum}.", "",
                   "Uncertainty by category (event / per-report unique-record sums):", ""]
         category_counts: dict[str, list[int]] = {}
         for row in kernel_entries:

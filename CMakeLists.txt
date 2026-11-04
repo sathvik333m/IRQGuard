@@ -158,6 +158,9 @@ if(BUILD_TESTING)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_phase17.py
                 $<TARGET_FILE:deadlock-analyzer>
     )
+    add_test(NAME evaluation_lock_operation_accounting
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_lock_operation_accounting.py
+    )
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_test(NAME runtime_lock_evidence
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/runtime/test_runtime_evidence.py

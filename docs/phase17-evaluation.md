@@ -104,7 +104,7 @@ ctest --test-dir build -R evaluation_phase17_dataset --output-on-failure
 ## Fresh Phase 17 Linux results
 
 The fresh five-report aggregate contains 396 function definitions, 12
-lock operations (10 acquisitions and 2 releases), 0 lock dependencies, 0
+lock operations (6 acquisitions and 6 releases), 0 lock dependencies, 0
 interrupt graph edges, 0 candidate cycles, 43,632 uncertainty events, 4,922
 unique uncertainty records, and 2 diagnostics. The per-file rows are in the
 generated sample report. Analysis time summed across separate translation
@@ -118,6 +118,15 @@ accuracy: zero dependencies or cycles may reflect missed extraction,
 translation-unit boundaries, unresolved lock identities, or the bounded
 model. Uncertainty events and unique records use the analyzer's schema-v4
 summary semantics; they are not interchangeable counts.
+
+The saved Phase 17 per-file JSON summary classifies `netdev.c` as 5
+acquisitions and 5 releases, and `ich8lan.c` as 1 acquisition and 1 release;
+the other three files contain no lock operations. A prior sentence in this
+document stated “10 acquisitions and 2 releases”; that was a documentation
+error. It confused the 10 operations in `netdev.c` with the aggregate split
+across all five files. The source reports themselves contain two irqsave
+acquire/restore pairs and four ordinary acquire/release pairs in `netdev.c`,
+plus one mutex pair in `ich8lan.c`.
 
 ## Comparison with established Linux tools
 

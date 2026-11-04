@@ -3,7 +3,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { WalkthroughPage } from './pages/WalkthroughPage'
 import { ScopeLimitsPage } from './pages/ScopeLimitsPage'
 import { RunItYourselfPage } from './pages/RunItYourselfPage'
+import { KernelEvaluationPage } from './pages/KernelEvaluationPage'
 import { DemoBadge } from './components/DemoBadge'
+import { DEMO_KERNEL_EVALUATION } from './demo/demoData'
 
 afterEach(() => {
   cleanup()
@@ -120,6 +122,14 @@ describe('RunItYourselfPage', () => {
     expect(screen.getByText(/Clang 20 \+ LLVM 20 Dev Libraries/)).toBeInTheDocument()
     expect(screen.getByText(/Node\.js 20\+/)).toBeInTheDocument()
     expect(screen.getAllByText(/\.\/irqguard analyze --source examples\/basic\.c/).length).toBeGreaterThan(0)
+  })
+})
+
+describe('KernelEvaluationPage', () => {
+  it('shows acquire and release totals from saved kernel operation records', () => {
+    render(<KernelEvaluationPage evaluation={DEMO_KERNEL_EVALUATION} />)
+    expect(screen.getByText('6 acquires · 6 releases')).toBeInTheDocument()
+    expect(screen.queryByText('10 acquires · 2 releases')).not.toBeInTheDocument()
   })
 })
 

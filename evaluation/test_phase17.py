@@ -28,6 +28,14 @@ with tempfile.TemporaryDirectory(prefix="irqguard-phase17-test-") as temporary:
     assert all(row["label_status"] == "unlabeled_exploratory" for row in summary["real_kernel_cases"])
     assert summary["ground_truth"]["precision"] is None
     assert summary["ground_truth"]["recall"] is None
+    by_case = {row["case_id"]: row for row in summary["real_kernel_cases"]}
+    assert (by_case["kernel-e1000e-netdev-v6.6.87"]["measurements"]["lock_acquisitions"],
+            by_case["kernel-e1000e-netdev-v6.6.87"]["measurements"]["lock_releases"]) == (5, 5)
+    assert (by_case["kernel-e1000e-ich8lan-v6.6.87"]["measurements"]["lock_acquisitions"],
+            by_case["kernel-e1000e-ich8lan-v6.6.87"]["measurements"]["lock_releases"]) == (1, 1)
+    report_text = (output / "REPORT.md").read_text(encoding="utf-8")
+    assert "Acquires | Releases" in report_text
+    assert "12 lock operations (6 acquisitions, 6 releases)" in report_text
     assert summary["kernel_pin_validation"]["status"] in {
         "matched", "mismatch", "checkout_unavailable_archived_reports_only"
     }

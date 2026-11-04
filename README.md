@@ -252,7 +252,7 @@ The recorded Phase 17 run reports:
 |---|---:|
 | Translation units analyzed | 5 / 5 |
 | Function definitions | 396 |
-| Lock operations | 12 (10 acquisitions, 2 releases) |
+| Lock operations | 12 (6 acquisitions, 6 releases) |
 | Lock dependencies / interrupt graph edges | 0 / 0 |
 | Candidate cycles | 0 |
 | Uncertainty events | 43,632 |
@@ -262,6 +262,8 @@ The recorded Phase 17 run reports:
 | Maximum per-process peak RSS | 240,964 KiB |
 
 Those numbers describe that pinned run and tool configuration. Zero dependencies or cycles do not establish deadlock freedom. The dataset contains no independently verified Linux deadlock labels, so precision and recall are not reported. The detailed report, raw metrics, dataset manifest, build-validation evidence, and limitations are in `evaluation/results/phase17/REPORT.md`, `evaluation/dataset-v1.json`, and `docs/phase17-evaluation.md`.
+
+Phase 19.1 independently inventoried every lock operation from archived and fresh reports. All three snapshots agree on **6 acquisitions and 6 releases**. It traced the earlier “10 acquisitions and 2 releases” statement to a documentation error; no extractor misclassification was found. See [`evaluation/results/phase19.1/REPORT.md`](evaluation/results/phase19.1/REPORT.md) and its machine-readable inventory/comparison artifacts.
 
 ### Reproducing the selected kernel run
 

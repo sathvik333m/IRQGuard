@@ -81,6 +81,17 @@ export function KernelEvaluationPage({
   const { aggregate, kernel, configuration } = evaluation
   const p17 = evaluation.phase17_evaluation
   const counts = p17?.real_kernel_aggregate?.counts_sum_across_translation_units ?? aggregate
+  const lockOperationCases = p17?.real_kernel_cases ?? []
+  const lockSplitAvailable = lockOperationCases.some((item) =>
+    Number.isFinite(item.measurements?.lock_acquisitions) &&
+    Number.isFinite(item.measurements?.lock_releases)
+  )
+  const lockAcquisitions = lockOperationCases.reduce(
+    (total, item) => total + Number(item.measurements?.lock_acquisitions ?? 0), 0
+  )
+  const lockReleases = lockOperationCases.reduce(
+    (total, item) => total + Number(item.measurements?.lock_releases ?? 0), 0
+  )
 
   // Dynamic Uncertainty Chart Data
   const uncertaintyChartData = useMemo(() => {
@@ -140,7 +151,11 @@ export function KernelEvaluationPage({
         <div className="kpi-card">
           <span className="kpi-label">Lock Operations</span>
           <strong className="kpi-value">{counts.lock_operations ?? 12}</strong>
-          <small className="kpi-sub">10 acquires · 2 releases</small>
+          <small className="kpi-sub">
+            {lockSplitAvailable
+              ? `${lockAcquisitions} acquires · ${lockReleases} releases`
+              : 'Acquire/release split unavailable'}
+          </small>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">Candidate Cycles</span>

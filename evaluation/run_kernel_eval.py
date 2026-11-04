@@ -22,6 +22,8 @@ from typing import Any
 EXPECTED_COMMIT = "814637ca257f4faf57a73fd4e38888cce88b5911"
 SUBSYSTEM = Path("drivers/net/ethernet/intel/e1000e")
 SOURCE_FILES = ("netdev.c", "ethtool.c", "ich8lan.c", "phy.c", "nvm.c")
+LOCK_ACQUISITION_KINDS = {"lock_acquire", "lock_acquire_irqsave"}
+LOCK_RELEASE_KINDS = {"lock_release", "lock_release_irqrestore"}
 
 
 def run(command: list[str], cwd: Path, log: Path, timeout: int = 1800,
@@ -60,10 +62,16 @@ def report_counts(report: dict[str, Any]) -> dict[str, Any]:
     for item in report.get("interrupt_cycles", []):
         key = item.get("category", "unknown")
         categories[key] = categories.get(key, 0) + 1
+    lock_operations = [item for item in report.get("api_operations", [])
+                       if str(item.get("kind", "")).startswith("lock_")]
+    acquisitions = sum(item.get("kind") in LOCK_ACQUISITION_KINDS for item in lock_operations)
+    releases = sum(item.get("kind") in LOCK_RELEASE_KINDS for item in lock_operations)
     return {
         "functions": len(report.get("functions", [])),
-        "lock_operations": sum(str(item.get("kind", "")).startswith("lock_")
-                                for item in report.get("api_operations", [])),
+        "lock_operations": len(lock_operations),
+        "lock_acquisitions": acquisitions,
+        "lock_releases": releases,
+        "other_lock_operations": len(lock_operations) - acquisitions - releases,
         "lock_dependencies": len(report.get("lock_dependencies", [])),
         "interrupt_graph_edges": len(report.get("interrupt_lock_graph", {}).get("edges", [])),
         "interrupt_graph_nodes": len(report.get("interrupt_lock_graph", {}).get("nodes", [])),
@@ -331,7 +339,7 @@ def main() -> int:
         "peak_rss_kib_max_across_separate_runs": max_peak_kib or None,
         "counts_sum_across_translation_units": {
             key: sum(item["counts"][key] for item in analyzed)
-            for key in ("functions", "lock_operations", "lock_dependencies", "interrupt_graph_edges", "interrupt_graph_nodes", "interrupt_cycles", "uncertainties", "diagnostics")
+            for key in ("functions", "lock_operations", "lock_acquisitions", "lock_releases", "other_lock_operations", "lock_dependencies", "interrupt_graph_edges", "interrupt_graph_nodes", "interrupt_cycles", "uncertainties", "diagnostics")
         },
         "finding_category_counts_sum": {},
     }
