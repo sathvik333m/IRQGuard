@@ -267,6 +267,8 @@ Phase 19.1 independently inventoried every lock operation from archived and fres
 
 The later Phase 19.2 uncertainty investigation reran the same five pinned files. It recorded **36,330 uncertainty events, 4,644 category records, and 2,431 unique root causes**, down from the fresh Phase 19.1 baseline of 43,632 events and 2,570 root causes. The reduction came from seven narrowly modeled, source-verified no-lock/no-IRQ effects; unknown helpers and callbacks remain unresolved. No dependencies or cycles were reported, which does not prove deadlock freedom. The [Phase 19.2 report](docs/phase19.2-uncertainty-root-cause.md) documents the root-cause links, per-file results, and limitations. The kernel evaluation page uses the same compact summary served by the local API.
 
+A fresh repeat of the same pinned-source analysis completed all five files with **0 dependencies, 0 graph cycles, and 0 findings**. This scope therefore cannot measure whether feasibility checks reduce inconclusive cycle classifications. The run reproduced 36,330 uncertainty events and 2,431 unique root causes; see the [latest kernel feasibility evaluation](evaluation/results/phase19.3/REPORT.md) and its checksummed evidence bundle.
+
 ### Reproducing the selected kernel run
 
 The pinned source checkout is ignored by Git. To create it without changing an existing checkout:

@@ -260,7 +260,6 @@ export interface Phase17Evaluation {
 
 export interface Phase19_2UncertaintySummary {
   schema_version: number
-  phase: string
   status: string
   kernel: { release_tag: string; commit: string }
   subsystem: string

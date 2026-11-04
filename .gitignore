@@ -65,10 +65,11 @@ Thumbs.db
 # Keep REPORT.md and raw-measurements.json tracked; ignore only generated kernel artifacts.
 # Ad hoc Phase 15 reruns are disposable; curated baseline/after evidence is tracked.
 /evaluation/results/phase15/rerun/
-# Phase 19.2 baseline/after evidence and checksums are curated and tracked;
-# ignore only scratch outputs from additional local reruns.
+# Curated Phase 19.x summaries and checksums are tracked; ignore only scratch
+# outputs from local reruns and generated build trees.
 /evaluation/results/phase19.2/rerun/
 /evaluation/results/phase19.2/rerun-*/
 /evaluation/results/phase19.2/tmp-*/
+/evaluation/results/phase19.3/rerun-*/
 # Pinned upstream kernel checkout is kept locally for reproducible analysis, not committed.
 /third_party/linux-v6.6.87/

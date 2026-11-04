@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export the compact, evidence-backed Phase 19.2 website summary."""
+"""Export the compact current Linux evaluation summary for the website."""
 from __future__ import annotations
 
 import gzip
@@ -15,12 +15,18 @@ def read_gzip_json(path: Path) -> dict[str, Any]:
 
 
 def export(root: Path) -> dict[str, Any]:
-    base = root / "evaluation/results/phase19.2"
-    before = read_gzip_json(base / "baseline/uncertainty-summary.json.gz")["aggregate"]
-    after = read_gzip_json(base / "after/uncertainty-summary.json.gz")["aggregate"]
-    before_raw = json.loads((base / "baseline/raw-measurements.json").read_text(encoding="utf-8"))
-    after_raw = json.loads((base / "after/raw-measurements.json").read_text(encoding="utf-8"))
-    impact = read_gzip_json(base / "after/impact.json.gz")
+    previous = root / "evaluation/results/phase19.2"
+    latest = root / "evaluation/results/phase19.3/evidence"
+    before = read_gzip_json(previous / "baseline/uncertainty-summary.json.gz")["aggregate"]
+    before_raw = json.loads((previous / "baseline/raw-measurements.json").read_text(encoding="utf-8"))
+    if (latest / "raw-measurements.json").is_file():
+        after = read_gzip_json(latest / "uncertainty-summary.json.gz")["aggregate"]
+        after_raw = json.loads((latest / "raw-measurements.json").read_text(encoding="utf-8"))
+        impact = read_gzip_json(latest / "uncertainty-impact.json.gz")
+    else:
+        after = read_gzip_json(previous / "after/uncertainty-summary.json.gz")["aggregate"]
+        after_raw = json.loads((previous / "after/raw-measurements.json").read_text(encoding="utf-8"))
+        impact = read_gzip_json(previous / "after/impact.json.gz")
     def metrics(summary: dict[str, Any], raw: dict[str, Any]) -> dict[str, Any]:
         measurement = raw["aggregate"]
         counts = measurement["counts_sum_across_translation_units"]
@@ -63,7 +69,6 @@ def export(root: Path) -> dict[str, Any]:
     )[:6]
     return {
         "schema_version": 1,
-        "phase": "19.2",
         "status": "completed",
         "kernel": after_raw["kernel"],
         "subsystem": after_raw["configuration"]["subsystem"],
@@ -113,9 +118,9 @@ def main() -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     except (OSError, KeyError, json.JSONDecodeError) as error:
-        print(f"Phase 19.2 website summary error: {error}", file=sys.stderr)
+        print(f"Kernel evaluation summary error: {error}", file=sys.stderr)
         return 1
-    print(f"Wrote Phase 19.2 website summary: {output}")
+    print(f"Wrote current kernel evaluation summary: {output}")
     return 0
 
 
