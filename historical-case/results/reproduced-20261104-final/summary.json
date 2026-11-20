@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "case_id": "linux-mips-gic-recursive-lock-2026",
+  "created_utc": "2026-11-04T13:34:19.079061+00:00",
+  "pins": {
+    "affected": "03c4d26933d54556a89379db5923ae9e474569e8",
+    "fixed": "1bae25dcc6beb8b874f23601d2efa142ac4f9f36"
+  },
+  "introducing_commit": "322a9063876890895cb8308cc6f59de312e8aad5",
+  "source_file": "drivers/irqchip/irq-mips-gic.c",
+  "analyzer": {
+    "path": "/home/sathvik/os_project/build/deadlock-analyzer",
+    "sha256": "d1bf6b6a4ad9dbec1a3062d06b54eb1a473f7a8756e30a36a3d8218eb9e1da4f"
+  },
+  "environment": {
+    "python": "3.12.3",
+    "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "make": "GNU Make 4.3",
+    "architecture": "mips",
+    "defconfig": "malta_defconfig",
+    "host_linker_override": "HOSTLDFLAGS=-fuse-ld=bfd; avoids missing lld-20"
+  },
+  "results": {
+    "affected": {
+      "revision": "03c4d26933d54556a89379db5923ae9e474569e8",
+      "source_sha256": "2ee8051f63c28c2c1e948fdadbbcfbbc413b095d7317ac0551f90cf2dc7706c7",
+      "config_sha256": "789134579dbd3d59491c501b0b78cb166130f9a79327fc8b10b24a59f74b4e56",
+      "compile_commands_sha256": "65a2b558c15e9105af3423981ecc03e0d5f718d713830f41938fa6623d0d1d37",
+      "setup_and_object_build_seconds": 17.022,
+      "analysis_seconds": 0.758,
+      "measurements": {
+        "functions": 35,
+        "calls": 239,
+        "lock_operations": 8,
+        "lock_acquisitions": 4,
+        "lock_releases": 4,
+        "dependencies": 1,
+        "cycles": 1,
+        "cycle_categories": {
+          "inconclusive_analysis": 1
+        },
+        "uncertainty_events": 855,
+        "unique_uncertainty_records": 419,
+        "parser_diagnostics": 0
+      },
+      "report": "affected.json",
+      "build_log": "affected.log"
+    },
+    "fixed": {
+      "revision": "1bae25dcc6beb8b874f23601d2efa142ac4f9f36",
+      "source_sha256": "be4a8f42fe15343a38f82224128842004d00afac55d049a09de9dad22cd4b9c2",
+      "config_sha256": "789134579dbd3d59491c501b0b78cb166130f9a79327fc8b10b24a59f74b4e56",
+      "compile_commands_sha256": "3fefb3f93d37c3f614ea9ddb8624f99f3f6a5ed775a0c197ef30b7c1343ca7a4",
+      "setup_and_object_build_seconds": 13.412,
+      "analysis_seconds": 0.783,
+      "measurements": {
+        "functions": 36,
+        "calls": 239,
+        "lock_operations": 6,
+        "lock_acquisitions": 3,
+        "lock_releases": 3,
+        "dependencies": 0,
+        "cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 892,
+        "unique_uncertainty_records": 422,
+        "parser_diagnostics": 0
+      },
+      "report": "fixed.json",
+      "build_log": "fixed.log"
+    }
+  },
+  "limitations": [
+    "This is one translation unit, not a whole-kernel interprocedural analysis.",
+    "The fixed revision uses guard(raw_spinlock_irqsave); current extraction does not emit that guard as a lock operation.",
+    "The analyzer reports high uncertainty and classifies the affected cycle as inconclusive.",
+    "A source-level candidate and upstream fix do not establish runtime reproduction in this environment."
+  ],
+  "validation": {
+    "classification": "partial_match",
+    "affected_recursive_lock_pattern_detected": true,
+    "fixed_revision_has_no_reported_cycle": true,
+    "fixed_guard_lock_operation_extracted": false,
+    "explanation": "The affected source produces the upstream-described gic_set_affinity -> gic_set_type same-lock edge and cycle. The cycle is classified inconclusive because its summary is uncertain. The fixed revision removes that recursive helper call, but its guard(raw_spinlock_irqsave) acquisition is not extracted, so this is a partial match rather than evidence of complete fixed-version lock coverage."
+  }
+}

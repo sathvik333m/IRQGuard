@@ -1,0 +1,27 @@
+{
+  "case_id": "linux-8250-startup-lock-order-2020",
+  "authority": "upstream Linux fix commit with a reproduced lockdep circular-dependency report and linked patch discussion",
+  "introducing_revision": "768aec0b5bcc",
+  "affected_revision": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+  "fixed_revision": "730037c3ee57f892e6df019bc88d417a5944737c",
+  "upstream_fix": "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=730037c3ee57f892e6df019bc88d417a5944737c",
+  "mailing_list_patch": "https://lore.kernel.org/lkml/20200817022646.1484638-1-sergey.senozhatsky@gmail.com/",
+  "file": "drivers/tty/serial/8250/8250_port.c",
+  "affected_evidence": {
+    "function": "serial8250_do_startup",
+    "port_lock_line": 2285,
+    "disable_irq_nosync_line": 2287,
+    "lockdep_reverse_path": ["__report_bad_irq", "printk", "serial8250_console_write"],
+    "lockdep_locks": ["irq_desc_lock_class", "port_lock_key", "console_owner"]
+  },
+  "fix_evidence": {
+    "function": "serial8250_do_startup",
+    "disable_irq_nosync_precedes_port_lock": true,
+    "fixed_disable_irq_nosync_line": 2279,
+    "fixed_port_lock_line": 2289
+  },
+  "independent_label": "upstream lockdep reported a circular locking dependency and the fixing commit documents the inverse lock chains",
+  "irqguard_result": "miss",
+  "visible_uncertainty": "disable_irq_nosync is unresolved while the affected path holds port->lock; IRQ descriptor lock effects and reverse genirq/console paths are not modeled in the one-file analysis",
+  "runtime_reproduced_by_irqguard": false
+}

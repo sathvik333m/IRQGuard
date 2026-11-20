@@ -14,7 +14,14 @@ required = {"id", "group", "split", "source", "expected_behavior", "rationale",
             "evidence_source", "validation_method", "known_limitations"}
 assert all(required <= case.keys() for case in cases)
 assert all((root / case["source"]).is_file() for case in cases if case["group"] != "real_kernel_exploratory")
-assert dataset["independent_bug_cases"] == []
+historical_cases = {case["id"]: case for case in dataset["independent_bug_cases"]}
+assert set(historical_cases) == {
+    "linux-mips-gic-recursive-lock-2026",
+    "linux-8250-startup-lock-order-2020",
+}
+assert historical_cases["linux-mips-gic-recursive-lock-2026"]["result_classification"] == "partial_match"
+assert historical_cases["linux-8250-startup-lock-order-2020"]["result_classification"] == "miss"
+assert all(case["affected_revision"] != case["fixed_revision"] for case in historical_cases.values())
 with tempfile.TemporaryDirectory(prefix="irqguard-phase17-test-") as temporary:
     output = Path(temporary) / "phase17"
     run = subprocess.run([sys.executable, str(root / "evaluation/run_phase17.py"),

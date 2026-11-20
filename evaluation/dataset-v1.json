@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "dataset_id": "irqguard-phase17-v1",
-  "description": "Controlled analyzer regression cases plus exploratory archived Linux v6.6.87 e1000e translation units. No real-kernel case is labeled ground truth.",
+  "description": "Controlled analyzer regression cases, exploratory Linux source, and two independently documented historical Linux locking bugs evaluated on paired source revisions.",
   "kernel_pin": {
     "release": "v6.6.87",
     "commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
@@ -172,6 +172,42 @@
       "known_limitations": "Not independently labeled; no whole-kernel call graph or runtime exercise is available."
     }
   ],
-  "independent_bug_cases": [],
-  "independent_bug_cases_note": "No case is labeled a confirmed Linux deadlock in this dataset. A suitable candidate requires an independently documented report or fix, an affected revision and source location, and evidence that the scenario matches IRQGuard's modeled scope; none has been added without that evidence."
+  "independent_bug_cases": [
+    {
+      "id": "linux-mips-gic-recursive-lock-2026",
+      "group": "independent_historical_bug",
+      "split": "final_evaluation",
+      "bug_title": "irqchip/mips-gic: recursive acquisition of gic_lock in gic_set_affinity()",
+      "affected_revision": "03c4d26933d54556a89379db5923ae9e474569e8",
+      "fixed_revision": "1bae25dcc6beb8b874f23601d2efa142ac4f9f36",
+      "introducing_revision": "322a9063876890895cb8308cc6f59de312e8aad5",
+      "source_file": "drivers/irqchip/irq-mips-gic.c",
+      "functions": ["gic_set_affinity", "gic_set_type", "gic_set_type_locked"],
+      "lock": "gic_lock",
+      "expected_pattern": "With CONFIG_SMP and a cross-cluster affinity move, gic_set_affinity holds gic_lock and calls gic_set_type, which attempts to acquire the same raw spinlock with irqsave semantics.",
+      "evidence_source": "https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git/commit/?id=1bae25dcc6beb8b874f23601d2efa142ac4f9f36; https://lkml.iu.edu/2610.1/17783.html",
+      "validation_method": "Run evaluation/run_historical_case.py against detached affected and fixed worktrees, then evaluation/test_historical_case.py against the resulting summary.",
+      "result_classification": "partial_match",
+      "known_limitations": "The affected cycle is reported as inconclusive because the interprocedural summary has unresolved effects. The fixed guard(raw_spinlock_irqsave) operation is not extracted, so disappearance of the recursive cycle does not demonstrate complete lock extraction in the fixed source. This dataset label is supported by the upstream fix, not by IRQGuard alone."
+    },
+    {
+      "id": "linux-8250-startup-lock-order-2020",
+      "group": "independent_historical_bug",
+      "split": "final_evaluation",
+      "bug_title": "serial: 8250: change lock order in serial8250_do_startup()",
+      "affected_revision": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+      "fixed_revision": "730037c3ee57f892e6df019bc88d417a5944737c",
+      "introducing_revision": "768aec0b5bcc",
+      "source_file": "drivers/tty/serial/8250/8250_port.c",
+      "related_external_paths": ["kernel/irq/manage.c", "kernel/irq/spurious.c", "kernel/printk/printk.c"],
+      "functions": ["serial8250_do_startup", "__report_bad_irq", "serial8250_console_write"],
+      "locks": ["uart->port->lock", "irq_desc_lock_class", "console_owner"],
+      "expected_pattern": "The lockdep report documents a cycle involving port->lock and the IRQ descriptor lock, with console_owner in the complete three-lock chain. In serial8250_do_startup(), the affected order holds port->lock before disable_irq_nosync() acquires the IRQ descriptor lock; an IRQ error-reporting path can acquire the descriptor lock and reach printk/console code that takes port->lock. The fix moves disable_irq_nosync() before port->lock.",
+      "evidence_source": "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=730037c3ee57f892e6df019bc88d417a5944737c; https://lore.kernel.org/lkml/20200817022646.1484638-1-sergey.senozhatsky@gmail.com/",
+      "validation_method": "Run evaluation/prepare_historical_case.py, evaluation/run_serial8250_case.py, then evaluation/test_historical_serial8250.py against the generated summary.",
+      "result_classification": "miss",
+      "known_limitations": "IRQGuard extracts local port->lock operations and reports disable_irq_nosync as an unresolved external call, but it does not model the IRQ descriptor lock or analyze the reverse genirq/printk path from other translation units. Kbuild compiled the selected C object with objtool/ORC validation explicitly skipped due an old objtool/GCC 13 -Werror incompatibility; the kernel was not linked or run. The independent source evidence is a lockdep circular-dependency report, not an IRQGuard or project runtime reproduction."
+    }
+  ],
+  "independent_bug_cases_note": "Two independently documented positive historical cases are evaluated on pinned affected/fixed source revisions. One is a partial match and one is a miss. Neither is a runtime reproduction by this project. The existing synthetic negative fixtures are not counted as independently verified real-kernel negatives. No precision or recall is computed from these two cases."
 }

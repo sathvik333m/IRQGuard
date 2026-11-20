@@ -73,3 +73,22 @@ Thumbs.db
 /evaluation/results/phase19.3/rerun-*/
 # Pinned upstream kernel checkout is kept locally for reproducible analysis, not committed.
 /third_party/linux-v6.6.87/
+# Historical kernel trees are pinned by commit and recreated with the documented
+# worktree commands; keep multi-gigabyte upstream sources out of Git.
+/historical-case/linux-git/
+/historical-case/affected/
+/historical-case/fixed/
+/historical-case/introduced-322a906/
+/historical-case/serial8250/affected/
+/historical-case/serial8250/fixed/
+/historical-case/results/*-kbuild/
+/historical-case/results/serial8250/*-kbuild/
+/historical-case/results/reproduced-*/
+!/historical-case/results/reproduced-20261104-final/
+!/historical-case/results/reproduced-20261104-final/**
+/historical-case/results/reproduced-20261104-final/*-kbuild/
+/historical-case/results/serial8250/run-*/
+!/historical-case/results/serial8250/reproduced-20261104-final/
+!/historical-case/results/serial8250/reproduced-20261104-final/**
+/historical-case/results/serial8250/reproduced-20261104-final/*-kbuild/
+/historical-case/results/initial-introduction-to-fix/

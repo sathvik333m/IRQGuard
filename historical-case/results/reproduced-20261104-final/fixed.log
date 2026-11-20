@@ -1,0 +1,143 @@
+$ make -C /home/sathvik/os_project/historical-case/fixed O=/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild ARCH=mips LLVM=/usr/lib/llvm-20/bin/ HOSTCC=gcc HOSTCXX=g++ HOSTLD=/usr/bin/ld HOSTLDFLAGS=-fuse-ld=bfd LD=/usr/bin/ld olddefconfig
+make: Entering directory '/home/sathvik/os_project/historical-case/fixed'
+make[1]: Entering directory '/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild'
+  UPD     /home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild/Makefile
+  HOSTCC  scripts/basic/fixdep
+  HOSTCC  scripts/kconfig/conf.o
+  HOSTCC  scripts/kconfig/confdata.o
+  HOSTCC  scripts/kconfig/expr.o
+  LEX     scripts/kconfig/lexer.lex.c
+  YACC    scripts/kconfig/parser.tab.[ch]
+  HOSTCC  scripts/kconfig/lexer.lex.o
+  HOSTCC  scripts/kconfig/menu.o
+  HOSTCC  scripts/kconfig/parser.tab.o
+  HOSTCC  scripts/kconfig/preprocess.o
+  HOSTCC  scripts/kconfig/symbol.o
+  HOSTCC  scripts/kconfig/util.o
+  HOSTLD  scripts/kconfig/conf
+#
+# No change to .config
+#
+make[1]: Leaving directory '/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild'
+make: Leaving directory '/home/sathvik/os_project/historical-case/fixed'
+$ make -C /home/sathvik/os_project/historical-case/fixed O=/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild ARCH=mips LLVM=/usr/lib/llvm-20/bin/ HOSTCC=gcc HOSTCXX=g++ HOSTLD=/usr/bin/ld HOSTLDFLAGS=-fuse-ld=bfd LD=/usr/bin/ld prepare
+make: Entering directory '/home/sathvik/os_project/historical-case/fixed'
+make[1]: Entering directory '/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild'
+  SYSHDR  arch/mips/include/generated/uapi/asm/unistd_n32.h
+  SYSHDR  arch/mips/include/generated/uapi/asm/unistd_n64.h
+  SYSHDR  arch/mips/include/generated/uapi/asm/unistd_o32.h
+  SYSTBL  arch/mips/include/generated/asm/syscall_table_n32.h
+  SYSTBL  arch/mips/include/generated/asm/syscall_table_n64.h
+  SYSTBL  arch/mips/include/generated/asm/syscall_table_o32.h
+  SYSNR   arch/mips/include/generated/asm/unistd_nr_n32.h
+  SYSNR   arch/mips/include/generated/asm/unistd_nr_n64.h
+  SYSNR   arch/mips/include/generated/asm/unistd_nr_o32.h
+  HOSTCC  arch/mips/tools/elf-entry
+  HOSTCC  arch/mips/boot/tools/relocs_32.o
+  HOSTCC  arch/mips/boot/tools/relocs_64.o
+  HOSTCC  arch/mips/boot/tools/relocs_main.o
+  HOSTLD  arch/mips/boot/tools/relocs
+  HOSTCC  scripts/dtc/dtc.o
+  HOSTCC  scripts/dtc/flattree.o
+  HOSTCC  scripts/dtc/fstree.o
+  HOSTCC  scripts/dtc/data.o
+  HOSTCC  scripts/dtc/livetree.o
+  HOSTCC  scripts/dtc/treesource.o
+  HOSTCC  scripts/dtc/srcpos.o
+  HOSTCC  scripts/dtc/checks.o
+  HOSTCC  scripts/dtc/util.o
+  LEX     scripts/dtc/dtc-lexer.lex.c
+  YACC    scripts/dtc/dtc-parser.tab.[ch]
+  HOSTCC  scripts/dtc/dtc-lexer.lex.o
+  HOSTCC  scripts/dtc/dtc-parser.tab.o
+  HOSTLD  scripts/dtc/dtc
+  HOSTCC  scripts/dtc/libfdt/fdt.o
+  HOSTCC  scripts/dtc/libfdt/fdt_ro.o
+  HOSTCC  scripts/dtc/libfdt/fdt_wip.o
+  HOSTCC  scripts/dtc/libfdt/fdt_sw.o
+  HOSTCC  scripts/dtc/libfdt/fdt_rw.o
+  HOSTCC  scripts/dtc/libfdt/fdt_strerror.o
+  HOSTCC  scripts/dtc/libfdt/fdt_empty_tree.o
+  HOSTCC  scripts/dtc/libfdt/fdt_addresses.o
+  HOSTCC  scripts/dtc/libfdt/fdt_overlay.o
+  HOSTCC  scripts/dtc/fdtoverlay.o
+  HOSTLD  scripts/dtc/fdtoverlay
+  HOSTCC  scripts/genksyms/genksyms.o
+  YACC    scripts/genksyms/parse.tab.[ch]
+  HOSTCC  scripts/genksyms/parse.tab.o
+  LEX     scripts/genksyms/lex.lex.c
+  HOSTCC  scripts/genksyms/lex.lex.o
+  HOSTLD  scripts/genksyms/genksyms
+  HOSTCC  scripts/kallsyms
+  HOSTCC  scripts/sorttable.o
+  HOSTCC  scripts/elf-parse.o
+  HOSTLD  scripts/sorttable
+  HOSTCC  scripts/asn1_compiler
+  UPD     arch/mips/include/generated/uapi/asm/kvm_para.h
+  UPD     arch/mips/include/generated/uapi/asm/bpf_perf_event.h
+  UPD     arch/mips/include/generated/uapi/asm/ipcbuf.h
+  UPD     arch/mips/include/generated/asm/kvm_para.h
+  UPD     arch/mips/include/generated/asm/mcs_spinlock.h
+  UPD     arch/mips/include/generated/asm/parport.h
+  UPD     arch/mips/include/generated/asm/qrwlock.h
+  UPD     arch/mips/include/generated/asm/qspinlock.h
+  UPD     arch/mips/include/generated/asm/ring_buffer.h
+  UPD     arch/mips/include/generated/asm/user.h
+  UPD     arch/mips/include/generated/asm/text-patching.h
+  UPD     arch/mips/include/generated/asm/archrandom.h
+  UPD     arch/mips/include/generated/asm/cfi.h
+  UPD     arch/mips/include/generated/asm/current.h
+  UPD     arch/mips/include/generated/asm/device.h
+  UPD     arch/mips/include/generated/asm/emergency-restart.h
+  UPD     arch/mips/include/generated/asm/kmap_size.h
+  UPD     arch/mips/include/generated/asm/local64.h
+  UPD     arch/mips/include/generated/asm/module.lds.h
+  UPD     arch/mips/include/generated/asm/msi.h
+  UPD     arch/mips/include/generated/asm/percpu.h
+  UPD     arch/mips/include/generated/asm/percpu_types.h
+  UPD     arch/mips/include/generated/asm/preempt.h
+  UPD     arch/mips/include/generated/asm/rqspinlock.h
+  UPD     arch/mips/include/generated/asm/runtime-const.h
+  UPD     arch/mips/include/generated/asm/rwonce.h
+  UPD     arch/mips/include/generated/asm/sections.h
+  UPD     arch/mips/include/generated/asm/serial.h
+  UPD     arch/mips/include/generated/asm/simd.h
+  UPD     arch/mips/include/generated/asm/softirq_stack.h
+  UPD     arch/mips/include/generated/asm/trace_clock.h
+  UPD     arch/mips/include/generated/asm/unwind_user.h
+  UPD     arch/mips/include/generated/asm/word-at-a-time.h
+  UPD     include/config/kernel.release
+  UPD     include/generated/uapi/linux/version.h
+  UPD     include/generated/utsrelease.h
+  UPD     include/generated/compile.h
+  CC      scripts/mod/empty.o
+  HOSTCC  scripts/mod/mk_elfconfig
+  MKELF   scripts/mod/elfconfig.h
+  HOSTCC  scripts/mod/modpost.o
+  CC      scripts/mod/devicetable-offsets.s
+  UPD     scripts/mod/devicetable-offsets.h
+  HOSTCC  scripts/mod/file2alias.o
+  HOSTCC  scripts/mod/sumversion.o
+  HOSTCC  scripts/mod/symsearch.o
+  HOSTLD  scripts/mod/modpost
+  UPD     include/generated/timeconst.h
+  CC      kernel/bounds.s
+  UPD     include/generated/bounds.h
+  CC      arch/mips/kernel/asm-offsets.s
+  UPD     include/generated/asm-offsets.h
+  CC      kernel/sched/rq-offsets.s
+  UPD     include/generated/rq-offsets.h
+  CALL    /home/sathvik/os_project/historical-case/fixed/scripts/checksyscalls.sh 
+  CHKSHA1 /home/sathvik/os_project/historical-case/fixed/include/linux/atomic/atomic-arch-fallback.h
+  CHKSHA1 /home/sathvik/os_project/historical-case/fixed/include/linux/atomic/atomic-instrumented.h
+  CHKSHA1 /home/sathvik/os_project/historical-case/fixed/include/linux/atomic/atomic-long.h
+make[1]: Leaving directory '/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild'
+make: Leaving directory '/home/sathvik/os_project/historical-case/fixed'
+$ make -C /home/sathvik/os_project/historical-case/fixed O=/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild ARCH=mips LLVM=/usr/lib/llvm-20/bin/ HOSTCC=gcc HOSTCXX=g++ HOSTLD=/usr/bin/ld HOSTLDFLAGS=-fuse-ld=bfd LD=/usr/bin/ld drivers/irqchip/irq-mips-gic.o
+make: Entering directory '/home/sathvik/os_project/historical-case/fixed'
+make[1]: Entering directory '/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild'
+  CC      drivers/irqchip/irq-mips-gic.o
+make[1]: Leaving directory '/home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild'
+make: Leaving directory '/home/sathvik/os_project/historical-case/fixed'
+$ /usr/bin/python3 /home/sathvik/os_project/historical-case/fixed/scripts/clang-tools/gen_compile_commands.py -d /home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild -o /home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild/compile_commands.json /home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild/drivers/irqchip
+$ /home/sathvik/os_project/build/deadlock-analyzer analyze --source /home/sathvik/os_project/historical-case/fixed/drivers/irqchip/irq-mips-gic.c --compile-commands /home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed-kbuild --format json --output /home/sathvik/os_project/historical-case/results/reproduced-20261104-final/fixed.json

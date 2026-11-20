@@ -163,6 +163,14 @@ if(BUILD_TESTING)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_phase17.py
                 $<TARGET_FILE:deadlock-analyzer>
     )
+    add_test(NAME evaluation_historical_linux_case
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_historical_case.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/historical-case/results/reproduced-20261104-final/summary.json
+    )
+    add_test(NAME evaluation_historical_8250_case
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_historical_serial8250.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/historical-case/results/serial8250/reproduced-20261104-final/summary.json
+    )
     add_test(NAME evaluation_lock_operation_accounting
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/evaluation/test_lock_operation_accounting.py
     )

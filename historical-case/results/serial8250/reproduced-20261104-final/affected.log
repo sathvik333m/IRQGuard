@@ -1,0 +1,98 @@
+$ make -C /home/sathvik/os_project/historical-case/serial8250/affected O=/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild ARCH=x86_64 CC=/usr/lib/llvm-20/bin/clang HOSTCC=gcc HOSTCXX=g++ HOSTLD=/usr/bin/ld HOSTLDFLAGS=-fuse-ld=bfd LD=/usr/bin/ld x86_64_defconfig
+make: Entering directory '/home/sathvik/os_project/historical-case/serial8250/affected'
+make[1]: Entering directory '/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild'
+  GEN     Makefile
+  HOSTCC  scripts/basic/fixdep
+  HOSTCC  scripts/kconfig/conf.o
+  HOSTCC  scripts/kconfig/confdata.o
+  HOSTCC  scripts/kconfig/expr.o
+  LEX     scripts/kconfig/lexer.lex.c
+  YACC    scripts/kconfig/parser.tab.[ch]
+  HOSTCC  scripts/kconfig/lexer.lex.o
+  HOSTCC  scripts/kconfig/parser.tab.o
+  HOSTCC  scripts/kconfig/preprocess.o
+  HOSTCC  scripts/kconfig/symbol.o
+  HOSTCC  scripts/kconfig/util.o
+  HOSTLD  scripts/kconfig/conf
+#
+# configuration written to .config
+#
+make[1]: Leaving directory '/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild'
+make: Leaving directory '/home/sathvik/os_project/historical-case/serial8250/affected'
+$ make -C /home/sathvik/os_project/historical-case/serial8250/affected O=/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild ARCH=x86_64 CC=/usr/lib/llvm-20/bin/clang HOSTCC=gcc HOSTCXX=g++ HOSTLD=/usr/bin/ld HOSTLDFLAGS=-fuse-ld=bfd LD=/usr/bin/ld olddefconfig
+make: Entering directory '/home/sathvik/os_project/historical-case/serial8250/affected'
+make[1]: Entering directory '/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild'
+  GEN     Makefile
+scripts/kconfig/conf  --olddefconfig Kconfig
+#
+# No change to .config
+#
+make[1]: Leaving directory '/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild'
+make: Leaving directory '/home/sathvik/os_project/historical-case/serial8250/affected'
+$ make -C /home/sathvik/os_project/historical-case/serial8250/affected O=/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild ARCH=x86_64 CC=/usr/lib/llvm-20/bin/clang HOSTCC=gcc HOSTCXX=g++ HOSTLD=/usr/bin/ld HOSTLDFLAGS=-fuse-ld=bfd LD=/usr/bin/ld CONFIG_SYSTEM_TRUSTED_KEYRING=n CONFIG_STACK_VALIDATION= CONFIG_UNWINDER_ORC= SKIP_STACK_VALIDATION=1 drivers/tty/serial/8250/8250_port.o
+make: Entering directory '/home/sathvik/os_project/historical-case/serial8250/affected'
+make[1]: Entering directory '/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild'
+  GEN     Makefile
+  SYSTBL  arch/x86/include/generated/asm/syscalls_32.h
+  SYSHDR  arch/x86/include/generated/asm/unistd_32_ia32.h
+  SYSHDR  arch/x86/include/generated/asm/unistd_64_x32.h
+  SYSTBL  arch/x86/include/generated/asm/syscalls_64.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_32.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_64.h
+  SYSHDR  arch/x86/include/generated/uapi/asm/unistd_x32.h
+  HOSTCC  arch/x86/tools/relocs_32.o
+  HOSTCC  arch/x86/tools/relocs_64.o
+  HOSTCC  arch/x86/tools/relocs_common.o
+  HOSTLD  arch/x86/tools/relocs
+  HOSTCC  scripts/selinux/genheaders/genheaders
+  HOSTCC  scripts/selinux/mdp/mdp
+  HOSTCC  scripts/kallsyms
+  HOSTCC  scripts/sorttable
+  HOSTCC  scripts/asn1_compiler
+  WRAP    arch/x86/include/generated/uapi/asm/bpf_perf_event.h
+  WRAP    arch/x86/include/generated/uapi/asm/errno.h
+  WRAP    arch/x86/include/generated/uapi/asm/fcntl.h
+  WRAP    arch/x86/include/generated/uapi/asm/ioctl.h
+  WRAP    arch/x86/include/generated/uapi/asm/ioctls.h
+  WRAP    arch/x86/include/generated/uapi/asm/ipcbuf.h
+  WRAP    arch/x86/include/generated/uapi/asm/param.h
+  WRAP    arch/x86/include/generated/uapi/asm/poll.h
+  WRAP    arch/x86/include/generated/uapi/asm/resource.h
+  WRAP    arch/x86/include/generated/uapi/asm/socket.h
+  WRAP    arch/x86/include/generated/uapi/asm/sockios.h
+  WRAP    arch/x86/include/generated/uapi/asm/termbits.h
+  WRAP    arch/x86/include/generated/uapi/asm/termios.h
+  WRAP    arch/x86/include/generated/uapi/asm/types.h
+  WRAP    arch/x86/include/generated/asm/early_ioremap.h
+  WRAP    arch/x86/include/generated/asm/export.h
+  WRAP    arch/x86/include/generated/asm/mcs_spinlock.h
+  WRAP    arch/x86/include/generated/asm/dma-contiguous.h
+  WRAP    arch/x86/include/generated/asm/irq_regs.h
+  WRAP    arch/x86/include/generated/asm/mm-arch-hooks.h
+  WRAP    arch/x86/include/generated/asm/mmiowb.h
+  WRAP    arch/x86/include/generated/asm/rwonce.h
+  UPD     include/config/kernel.release
+  UPD     include/generated/uapi/linux/version.h
+  UPD     include/generated/utsrelease.h
+  CC      scripts/mod/empty.o
+  HOSTCC  scripts/mod/mk_elfconfig
+  MKELF   scripts/mod/elfconfig.h
+  HOSTCC  scripts/mod/modpost.o
+  CC      scripts/mod/devicetable-offsets.s
+  UPD     scripts/mod/devicetable-offsets.h
+  HOSTCC  scripts/mod/file2alias.o
+  HOSTCC  scripts/mod/sumversion.o
+  HOSTLD  scripts/mod/modpost
+  CC      kernel/bounds.s
+  UPD     include/generated/bounds.h
+  UPD     include/generated/timeconst.h
+  CC      arch/x86/kernel/asm-offsets.s
+  UPD     include/generated/asm-offsets.h
+  CALL    /home/sathvik/os_project/historical-case/serial8250/affected/scripts/checksyscalls.sh
+  CALL    /home/sathvik/os_project/historical-case/serial8250/affected/scripts/atomic/check-atomics.sh
+warning: Cannot use CONFIG_STACK_VALIDATION=y, please install libelf-dev, libelf-devel or elfutils-libelf-devel
+  CC      drivers/tty/serial/8250/8250_port.o
+make[1]: Leaving directory '/home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild'
+make: Leaving directory '/home/sathvik/os_project/historical-case/serial8250/affected'
+$ /usr/bin/python3 /home/sathvik/os_project/historical-case/affected/scripts/clang-tools/gen_compile_commands.py -d /home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild -o /home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild/compile_commands.json /home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild/drivers/tty/serial/8250
+$ /home/sathvik/os_project/build/deadlock-analyzer analyze --source /home/sathvik/os_project/historical-case/serial8250/affected/drivers/tty/serial/8250/8250_port.c --compile-commands /home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected-kbuild --format json --output /home/sathvik/os_project/historical-case/results/serial8250/reproduced-20261104-final/affected.json

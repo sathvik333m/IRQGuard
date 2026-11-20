@@ -14,9 +14,11 @@ The controlled set contains two positive cycle cases, two negative cases, and
 two edge cases for irqsave macros and interprocedural symbolic identities. The
 assertions are drawn from existing tests and are executed against the current
 analyzer. They check the documented outcomes, not statistical quality. The
-dataset currently has **zero independently verified Linux deadlock labels**.
-No precision, recall, false-positive rate, or false-negative rate is therefore
-computed.
+dataset now has **two independently documented historical Linux locking
+cases**, each evaluated separately on adjacent affected and fixed revisions.
+The five e1000e observations remain exploratory. Two historical cases are not
+an adequate basis for precision, recall, false-positive rate, or
+false-negative rate, so none is computed.
 
 The real-source group contains five Linux stable v6.6.87 e1000e files at
 `814637ca257f4faf57a73fd4e38888cce88b5911`: `netdev.c`, `ethtool.c`,
@@ -28,12 +30,15 @@ same five files from the pinned checkout; the results are exploratory and are
 not relabeled as ground truth. The checkout is ignored by Git and can be
 restored at the exact revision using the commands in the README.
 
-There are no independently documented bug cases in this version. A future
-case needs an upstream report or fixing commit, the affected revision and
-source path, a traceable lock/context scenario, and evidence that it falls
-within IRQGuard's modeled subset. An analyzer warning alone cannot establish
-the label. If those conditions cannot be supported, add the case as
-exploratory instead of ground truth.
+The historical set includes two upstream-documented positive cases: the MIPS
+GIC recursive `gic_lock` deadlock and the 8250 serial IRQ/port lock-order
+inversion. IRQGuard records a partial match and a miss, respectively, in
+[`historical-case/results/REPORT.md`](../historical-case/results/REPORT.md),
+with authoritative source links, pinned revisions, paired reports, and
+limitations. The upstream evidence supports the labels; IRQGuard's outputs
+alone do not. The reports document the inconclusive MIPS summary, the missing
+fixed-side `guard()` extraction, and the unmodeled 8250 `disable_irq_nosync()`
+lock effect.
 
 ## Reproduce controlled and kernel runs
 
@@ -152,7 +157,9 @@ and the kernel's [locking selftests](https://www.kernel.org/doc/html/v6.6/dev-to
 
 - The synthetic cases are deliberately small and overlap existing regression
   tests; they are not a held-out benchmark or independent oracle.
-- No real Linux case has a verified positive or negative ground-truth label.
+- The historical cases have independently documented positive labels, but
+  there is no independently verified real-kernel negative case. The five
+  e1000e cases remain exploratory and unlabeled.
 - The selected source subset is one e1000e revision/configuration, not all
   kernel source or all preprocessor configurations.
 - The current saved per-file reports do not create a whole-driver call graph;

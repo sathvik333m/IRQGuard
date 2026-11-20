@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "case_id": "linux-8250-startup-lock-order-2020",
+  "created_utc": "2026-11-04T14:24:25.895182+00:00",
+  "pins": {
+    "affected": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+    "fixed": "730037c3ee57f892e6df019bc88d417a5944737c"
+  },
+  "compilation_database_generator_revision": "03c4d26933d54556a89379db5923ae9e474569e8",
+  "source_file": "drivers/tty/serial/8250/8250_port.c",
+  "analyzer": {
+    "path": "/home/sathvik/os_project/build/deadlock-analyzer",
+    "sha256": "d1bf6b6a4ad9dbec1a3062d06b54eb1a473f7a8756e30a36a3d8218eb9e1da4f"
+  },
+  "environment": {
+    "python": "3.12.3",
+    "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "make": "GNU Make 4.3",
+    "architecture": "x86_64",
+    "defconfig": "x86_64_defconfig",
+    "kernel_release": "5.8.0 source revision; Clang 20 and GCC 13 host tools",
+    "build_validation": "one C object compiled; objtool/ORC validation skipped; no kernel link",
+    "build_overrides": [
+      "CC=/usr/lib/llvm-20/bin/clang",
+      "HOSTLDFLAGS=-fuse-ld=bfd",
+      "CONFIG_SYSTEM_TRUSTED_KEYRING=n for Kbuild host-tool selection (OpenSSL headers unavailable)",
+      "CONFIG_STACK_VALIDATION= and CONFIG_UNWINDER_ORC= with SKIP_STACK_VALIDATION=1"
+    ],
+    "build_limitation": "The 5.8 objtool host tool fails under GCC 13 with -Werror=use-after-free; source-object compilation proceeds with stack validation explicitly omitted."
+  },
+  "results": {
+    "affected": {
+      "revision": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+      "source_sha256": "b476bd2739ba4c424f8e651113060088b882d40c7c780e5ce8706d28ff66f013",
+      "config_sha256": "e4028cadb6803142f6cf4e1740773c1ff450f683f89328a0e454f9697cb2d603",
+      "compile_commands_sha256": "e1619ff82b072eac1c6830f1e718c3d1fb83257936d9a4a9592925e34fe3275c",
+      "object_build_and_setup_seconds": 24.653,
+      "analysis_seconds": 0.909,
+      "measurements": {
+        "functions": 113,
+        "calls": 645,
+        "lock_operations": 39,
+        "lock_acquisitions": 15,
+        "lock_releases": 16,
+        "dependencies": 0,
+        "cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 2865,
+        "unique_uncertainty_records": 813,
+        "parser_diagnostics": 0
+      },
+      "report": "affected.json",
+      "build_log": "affected.log"
+    },
+    "fixed": {
+      "revision": "730037c3ee57f892e6df019bc88d417a5944737c",
+      "source_sha256": "f8c5b3244d6dc177a51e3bf16e85a0587d256fb5781c126324f16dfd80d97c31",
+      "config_sha256": "e4028cadb6803142f6cf4e1740773c1ff450f683f89328a0e454f9697cb2d603",
+      "compile_commands_sha256": "c3ef904b16f486b8a646c2e8c167f27d1d2534a030a72cf861326cc7b45f1dce",
+      "object_build_and_setup_seconds": 18.074,
+      "analysis_seconds": 0.881,
+      "measurements": {
+        "functions": 113,
+        "calls": 645,
+        "lock_operations": 39,
+        "lock_acquisitions": 15,
+        "lock_releases": 16,
+        "dependencies": 0,
+        "cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 2865,
+        "unique_uncertainty_records": 813,
+        "parser_diagnostics": 0
+      },
+      "report": "fixed.json",
+      "build_log": "fixed.log"
+    }
+  },
+  "limitations": [
+    "The analysis is limited to 8250_port.c; it does not include genirq or console implementation translation units.",
+    "disable_irq_nosync is unresolved and its lock effects are not summarized.",
+    "The official source carries a lockdep circular-dependency report; this run does not reproduce the runtime schedule.",
+    "No accuracy metric is inferred from this case."
+  ],
+  "validation": {
+    "classification": "miss",
+    "affected_lockdep_pattern_reported": false,
+    "fixed_lockdep_pattern_reported": false,
+    "affected_external_disable_irq_call_seen": true,
+    "unsupported_disable_irq_api_uncertainty": true,
+    "explanation": "The upstream lockdep report documents a dependency involving port->lock, the IRQ descriptor lock, printk/console locking, and a hard-IRQ error path. IRQGuard extracts the local port lock and reports disable_irq_nosync as an unresolved external call, but has no summary for the IRQ descriptor lock and analyzes only this translation unit. It therefore emits no dependency or cycle in either revision. This is a miss, with the key unsupported effect visible as uncertainty."
+  }
+}

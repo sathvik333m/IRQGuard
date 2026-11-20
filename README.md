@@ -261,13 +261,19 @@ The archived Phase 17 run reports:
 | Sum of per-file analysis times | 6.993 s |
 | Maximum per-process peak RSS | 240,964 KiB |
 
-Those numbers describe that pinned run and tool configuration. Zero dependencies or cycles do not establish deadlock freedom. The dataset contains no independently verified Linux deadlock labels, so precision and recall are not reported. The detailed report, raw metrics, dataset manifest, build-validation evidence, and limitations are in `evaluation/results/phase17/REPORT.md`, `evaluation/dataset-v1.json`, and `docs/phase17-evaluation.md`.
+Those numbers describe that pinned run and tool configuration. Zero dependencies or cycles do not establish deadlock freedom. The five-file e1000e run remains exploratory. The evaluation dataset now also contains two independently documented historical locking cases, each evaluated on adjacent affected and fixed revisions: a MIPS GIC partial match and an 8250 serial lock-order miss. The sample is too small for precision or recall. See [`historical-case/results/REPORT.md`](historical-case/results/REPORT.md), the raw reports under `historical-case/results/`, and the dataset manifest at `evaluation/dataset-v1.json`.
 
 Phase 19.1 independently inventoried every lock operation from archived and fresh reports. All three snapshots agree on **6 acquisitions and 6 releases**. It traced the earlier “10 acquisitions and 2 releases” statement to a documentation error; no extractor misclassification was found. See [`evaluation/results/phase19.1/REPORT.md`](evaluation/results/phase19.1/REPORT.md) and its machine-readable inventory/comparison artifacts.
 
 The later Phase 19.2 uncertainty investigation reran the same five pinned files. It recorded **36,330 uncertainty events, 4,644 category records, and 2,431 unique root causes**, down from the fresh Phase 19.1 baseline of 43,632 events and 2,570 root causes. The reduction came from seven narrowly modeled, source-verified no-lock/no-IRQ effects; unknown helpers and callbacks remain unresolved. No dependencies or cycles were reported, which does not prove deadlock freedom. The [Phase 19.2 report](docs/phase19.2-uncertainty-root-cause.md) documents the root-cause links, per-file results, and limitations. The kernel evaluation page uses the same compact summary served by the local API.
 
 A fresh repeat of the same pinned-source analysis completed all five files with **0 dependencies, 0 graph cycles, and 0 findings**. This scope therefore cannot measure whether feasibility checks reduce inconclusive cycle classifications. The run reproduced 36,330 uncertainty events and 2,431 unique root causes; see the [latest kernel feasibility evaluation](evaluation/results/phase19.3/REPORT.md) and its checksummed evidence bundle.
+
+### Historical kernel bug case
+
+The MIPS GIC case is the upstream recursive `gic_lock` deadlock fixed by commit `1bae25dcc6beb8b874f23601d2efa142ac4f9f36`. IRQGuard reports the affected same-lock dependency cycle, but marks it inconclusive because of an uncertain function summary. It disappears in the fixed report, while the fixed `guard(raw_spinlock_irqsave)` acquisition is not extracted; this is a **partial match**. The 8250 serial case is the upstream lockdep-reported lock-order inversion fixed by `730037c3ee57f892e6df019bc88d417a5944737c`; IRQGuard reports `disable_irq_nosync()` as unresolved but produces no dependency or cycle, a **miss**. These are source-level comparisons, not runtime reproductions. The [combined case report](historical-case/results/REPORT.md) records provenance, metrics, and limitations.
+
+To obtain detached source worktrees and reproduce the paired runs, use `evaluation/prepare_historical_case.py`, `evaluation/run_historical_case.py`, and `evaluation/run_serial8250_case.py`; each runner verifies source pins and refuses to overwrite results. The selected objects compiled, but neither full kernel was linked or run, and no runtime deadlock was reproduced. Two cases do not support an accuracy metric.
 
 ### Reproducing the selected kernel run
 
