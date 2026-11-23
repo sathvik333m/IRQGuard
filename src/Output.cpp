@@ -814,7 +814,7 @@ std::string toJson(const AnalysisResult &result) {
     return out.str();
 }
 
-std::string toText(const AnalysisResult &result) {
+static std::string toTextLegacy(const AnalysisResult &result) {
     std::ostringstream out;
     out << "Source: " << result.source << "\nFunctions (" << result.functions.size() << "):\n";
     for (const auto &function : result.functions)
@@ -904,6 +904,156 @@ std::string toText(const AnalysisResult &result) {
     for (const auto &diagnostic : result.diagnostics)
         out << "Diagnostic: " << diagnostic << '\n';
     out << "Cycle reports are static candidates under the process/hardirq model; they are not confirmed deadlocks.\n";
+    return out.str();
+}
+
+std::string toText(const AnalysisResult &result, bool verbose) {
+    if (verbose) return toTextLegacy(result);
+    auto loc = [](const SourceLocation &source) {
+        if (!source.valid) return std::string("<location unavailable>");
+        const auto slash = source.file.find_last_of("/\\");
+        return source.file.substr(slash == std::string::npos ? 0 : slash + 1) + ':' +
+            std::to_string(source.line) + ':' + std::to_string(source.column);
+    };
+    std::ostringstream out;
+    std::size_t acquireCount = 0, releaseCount = 0;
+    for (const auto &operation : result.apiOperations) {
+        if (operation.kind.rfind("lock_acquire", 0) == 0) ++acquireCount;
+        if (operation.kind.rfind("lock_release", 0) == 0) ++releaseCount;
+    }
+    const auto uncertainties = uncertaintyRecords(result);
+    std::set<std::string> roots;
+    std::map<std::string, std::pair<std::size_t, std::size_t>> categories;
+    for (const auto &record : uncertainties) {
+        roots.insert(record.rootCauseId);
+        auto &counts = categories[record.category];
+        counts.first += record.events;
+        ++counts.second;
+    }
+    out << "  ╔══════════════════════════════════════════════════════╗\n"
+        << "  ║              IRQGuard static analysis              ║\n"
+        << "  ╚══════════════════════════════════════════════════════╝\n\n"
+        << "[ANALYSIS]\n"
+        << "Source       : " << result.source << '\n'
+        << "Parser       : Clang\n"
+        << "Status       : Completed\n\n"
+        << "[PIPELINE]\n"
+        << "  ✓ Function extraction\n"
+        << "  ✓ Call graph construction\n"
+        << "  ✓ Lock API recognition\n"
+        << "  ✓ Lock identity modeling\n"
+        << "  ✓ Interprocedural dependency analysis\n"
+        << "  ✓ Interrupt-aware checks (supported subset)\n"
+        << "  ✓ Cycle search\n\n"
+        << "[CODE STRUCTURE]\n"
+        << "Functions               " << result.functions.size() << '\n'
+        << "Function calls          " << result.calls.size() << '\n'
+        << "API operations          " << result.apiOperations.size() << "\n\n"
+        << "[LOCK ANALYSIS]\n"
+        << "Acquisitions            " << acquireCount << '\n'
+        << "Releases                " << releaseCount << '\n'
+        << "Lock dependencies       " << result.lockDependencies.size() << '\n'
+        << "Interrupt registrations " << result.interruptRegistrations.size() << '\n'
+        << "Context-aware edges     " << result.interruptLockEdges.size() << "\n\n";
+
+    if (!result.lockDependencies.empty()) {
+        out << "[DEPENDENCIES]\n";
+        for (std::size_t i = 0; i < result.lockDependencies.size(); ++i) {
+            const auto &dependency = result.lockDependencies[i];
+            out << "  " << dependency.fromLock << " ──────────► " << dependency.toLock << '\n'
+                << "    Type       : " << (dependency.origin == "direct" ? "Direct" : "Inferred through calls") << '\n'
+                << "    Certainty  : " << dependency.certainty << '\n'
+                << "    Function   : " << dependency.reportingFunction
+                << " (origin: " << dependency.originFunction << ")\n"
+                << "    Locations  : " << loc(dependency.fromAcquisition.expansion)
+                << " -> " << loc(dependency.toAcquisition.expansion) << '\n';
+            if (!dependency.throughCalls.empty()) {
+                out << "    Call path  :";
+                for (const auto &step : dependency.throughCalls)
+                    out << ' ' << step.function << " -> " << step.callee
+                        << " @ " << loc(step.location.expansion) << ';';
+                out << '\n';
+            }
+            if (i + 1 < result.lockDependencies.size()) out << '\n';
+        }
+        out << '\n';
+    }
+
+    out << "[DEADLOCK ANALYSIS]\n"
+        << "Candidate cycles        " << result.interruptCycles.size() << '\n'
+        << "Confirmed deadlocks     Not established\n";
+    if (result.interruptCycles.empty()) {
+        out << "\n[RESULT]\n"
+            << "No cycle candidate identified in this source analysis.\n";
+    } else {
+        out << "\n[FINDINGS]\n";
+        for (std::size_t i = 0; i < result.interruptCycles.size(); ++i) {
+            const auto &cycle = result.interruptCycles[i];
+            out << "  C-" << i + 1 << "  " << cycle.classification
+                << " / " << cycle.feasibility << '\n'
+                << "    Lock sequence: ";
+            for (std::size_t j = 0; j < cycle.lockSequence.size(); ++j)
+                out << (j ? " -> " : "") << cycle.lockSequence[j];
+            out << "\n    Explanation: " << cycle.explanation << '\n';
+            for (const auto edgeIndex : cycle.edgeIndexes) {
+                if (edgeIndex >= result.interruptLockEdges.size()) continue;
+                const auto &edge = result.interruptLockEdges[edgeIndex];
+                out << "    Edge: " << edge.fromContext << " -> " << edge.toContext
+                    << ", " << edge.sourceFunction << " -> " << edge.targetFunction
+                    << ", " << loc(edge.fromLocation.expansion) << " -> "
+                    << loc(edge.toLocation.expansion) << " [" << edge.kind
+                    << ", IRQ=" << edge.irqState << "]\n";
+            }
+        }
+    }
+
+    out << "\n[UNCERTAINTY]\n"
+        << "Events       : " << result.uncertainties.size() << '\n'
+        << "Unique records: " << uncertainties.size() << '\n'
+        << "Root causes  : " << roots.size() << '\n';
+    for (const auto &category : categories)
+        out << "  " << category.first << " : " << category.second.first
+            << " events / " << category.second.second << " unique records\n";
+
+    if (uncertainties.empty()) out << "  None recorded.\n";
+    else {
+        std::vector<const UncertaintyRecordView *> ordered;
+        for (const auto &record : uncertainties) ordered.push_back(&record);
+        std::stable_sort(ordered.begin(), ordered.end(), [](const auto *left, const auto *right) {
+            if (left->severity != right->severity) return left->severity == "high";
+            if (left->findings.empty() != right->findings.empty()) return !left->findings.empty();
+            return left->events > right->events;
+        });
+        const auto count = std::min<std::size_t>(12, ordered.size());
+        for (std::size_t i = 0; i < count; ++i) {
+            const auto &record = *ordered[i];
+            out << "  " << record.id << " [" << record.severity << ", " << record.category
+                << "] " << record.reason << " (" << record.events << " events)\n";
+            if (!record.function.empty()) out << "    Function    : " << record.function << '\n';
+            if (!record.api.empty()) out << "    API/expression: " << record.api << '\n';
+            if (!record.sourceFile.empty())
+                out << "    Location: " << record.sourceFile << ':' << record.line << ':' << record.column << '\n';
+            out << "    Impact: " << record.impact << '\n';
+            if (!record.findings.empty()) {
+                out << "    Affects: ";
+                bool first = true;
+                for (const auto &finding : record.findings) {
+                    out << (first ? "" : ", ") << finding;
+                    first = false;
+                }
+                out << '\n';
+            }
+        }
+        if (count < ordered.size())
+            out << "  ... " << ordered.size() - count
+                << " more records; use --verbose to print the full report.\n";
+    }
+    if (!result.diagnostics.empty()) {
+        out << "\n[DIAGNOSTICS]\n";
+        for (const auto &diagnostic : result.diagnostics) out << "  - " << diagnostic << '\n';
+    }
+    out << "\nAnalysis completed successfully.\n"
+        << "Static candidates are not confirmed deadlocks; no candidate does not prove deadlock freedom.\n";
     return out.str();
 }
 

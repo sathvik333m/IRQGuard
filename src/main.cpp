@@ -17,6 +17,7 @@ void usage(std::ostream &out) {
            "  --api-config FILE       JSON API registry (extends/replaces defaults by name)\n"
            "  --clang-arg ARG         Add a Clang argument (repeatable; direct mode only)\n"
            "  --format text|json|dot  Output format (default: text)\n"
+           "  --verbose               Include complete extracted structure (text format only)\n"
            "  --output FILE           Write report to file instead of stdout\n"
            "  --help                  Show this help\n";
 }
@@ -37,6 +38,7 @@ int main(int argc, char **argv) {
     std::string apiConfig;
     std::string format = "text";
     std::string outputPath;
+    bool verbose = false;
     for (int i = 2; i < argc; ++i) {
         std::string argument = argv[i];
         auto value = [&](const char *name) -> std::string {
@@ -51,6 +53,7 @@ int main(int argc, char **argv) {
         else if (argument == "--api-config") apiConfig = value("--api-config");
         else if (argument == "--clang-arg") options.clangArguments.push_back(value("--clang-arg"));
         else if (argument == "--format") format = value("--format");
+        else if (argument == "--verbose") verbose = true;
         else if (argument == "--output") outputPath = value("--output");
         else if (argument == "--help" || argument == "-h") { usage(std::cout); return 0; }
         else { std::cerr << "error: unknown option '" << argument << "'\n"; return 2; }
@@ -58,6 +61,10 @@ int main(int argc, char **argv) {
     if (options.source.empty()) { std::cerr << "error: --source is required\n"; return 2; }
     if (format != "text" && format != "json" && format != "dot") {
         std::cerr << "error: --format must be 'text', 'json', or 'dot'\n";
+        return 2;
+    }
+    if (verbose && format != "text") {
+        std::cerr << "error: --verbose is available only with --format text\n";
         return 2;
     }
     if (!options.compilationDatabase.empty() && !options.clangArguments.empty()) {
@@ -78,7 +85,7 @@ int main(int argc, char **argv) {
         return status;
     }
     const std::string report = format == "json" ? deadlock::toJson(result) :
-        (format == "dot" ? deadlock::toDot(result) : deadlock::toText(result));
+        (format == "dot" ? deadlock::toDot(result) : deadlock::toText(result, verbose));
     if (outputPath.empty()) {
         std::cout << report;
     } else {

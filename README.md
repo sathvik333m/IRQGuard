@@ -21,7 +21,11 @@ After installing the prerequisites and building the analyzer, run it on the incl
 ./irqguard analyze --source examples/basic.c
 ```
 
-The example contains normal C functions and mutex calls. IRQGuard prints the functions, call sites, lock operations, source locations, and any extracted dependency. It does not require special annotations.
+The default text report starts with analysis counts, findings, lock operations and dependencies, then summarizes uncertainty with source evidence. Use `--verbose` to print the complete function, call-site and graph-edge inventory. No special annotations are required.
+
+```sh
+./irqguard analyze --source examples/basic.c --verbose
+```
 
 Export a JSON report or dependency graph:
 
