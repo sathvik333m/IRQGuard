@@ -12,6 +12,24 @@ import {
 } from 'recharts'
 import type { KernelEvaluation } from '../types'
 import { DEMO_KERNEL_EVALUATION } from '../demo/demoData'
+import historicalCases from '../demo/historical-cases.json'
+
+type HistoricalCase = {
+  id: string
+  title: string
+  classification: string
+  source_file: string
+  affected_revision: string
+  fixed_revision: string
+  pattern: string
+  affected: { lock_operations: number; dependencies: number; cycles: number; classification?: string }
+  fixed: { lock_operations: number; dependencies: number; cycles: number }
+  limitation: string
+  upstream_url: string
+  commit_url: string
+}
+
+const historicalCaseRows = historicalCases as HistoricalCase[]
 
 function basename(path: string) {
   return path.split('/').filter(Boolean).at(-1) ?? path
@@ -192,6 +210,53 @@ export function KernelEvaluationPage({
         </div>
         <p className="phase17-caveat mt-3 text-xs text-dim">
           These are exploratory source measurements, not independently verified bug labels. No precision or recall is claimed. Userspace runtime tests do not emulate hardware interrupts.
+        </p>
+      </section>
+
+      <section className="panel historical-evidence-panel" aria-labelledby="historical-evidence-title">
+        <div className="panel-heading">
+          <div>
+            <div className="eyebrow">UPSTREAM-DOCUMENTED CASES · AFFECTED / FIXED REVISIONS</div>
+            <h2 id="historical-evidence-title">Historical locking bug evaluation</h2>
+          </div>
+          <span className="runtime-scope">2 cases · no accuracy metric</span>
+        </div>
+        <p className="historical-evidence-intro">
+          These cases have independent upstream evidence. IRQGuard results are compared across pinned source revisions; they are static-analysis outcomes, not runtime reproductions.
+        </p>
+        <div className="historical-evidence-list">
+          {historicalCaseRows.map((item) => (
+            <article className="historical-evidence-case" key={item.id}>
+              <div className="historical-case-title-row">
+                <div>
+                  <h3>{item.title}</h3>
+                  <code>{item.source_file}</code>
+                </div>
+                <span className={`historical-classification ${item.classification === 'Miss' ? 'miss' : 'partial'}`}>
+                  {item.classification}
+                </span>
+              </div>
+              <p>{item.pattern}</p>
+              <div className="historical-revision-grid">
+                <div>
+                  <span>Affected · <code title={item.affected_revision}>{item.affected_revision.slice(0, 12)}</code></span>
+                  <small>{item.affected.lock_operations} lock operations · {item.affected.dependencies} dependencies · {item.affected.cycles} cycles{item.affected.classification ? ` · ${item.affected.classification.replaceAll('_', ' ')}` : ''}</small>
+                </div>
+                <div>
+                  <span>Fixed · <code title={item.fixed_revision}>{item.fixed_revision.slice(0, 12)}</code></span>
+                  <small>{item.fixed.lock_operations} lock operations · {item.fixed.dependencies} dependencies · {item.fixed.cycles} cycles</small>
+                </div>
+              </div>
+              <div className="historical-case-limit"><Info size={14} /><span>{item.limitation}</span></div>
+              <div className="historical-evidence-links">
+                <a href={item.commit_url} target="_blank" rel="noreferrer">Upstream commit</a>
+                <a href={item.upstream_url} target="_blank" rel="noreferrer">Patch / lockdep evidence</a>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="historical-evidence-footnote">
+          One case is a partial match and one is a miss. The sample has no independently verified Linux negative case and is too small for precision or recall. A missing report in the fixed revision does not prove the analyzer extracted every relevant lock operation.
         </p>
       </section>
 

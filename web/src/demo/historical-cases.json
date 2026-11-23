@@ -1,0 +1,30 @@
+[
+  {
+    "id": "linux-mips-gic-recursive-lock-2026",
+    "title": "MIPS GIC · recursive gic_lock acquisition",
+    "classification": "Partial match",
+    "source_file": "drivers/irqchip/irq-mips-gic.c",
+    "affected_revision": "03c4d26933d54556a89379db5923ae9e474569e8",
+    "fixed_revision": "1bae25dcc6beb8b874f23601d2efa142ac4f9f36",
+    "pattern": "gic_set_affinity() holds gic_lock and calls gic_set_type(), which attempts to acquire that same raw spinlock.",
+    "affected": { "lock_operations": 8, "dependencies": 1, "cycles": 1, "classification": "inconclusive_analysis" },
+    "fixed": { "lock_operations": 6, "dependencies": 0, "cycles": 0 },
+    "limitation": "The cycle has an uncertain summary. In the fixed source, guard(raw_spinlock_irqsave) is not extracted, so the zero-cycle result is not complete lock coverage.",
+    "upstream_url": "https://lkml.iu.edu/2610.1/17783.html",
+    "commit_url": "https://git.kernel.org/tip/1bae25dcc6beb8b874f23601d2efa142ac4f9f36"
+  },
+  {
+    "id": "linux-8250-startup-lock-order-2020",
+    "title": "8250 serial · IRQ descriptor and port lock order",
+    "classification": "Miss",
+    "source_file": "drivers/tty/serial/8250/8250_port.c",
+    "affected_revision": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+    "fixed_revision": "730037c3ee57f892e6df019bc88d417a5944737c",
+    "pattern": "The upstream lockdep report describes conflicting port->lock and IRQ descriptor lock order; the fix moves disable_irq_nosync() before taking port->lock.",
+    "affected": { "lock_operations": 39, "dependencies": 0, "cycles": 0 },
+    "fixed": { "lock_operations": 39, "dependencies": 0, "cycles": 0 },
+    "limitation": "disable_irq_nosync() remains unresolved, and this run covers only 8250_port.c; IRQ descriptor and printk/console paths are outside its translation unit.",
+    "upstream_url": "https://lkml.iu.edu/2008.1/05059.html",
+    "commit_url": "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=730037c3ee57f892e6df019bc88d417a5944737c"
+  }
+]
