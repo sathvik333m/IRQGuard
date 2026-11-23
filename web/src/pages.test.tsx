@@ -140,6 +140,15 @@ describe('KernelEvaluationPage', () => {
     expect(screen.getAllByText(/Zero cycles do not prove deadlock freedom/).length).toBeGreaterThan(0)
     expect(screen.queryByText(/Historical Runs|Archived baseline|Phase [0-9]/i)).not.toBeInTheDocument()
   })
+
+  it('shows an upstream case IRQGuard reported without presenting miss cases as detections', () => {
+    render(<KernelEvaluationPage evaluation={DEMO_KERNEL_EVALUATION} />)
+    expect(screen.getByRole('heading', { name: 'Historical pattern detected by IRQGuard' })).toBeInTheDocument()
+    expect(screen.getByText('MIPS GIC · recursive gic_lock acquisition')).toBeInTheDocument()
+    expect(screen.getByText('1 detected partial match')).toBeInTheDocument()
+    expect(screen.queryByText(/8250 serial|qedi · hard-IRQ/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Also evaluated:.*not detected by IRQGuard/)).not.toBeInTheDocument()
+  })
 })
 
 describe('DemoBadge', () => {

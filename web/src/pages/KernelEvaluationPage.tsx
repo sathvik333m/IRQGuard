@@ -34,7 +34,6 @@ type HistoricalCase = {
 
 const historicalCaseRows = historicalCases as HistoricalCase[]
 const detectedHistoricalCases = historicalCaseRows.filter((item) => item.affected.cycles > 0)
-const missedHistoricalCases = historicalCaseRows.filter((item) => item.classification === 'Miss')
 
 function basename(path: string) {
   return path.split('/').filter(Boolean).at(-1) ?? path
@@ -224,7 +223,7 @@ export function KernelEvaluationPage({
             <div className="eyebrow">UPSTREAM-DOCUMENTED BUG · PINNED AFFECTED / FIXED REVISIONS</div>
             <h2 id="historical-evidence-title">Historical pattern detected by IRQGuard</h2>
           </div>
-          <span className="runtime-scope">1 partial detection · 1 miss documented</span>
+          <span className="runtime-scope">{detectedHistoricalCases.length} detected partial match{detectedHistoricalCases.length === 1 ? '' : 'es'}</span>
         </div>
         <p className="historical-evidence-intro">
           Upstream evidence confirms this recursive-lock bug. IRQGuard reports its same-lock cycle in the affected revision, and the cycle is absent after the fix. The report remains inconclusive, so this is a partial match, not a confirmed runtime reproduction.
@@ -263,18 +262,8 @@ export function KernelEvaluationPage({
             </article>
           ))}
         </div>
-        {missedHistoricalCases.map((item) => (
-          <details className="historical-miss-disclosure" key={item.id}>
-            <summary>Also evaluated: {item.title} — not detected by IRQGuard</summary>
-            <p>{item.pattern} IRQGuard emitted {item.affected.dependencies} dependencies and {item.affected.cycles} cycles in both revisions because <code>disable_irq_nosync()</code> remains unresolved and the reverse IRQ/console paths are outside the analyzed translation unit.</p>
-            <div className="historical-evidence-links">
-              <a href={item.commit_url} target="_blank" rel="noreferrer">Upstream commit</a>
-              <a href={item.upstream_url} target="_blank" rel="noreferrer">Lockdep report / patch</a>
-            </div>
-          </details>
-        ))}
         <p className="historical-evidence-footnote">
-          This is a small case study, not a benchmark for accuracy. No precision or recall is claimed, and an absent cycle after a fix does not prove complete lock extraction.
+          This displayed upstream case is a small case study, not a benchmark for accuracy. No precision or recall is claimed, and an absent cycle after a fix does not prove complete lock extraction.
         </p>
       </section>
 

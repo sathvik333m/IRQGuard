@@ -49,6 +49,9 @@ describe('IRQGuard workspace states', () => {
     const currentResult = document.querySelector('.guide-current-result')
     expect(currentResult?.textContent).toContain('0 dependencies · 0 candidate cycles · 36,330 uncertainty events · 4,644 unique records')
     expect(currentResult?.textContent).toContain('2,431 root causes after linking repeated IRQ-state effects')
+    const qediCheck = screen.getByText('Separate qedi identity check').parentElement
+    expect(qediCheck?.textContent).toContain('same qedi_percpu[current_cpu].p_work_lock')
+    expect(qediCheck?.textContent).toContain('0 dependencies and 0 cycles, so IRQGuard has not detected the historical qedi deadlock')
   })
 
   it('shows a useful error when the local API cannot be reached', async () => {
