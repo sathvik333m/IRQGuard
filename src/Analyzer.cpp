@@ -113,13 +113,39 @@ std::string declarationIdentity(const clang::ValueDecl *declaration,
 
 using SafePointerAliases = std::unordered_map<const clang::VarDecl *, const clang::Expr *>;
 
+std::string publicMacroToken(const clang::Expr *expression,
+                             clang::ASTContext &context) {
+    if (!expression || !expression->getExprLoc().isMacroID()) return {};
+    clang::Token token;
+    const auto expansion = context.getSourceManager().getExpansionLoc(expression->getExprLoc());
+    if (clang::Lexer::getRawToken(expansion, token, context.getSourceManager(),
+                                  context.getLangOpts(), true))
+        return {};
+    return clang::Lexer::getSpelling(token, context.getSourceManager(), context.getLangOpts());
+}
+
+bool isCurrentCpuApi(const clang::Expr *expression, clang::ASTContext &context) {
+    const auto token = publicMacroToken(expression, context);
+    if (token == "smp_processor_id" || token == "raw_smp_processor_id") return true;
+    if (const auto *call = llvm::dyn_cast_or_null<clang::CallExpr>(expression)) {
+        const auto *callee = call->getDirectCallee();
+        return callee && (callee->getNameAsString() == "smp_processor_id" ||
+                          callee->getNameAsString() == "raw_smp_processor_id");
+    }
+    return false;
+}
+
 class PointerAliasCollector : public clang::RecursiveASTVisitor<PointerAliasCollector> {
 public:
+    PointerAliasCollector(clang::ASTContext &context, const clang::Stmt *body)
+        : context(context), body(body) {}
+
     bool VisitVarDecl(clang::VarDecl *variable) {
         if (variable->isLocalVarDecl() && variable->hasLocalStorage() &&
             !variable->isStaticLocal() && variable->getType()->isPointerType() &&
-            variable->hasInit())
-            candidates[variable->getCanonicalDecl()] = variable->getInit();
+            variable->hasInit() && context.getSourceManager().isWrittenInMainFile(
+                context.getSourceManager().getSpellingLoc(variable->getLocation())))
+            initializers[variable->getCanonicalDecl()] = variable->getInit();
         return true;
     }
 
@@ -129,7 +155,25 @@ public:
             binary->getLHS()->IgnoreParenImpCasts());
         const auto *variable = reference
             ? llvm::dyn_cast<clang::VarDecl>(reference->getDecl()) : nullptr;
-        if (variable) modified.insert(variable->getCanonicalDecl());
+        if (!variable || !variable->isLocalVarDecl() || !variable->hasLocalStorage() ||
+            variable->isStaticLocal() || !context.getSourceManager().isWrittenInMainFile(
+                context.getSourceManager().getSpellingLoc(variable->getLocation()))) return true;
+        const auto *canonical = variable->getCanonicalDecl();
+        ++assignmentCounts[canonical];
+        writeReferences.insert(reference);
+        const auto parents = context.getParents(*binary);
+        const auto *parentBlock = parents.empty() ? nullptr : parents[0].get<clang::CompoundStmt>();
+        const bool directBodyStatement = parentBlock == body && binary->getOpcode() == clang::BO_Assign;
+        if (directBodyStatement) directAssignments[canonical] = binary->getRHS();
+        return true;
+    }
+
+    bool VisitDeclRefExpr(clang::DeclRefExpr *reference) {
+        const auto *variable = llvm::dyn_cast<clang::VarDecl>(reference->getDecl());
+        if (!variable || writeReferences.count(reference)) return true;
+        const auto offset = context.getSourceManager().getFileOffset(
+            context.getSourceManager().getExpansionLoc(reference->getExprLoc()));
+        reads[variable->getCanonicalDecl()].push_back(offset);
         return true;
     }
 
@@ -139,22 +183,97 @@ public:
             unary->getSubExpr()->IgnoreParenImpCasts());
         const auto *variable = reference
             ? llvm::dyn_cast<clang::VarDecl>(reference->getDecl()) : nullptr;
-        if (variable) addressEscaped.insert(variable->getCanonicalDecl());
+        if (variable && context.getSourceManager().isWrittenInMainFile(
+                context.getSourceManager().getSpellingLoc(variable->getLocation())))
+            addressEscaped.insert(variable->getCanonicalDecl());
         return true;
     }
 
     SafePointerAliases safeCandidates() const {
         SafePointerAliases output;
-        for (const auto &candidate : candidates)
-            if (!modified.count(candidate.first) && !addressEscaped.count(candidate.first))
+        for (const auto &candidate : initializers) {
+            const auto writes = assignmentCounts.find(candidate.first);
+            if ((writes == assignmentCounts.end() || writes->second == 0) &&
+                !addressEscaped.count(candidate.first))
                 output.emplace(candidate);
+        }
+        for (const auto &candidate : directAssignments) {
+            const auto writes = assignmentCounts.find(candidate.first);
+            if (writes == assignmentCounts.end() || writes->second != 1 ||
+                addressEscaped.count(candidate.first)) continue;
+            if (!candidate.first->getType()->isPointerType() &&
+                !isCurrentCpuApi(candidate.second, context)) continue;
+            auto readsBeforeWrite = reads.find(candidate.first);
+            if (readsBeforeWrite != reads.end()) {
+                const auto assignmentOffset = context.getSourceManager().getFileOffset(
+                    context.getSourceManager().getExpansionLoc(candidate.second->getExprLoc()));
+                if (std::any_of(readsBeforeWrite->second.begin(), readsBeforeWrite->second.end(),
+                                [&](unsigned offset) { return offset < assignmentOffset; }))
+                    continue;
+            }
+            output[candidate.first] = candidate.second;
+        }
         return output;
     }
 
 private:
-    std::unordered_map<const clang::VarDecl *, const clang::Expr *> candidates;
-    std::unordered_set<const clang::VarDecl *> modified;
+    clang::ASTContext &context;
+    const clang::Stmt *body;
+    std::unordered_map<const clang::VarDecl *, const clang::Expr *> initializers;
+    std::unordered_map<const clang::VarDecl *, const clang::Expr *> directAssignments;
+    std::unordered_map<const clang::VarDecl *, std::size_t> assignmentCounts;
+    std::unordered_map<const clang::VarDecl *, std::vector<unsigned>> reads;
+    std::unordered_set<const clang::DeclRefExpr *> writeReferences;
     std::unordered_set<const clang::VarDecl *> addressEscaped;
+};
+
+class PerCpuOperandScanner : public clang::RecursiveASTVisitor<PerCpuOperandScanner> {
+public:
+    explicit PerCpuOperandScanner(clang::ASTContext &context)
+        : context(context), manager(context.getSourceManager()) {}
+
+    bool VisitDeclRefExpr(clang::DeclRefExpr *reference) {
+        if (!manager.isWrittenInMainFile(manager.getSpellingLoc(reference->getExprLoc())))
+            return true;
+        const auto *variable = llvm::dyn_cast<clang::VarDecl>(reference->getDecl());
+        if (!variable) return true;
+        const auto *canonical = variable->getCanonicalDecl();
+        if (variable->hasGlobalStorage()) globals.insert(canonical);
+        else {
+            locals.insert(canonical);
+            references.try_emplace(canonical, reference);
+        }
+        return true;
+    }
+
+    bool VisitIntegerLiteral(clang::IntegerLiteral *literal) {
+        if (manager.isWrittenInMainFile(manager.getSpellingLoc(literal->getExprLoc())))
+            constants.insert(literal->getValue().getLimitedValue());
+        return true;
+    }
+
+    bool VisitStmt(clang::Stmt *statement) {
+        if (const auto *expression = llvm::dyn_cast<clang::Expr>(statement))
+            hasCurrentCpuCall |= isCurrentCpuApi(expression, context);
+        return true;
+    }
+
+    bool VisitCallExpr(clang::CallExpr *call) {
+        const auto *callee = call->getDirectCallee();
+        if (callee && !isCurrentCpuApi(call, context) &&
+            manager.isWrittenInMainFile(manager.getSpellingLoc(call->getExprLoc())))
+            hasUnsupportedSourceCall = true;
+        return true;
+    }
+
+    clang::ASTContext &context;
+    clang::SourceManager &manager;
+    std::set<const clang::VarDecl *> globals;
+    std::set<const clang::VarDecl *> locals;
+    std::unordered_map<const clang::VarDecl *, const clang::DeclRefExpr *> references;
+    std::set<unsigned long long> constants;
+    bool hasCurrentCpuCall = false;
+    bool hasUnsupportedSourceCall = false;
 };
 
 std::string canonicalExpressionImpl(
@@ -168,6 +287,54 @@ std::string canonicalExpressionImpl(
         return "unknown@missing";
     }
     expression = identityOperand(expression);
+    const std::string macroAPI = publicMacroToken(expression, context);
+    if (macroAPI == "this_cpu_ptr" || macroAPI == "per_cpu") {
+        PerCpuOperandScanner scanner(context);
+        scanner.TraverseStmt(const_cast<clang::Expr *>(expression));
+        if (scanner.globals.size() != 1) {
+            resolved = false;
+            return "unknown_percpu@" + locationIdentity(expression->getExprLoc(), manager);
+        }
+        std::string cpuIdentity;
+        bool cpuResolved = false;
+        if (macroAPI == "this_cpu_ptr" || scanner.hasCurrentCpuCall) {
+            cpuIdentity = "current_cpu";
+            cpuResolved = true;
+        } else {
+            std::set<std::string> indexes;
+            for (const auto *local : scanner.locals) {
+                auto alias = aliases.find(local);
+                if (alias != aliases.end()) {
+                    bool aliasResolved = true;
+                    const auto aliasIdentity = canonicalExpressionImpl(alias->second, context,
+                        function, aliasResolved, aliases, activeAliases);
+                    if (aliasResolved && aliasIdentity == "current_cpu") {
+                        indexes.insert("current_cpu");
+                        continue;
+                    }
+                }
+                auto identity = declarationIdentity(local, manager);
+                if (!identity.empty()) indexes.insert("unknown_index(" + identity + ")");
+            }
+            if (indexes.size() == 1 && *indexes.begin() == "current_cpu") {
+                cpuIdentity = "current_cpu";
+                cpuResolved = true;
+            } else if (scanner.locals.empty() && !scanner.hasUnsupportedSourceCall &&
+                       scanner.constants.size() == 1) {
+                cpuIdentity = "constant(" + std::to_string(*scanner.constants.begin()) + ")";
+                cpuResolved = true;
+            }
+        }
+        if (cpuIdentity.empty()) {
+            resolved = false;
+            cpuIdentity = "unknown_index@" + locationIdentity(expression->getExprLoc(), manager);
+        } else {
+            resolved = cpuResolved;
+        }
+        return "percpu(" + declarationIdentity(*scanner.globals.begin(), manager) + "," +
+               cpuIdentity + ")";
+    }
+    if (isCurrentCpuApi(expression, context)) return "current_cpu";
     if (const auto *reference = llvm::dyn_cast<clang::DeclRefExpr>(expression)) {
         const auto *value = llvm::dyn_cast<clang::ValueDecl>(reference->getDecl());
         if (const auto *parameter = llvm::dyn_cast_or_null<clang::ParmVarDecl>(value)) {
@@ -219,6 +386,8 @@ std::string canonicalExpressionImpl(
         if (member->getType()->isPointerType()) resolved = false;
         const auto *field = llvm::dyn_cast<clang::ValueDecl>(member->getMemberDecl());
         std::string fieldName = field ? field->getQualifiedNameAsString() : "<member>";
+        if (base.rfind("percpu(", 0) == 0)
+            return "member(" + base + "::" + fieldName + ")";
         return "member(" + base + (throughPointer ? "->" : ".") + fieldName + ")";
     }
     if (const auto *subscript = llvm::dyn_cast<clang::ArraySubscriptExpr>(expression)) {
@@ -242,6 +411,8 @@ std::string canonicalExpressionImpl(
         auto operand = canonicalExpressionImpl(unary->getSubExpr(), context, function,
                                                operandResolved, aliases, activeAliases);
         resolved &= operandResolved;
+        if (unary->getOpcode() == clang::UO_AddrOf && operand.rfind("percpu(", 0) == 0)
+            return operand;
         return "unary(" + unary->getOpcodeStr(unary->getOpcode()).str() + "," + operand + ")";
     }
     if (const auto *binary = llvm::dyn_cast<clang::BinaryOperator>(expression)) {
@@ -445,7 +616,7 @@ public:
         const SafePointerAliases previousAliases = safeAliases_;
         currentFunction_ = function->getQualifiedNameAsString();
         currentFunctionDecl_ = function;
-        PointerAliasCollector aliasCollector;
+        PointerAliasCollector aliasCollector(context_, function->getBody());
         aliasCollector.TraverseStmt(function->getBody());
         const auto aliasCandidates = aliasCollector.safeCandidates();
         safeAliases_.clear();

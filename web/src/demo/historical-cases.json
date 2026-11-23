@@ -29,5 +29,19 @@
     "limitation": "disable_irq_nosync() remains unresolved, and this run covers only 8250_port.c; IRQ descriptor and printk/console paths are outside its translation unit.",
     "upstream_url": "https://lkml.iu.edu/2008.1/05059.html",
     "commit_url": "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=730037c3ee57f892e6df019bc88d417a5944737c"
+  },
+  {
+    "id": "linux-qedi-percpu-work-lock-2023",
+    "title": "qedi · hard-IRQ reentry on per-CPU work lock",
+    "classification": "Miss",
+    "source_file": "drivers/scsi/qedi/qedi_main.c",
+    "affected_revision": "8eebf0e84f0614cebc7347f7bbccba4056d77d42",
+    "fixed_revision": "dd64f80587190265ca8a0f4be6c64c2fda6d3ac2",
+    "pattern": "The upstream fix describes qedi_cpu_offline() holding p_work_lock with hard IRQs enabled while qedi_msix_handler() can interrupt and reach qedi_process_completions(), which acquires the same per-CPU lock.",
+    "affected": { "lock_operations": 24, "dependencies": 0, "cycles": 0 },
+    "fixed": { "analysis_status": "not analyzed with a matching Kbuild database" },
+    "limitation": "This affected-source run remains a miss: both lock sites now have the same symbolic qedi_percpu[current_cpu].p_work_lock identity, but IRQGuard emits no dependency or cycle for the interrupt reentry. The fixed source was not rerun in this comparison.",
+    "upstream_url": "https://lore.kernel.org/r/20230726125655.4197-1-dg573847474@gmail.com",
+    "commit_url": "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=dd64f80587190265ca8a0f4be6c64c2fda6d3ac2"
   }
 ]
