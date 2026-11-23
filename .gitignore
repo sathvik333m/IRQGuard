@@ -102,3 +102,6 @@ Thumbs.db
 !/historical-case/results/serial8250/reproduced-20261104-final/**
 /historical-case/results/serial8250/reproduced-20261104-final/*-kbuild/
 /historical-case/results/initial-introduction-to-fix/
+
+/output
+/scripts
