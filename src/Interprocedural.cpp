@@ -366,7 +366,8 @@ SummaryData summarizeFunction(
                         if (api.lock->identityStatus == "unresolved")
                             summary.uncertainties.insert("lock identity unresolved at " + sourceKey(api.location));
                     } else if (api.kind == "lock_release" || api.kind == "lock_release_irq" ||
-                               api.kind == "lock_release_irqrestore") {
+                               api.kind == "lock_release_irqrestore" ||
+                               api.kind == "lock_release_softirq_enable") {
                         ReleaseFact release{identity, api.lock->identityStatus,
                                             function.qualifiedName, api.lock->location, {}, false};
                         summary.releases[releaseKey(release)] = release;

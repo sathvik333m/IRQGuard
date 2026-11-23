@@ -98,8 +98,16 @@ assert len(unknown) == 1 and unknown[0]["lock"]["identity_status"] == "unresolve
 assert unknown[0]["state_identity_status"] == "symbolic"
 assert any("unresolved_macro_lock_expression" in u and "lock identity unresolved" in u
            for u in report["uncertainties"])
-assert any("possibly unsupported lock/IRQ API 'spin_lock_bh'" in u
-           for u in report["uncertainties"])
+bh_ops = [o for o in ops if o["caller"] == "bottom_half_lock_api_operation"]
+assert [(o["api"], o["kind"]) for o in bh_ops] == [
+    ("spin_lock_bh", "lock_acquire_softirq_disable"),
+    ("spin_unlock_bh", "lock_release_softirq_enable"),
+]
+assert not any("possibly unsupported lock/IRQ API 'spin_lock_bh'" in u
+               or "possibly unsupported lock/IRQ API 'spin_unlock_bh'" in u
+               for u in report["uncertainties"])
+assert [s["irq_state"] for s in snapshots("bottom_half_lock_api_operation", "lock_c") 
+        ] == ["enabled"], "bottom-half exclusion must not disable hard IRQs"
 
 # Explicit IRQ and local save/restore APIs have separate semantic kinds.
 irq_ops = [o for o in ops if o["caller"] == "explicit_irq_lock_operations"]

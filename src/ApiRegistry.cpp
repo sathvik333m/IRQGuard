@@ -11,6 +11,10 @@ ApiRegistry::ApiRegistry() {
         {"mutex_unlock", "lock_release", 0, -1, -1},
         {"spin_lock", "lock_acquire", 0, -1, -1},
         {"spin_unlock", "lock_release", 0, -1, -1},
+        // Bottom-half variants protect against softirq re-entry. They do not
+        // change hard-IRQ state, which remains relevant to hard IRQ handlers.
+        {"spin_lock_bh", "lock_acquire_softirq_disable", 0, -1, -1},
+        {"spin_unlock_bh", "lock_release_softirq_enable", 0, -1, -1},
         {"spin_lock_irq", "lock_acquire_irq", 0, -1, -1},
         {"spin_unlock_irq", "lock_release_irq", 0, -1, -1},
         // Linux spinlock headers commonly expand public macros to these

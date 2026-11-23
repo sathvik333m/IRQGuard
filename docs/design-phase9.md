@@ -51,6 +51,7 @@ saved-state operations, and handler registration:
 | --- | --- | --- |
 | `mutex_lock`, `spin_lock`, selected raw aliases | `lock_acquire` | Acquire lock, IRQ state unchanged |
 | `mutex_unlock`, `spin_unlock`, selected raw aliases | `lock_release` | Release lock, IRQ state unchanged |
+| `spin_lock_bh` / `spin_unlock_bh` | `lock_acquire_softirq_disable` / `lock_release_softirq_enable` | Acquire/release the lock and model bottom-half exclusion; hard-IRQ state is unchanged |
 | `spin_lock_irq`, selected raw aliases | `lock_acquire_irq` | Disable local IRQs before acquisition snapshot |
 | `spin_unlock_irq`, selected raw aliases | `lock_release_irq` | Release and model the API's explicit local IRQ enable |
 | `spin_lock_irqsave(lock, flags)`, selected raw/nested aliases | `lock_acquire_irqsave` | Save current abstract state to the flags identity, then disable IRQs |

@@ -51,6 +51,7 @@ export function LockGraph({ report, selectedFinding, onSelectFinding, onOpenSour
   const [relationship, setRelationship] = useState('all')
   const [lockApi, setLockApi] = useState('all')
   const [focusedEdge, setFocusedEdge] = useState<GraphEdge | null>(null)
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null)
   const [focusedLock, setFocusedLock] = useState<string | null>(null)
   const cycles = report.interrupt_cycles
   const lockApis = useMemo(() => {
@@ -104,14 +105,19 @@ export function LockGraph({ report, selectedFinding, onSelectFinding, onOpenSour
       target: edge.to_lock,
       type: 'smoothstep',
       animated: active && !rejected,
-      label: `${edge.from_context ?? 'unknown'} → ${edge.to_context ?? 'unknown'}`,
-      labelStyle: { fill: active ? '#f4f6f8' : '#8994a3', fontSize: 12 },
-      labelBgStyle: { fill: '#11161d', fillOpacity: 0.92 },
+      // Edge labels repeat heavily in dense graphs. Reveal them on hover or
+      // for the selected finding instead of letting labels obscure the graph.
+      label: active || hoveredEdgeId === `edge-${index}-${edge.kind}-${index}`
+        ? `${edge.from_context ?? 'unknown'} → ${edge.to_context ?? 'unknown'}` : '',
+      labelStyle: { fill: active ? 'var(--red)' : 'var(--graph-edge-label-text)', fontSize: 11 },
+      labelBgStyle: { fill: 'var(--graph-edge-label-bg)', fillOpacity: 0.96 },
+      labelBgPadding: [5, 3] as [number, number],
+      labelBgBorderRadius: 3,
       markerEnd: { type: MarkerType.ArrowClosed, color },
       style: { stroke: color, strokeWidth: active ? 2.8 : 1.55, strokeDasharray: rejected ? '6 5' : undefined, opacity: selectedFinding && !active ? 0.28 : 0.9 },
       data: { raw: edge },
     }
-  }), [filteredEdges, highlighted, selectedFinding])
+  }), [filteredEdges, highlighted, hoveredEdgeId, selectedFinding])
   const visibleNodeIds = useMemo(() => new Set(nodes.map((node) => node.id)), [nodes])
 
   return <ReactFlowProvider>
@@ -139,6 +145,8 @@ export function LockGraph({ report, selectedFinding, onSelectFinding, onOpenSour
         maxZoom={1.7}
         proOptions={{ hideAttribution: true }}
         onEdgeClick={(_event, edge) => { setFocusedLock(null); setFocusedEdge((edge.data as { raw: GraphEdge }).raw) }}
+        onEdgeMouseEnter={(_event, edge) => setHoveredEdgeId(edge.id)}
+        onEdgeMouseLeave={() => setHoveredEdgeId(null)}
         onNodeClick={(_event, node) => { setFocusedEdge(null); setFocusedLock(node.id) }}
         onPaneClick={() => { setFocusedEdge(null); setFocusedLock(null) }}
         aria-label="Lock dependency graph"

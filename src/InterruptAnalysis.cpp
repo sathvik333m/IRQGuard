@@ -362,7 +362,8 @@ IRQSummary summarizeFunction(
                     api.kind == "lock_release" || api.kind == "lock_acquire_irq" ||
                     api.kind == "lock_release_irq" || api.kind == "lock_acquire_irqsave" ||
                     api.kind == "lock_release_irqrestore" ||
-                    api.kind == "lock_acquire_softirq_disable" || api.kind == "irq_disable" ||
+                    api.kind == "lock_acquire_softirq_disable" ||
+                    api.kind == "lock_release_softirq_enable" || api.kind == "irq_disable" ||
                     api.kind == "irq_enable" || api.kind == "irq_save" ||
                     api.kind == "irq_restore" || api.kind == "interrupt_register" ||
                     api.kind == "interrupt_unregister";
@@ -703,7 +704,8 @@ void refineDirectDependencies(AnalysisResult &result) {
                 const auto *api = apiAt(callIndex);
                 if (api && api->lock && api->lock->identityTemplate == dependency->fromLock &&
                     (api->kind == "lock_release" || api->kind == "lock_release_irq" ||
-                     api->kind == "lock_release_irqrestore")) {
+                     api->kind == "lock_release_irqrestore" ||
+                     api->kind == "lock_release_softirq_enable")) {
                     state.holdingSource = false;
                 }
             }

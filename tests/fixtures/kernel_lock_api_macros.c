@@ -122,6 +122,8 @@ void local_irq_save_restore_operations(unsigned long flags) {
 }
 
 void spin_lock_bh(spinlock_t *lock);
-void unsupported_lock_api_operation(void) {
+void spin_unlock_bh(spinlock_t *lock);
+void bottom_half_lock_api_operation(void) {
     spin_lock_bh(&lock_c);
+    spin_unlock_bh(&lock_c);
 }

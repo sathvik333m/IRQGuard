@@ -25,11 +25,16 @@ type HistoricalCase = {
   affected: { lock_operations: number; dependencies: number; cycles: number; classification?: string }
   fixed: { lock_operations: number; dependencies: number; cycles: number }
   limitation: string
+  detected_cycle?: string
+  detected_call_path?: string
+  detected_source_sites?: string
   upstream_url: string
   commit_url: string
 }
 
 const historicalCaseRows = historicalCases as HistoricalCase[]
+const detectedHistoricalCases = historicalCaseRows.filter((item) => item.affected.cycles > 0)
+const missedHistoricalCases = historicalCaseRows.filter((item) => item.classification === 'Miss')
 
 function basename(path: string) {
   return path.split('/').filter(Boolean).at(-1) ?? path
@@ -216,27 +221,30 @@ export function KernelEvaluationPage({
       <section className="panel historical-evidence-panel" aria-labelledby="historical-evidence-title">
         <div className="panel-heading">
           <div>
-            <div className="eyebrow">UPSTREAM-DOCUMENTED CASES · AFFECTED / FIXED REVISIONS</div>
-            <h2 id="historical-evidence-title">Historical locking bug evaluation</h2>
+            <div className="eyebrow">UPSTREAM-DOCUMENTED BUG · PINNED AFFECTED / FIXED REVISIONS</div>
+            <h2 id="historical-evidence-title">Historical pattern detected by IRQGuard</h2>
           </div>
-          <span className="runtime-scope">2 cases · no accuracy metric</span>
+          <span className="runtime-scope">1 partial detection · 1 miss documented</span>
         </div>
         <p className="historical-evidence-intro">
-          These cases have independent upstream evidence. IRQGuard results are compared across pinned source revisions; they are static-analysis outcomes, not runtime reproductions.
+          Upstream evidence confirms this recursive-lock bug. IRQGuard reports its same-lock cycle in the affected revision, and the cycle is absent after the fix. The report remains inconclusive, so this is a partial match, not a confirmed runtime reproduction.
         </p>
         <div className="historical-evidence-list">
-          {historicalCaseRows.map((item) => (
+          {detectedHistoricalCases.map((item) => (
             <article className="historical-evidence-case" key={item.id}>
               <div className="historical-case-title-row">
                 <div>
                   <h3>{item.title}</h3>
                   <code>{item.source_file}</code>
                 </div>
-                <span className={`historical-classification ${item.classification === 'Miss' ? 'miss' : 'partial'}`}>
-                  {item.classification}
-                </span>
+                <span className="historical-classification partial">Partial match</span>
               </div>
               <p>{item.pattern}</p>
+              <div className="historical-detected-path">
+                <span>IRQGuard-reported cycle</span><strong>{item.detected_cycle}</strong>
+                <small>Call path: {item.detected_call_path}</small>
+                <small>Source evidence: {item.detected_source_sites}</small>
+              </div>
               <div className="historical-revision-grid">
                 <div>
                   <span>Affected · <code title={item.affected_revision}>{item.affected_revision.slice(0, 12)}</code></span>
@@ -255,8 +263,18 @@ export function KernelEvaluationPage({
             </article>
           ))}
         </div>
+        {missedHistoricalCases.map((item) => (
+          <details className="historical-miss-disclosure" key={item.id}>
+            <summary>Also evaluated: {item.title} — not detected by IRQGuard</summary>
+            <p>{item.pattern} IRQGuard emitted {item.affected.dependencies} dependencies and {item.affected.cycles} cycles in both revisions because <code>disable_irq_nosync()</code> remains unresolved and the reverse IRQ/console paths are outside the analyzed translation unit.</p>
+            <div className="historical-evidence-links">
+              <a href={item.commit_url} target="_blank" rel="noreferrer">Upstream commit</a>
+              <a href={item.upstream_url} target="_blank" rel="noreferrer">Lockdep report / patch</a>
+            </div>
+          </details>
+        ))}
         <p className="historical-evidence-footnote">
-          One case is a partial match and one is a miss. The sample has no independently verified Linux negative case and is too small for precision or recall. A missing report in the fixed revision does not prove the analyzer extracted every relevant lock operation.
+          This is a small case study, not a benchmark for accuracy. No precision or recall is claimed, and an absent cycle after a fix does not prove complete lock extraction.
         </p>
       </section>
 
