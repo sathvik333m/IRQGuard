@@ -104,4 +104,5 @@ Thumbs.db
 /historical-case/results/initial-introduction-to-fix/
 
 /output
-/scripts
+/scripts/*
+!/scripts/build_project_report.py

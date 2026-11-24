@@ -144,7 +144,7 @@ The main implementation is in `src/` and its shared model is in `include/deadloc
 1. **Frontend:** Clang LibTooling parses the requested translation unit and records definitions, calls, selected API operations, locations, and supported CFG facts. Parse failures are errors, not successful partial reports.
 2. **API recognition:** A configurable registry distinguishes lock acquire/release, IRQ state operations, saved-state operations, and interrupt registration APIs. Macro expansion and spelling locations are retained where Clang provides them.
 3. **Interprocedural analysis:** Function summaries propagate supported effects through direct calls and selected resolvable targets. Formal parameters use symbolic identities; unresolved calls, lock identities, and summaries remain uncertainty.
-   Selected Linux per-CPU expressions (`per_cpu` and `this_cpu_ptr`) use declaration-plus-index identities where Clang's AST exposes the exact macro and index evidence; unresolved indices stay unresolved. See `docs/percpu-lock-identity.md` for qedi results and limits.
+   Selected Linux per-CPU expressions (`per_cpu` and `this_cpu_ptr`) use declaration-plus-index identities where Clang's AST exposes the exact macro and index evidence; unresolved indices stay unresolved. See `docs/percpu-lock-identity.md` for supported forms and limits.
 4. **Interrupt model:** The scoped model identifies statically resolvable `request_irq` handler targets and tracks selected local IRQ and irqsave/restore transitions. Restores use saved-state information where available; they are not treated as unconditional enables.
 5. **Cycle and feasibility analysis:** Context-labelled edges are searched for cycles. Bounded CFG reasoning can reject some contradictory branch paths; unsupported or incomplete evidence remains inconclusive.
 
@@ -368,6 +368,6 @@ Archerfish is the research inspiration, not an implementation dependency. IRQGua
 - `docs/phase17-evaluation.md` — dataset, reproduction, tool comparison, and evaluation limits.
 - `docs/phase18-integration.md` — report comparison, runtime evidence integration, and GUI contract.
 - `docs/phase19.2-uncertainty-root-cause.md` — fresh kernel uncertainty baseline, causal call/IRQ tracing, audited effect summaries, and before/after evidence.
-- `docs/percpu-lock-identity.md` — supported per-CPU lock identity forms, conservative limits, and qedi validation.
+- `docs/percpu-lock-identity.md` — supported per-CPU lock identity forms and conservative limits.
 - `evaluation/results/linux-v6.6.87/REPORT.md` — pinned kernel evaluation record.
 - `evaluation/results/phase17/REPORT.md` — controlled fixture and exploratory kernel run summary.

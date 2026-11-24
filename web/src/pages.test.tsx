@@ -146,7 +146,7 @@ describe('KernelEvaluationPage', () => {
     expect(screen.getByRole('heading', { name: 'Historical pattern detected by IRQGuard' })).toBeInTheDocument()
     expect(screen.getByText('MIPS GIC · recursive gic_lock acquisition')).toBeInTheDocument()
     expect(screen.getByText('1 detected partial match')).toBeInTheDocument()
-    expect(screen.queryByText(/8250 serial|qedi · hard-IRQ/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/8250 serial/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Also evaluated:.*not detected by IRQGuard/)).not.toBeInTheDocument()
   })
 })

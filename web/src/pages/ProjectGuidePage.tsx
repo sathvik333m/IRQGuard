@@ -481,14 +481,6 @@ export function ProjectGuidePage({
             {Number(current?.unique_root_causes ?? 2431).toLocaleString()} root causes after linking repeated IRQ-state effects. Zero cycles do not prove deadlock freedom; no independently labeled Linux bug set supports accuracy metrics.
           </small>
         </div>
-        <div className="guide-current-result guide-percpu-result">
-          <span className="status-dot" style={{ background: 'var(--amber)' }} />
-          <strong>Separate qedi identity check</strong>
-          <span>Per-CPU lock identities match</span>
-          <small>
-            <code>qedi_process_completions()</code> and <code>qedi_cpu_offline()</code> now resolve to the same <code>qedi_percpu[current_cpu].p_work_lock</code>. That translation-unit run still produced 0 dependencies and 0 cycles, so IRQGuard has not detected the historical qedi deadlock.
-          </small>
-        </div>
       </section>
 
       {/* Footer Call-to-Action */}

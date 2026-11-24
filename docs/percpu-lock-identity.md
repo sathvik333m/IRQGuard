@@ -22,33 +22,7 @@ more complex index computations may remain unresolved. A symbolic identity
 must therefore be read as a reusable source-level identity template, not as a
 runtime alias proof.
 
-## qedi validation
-
-The affected qedi source was analyzed at Linux commit
-`8eebf0e84f0614cebc7347f7bbccba4056d77d42` using its generated Kbuild
-compilation command (Clang 20.1.2). On that source,
-`qedi_process_completions()` uses
-`per_cpu(qedi_percpu, cpu)` after assigning `cpu = smp_processor_id()`, while
-`qedi_cpu_offline()` uses `this_cpu_ptr(&qedi_percpu)`. Both operations now
-produce the same symbolic `qedi_percpu[current_cpu].p_work_lock` identity.
-The run extracted 98 functions and 24 API operations, with zero diagnostics,
-zero lock dependencies, and zero interrupt cycles. It also reported 3,164
-uncertainty events (971 structured uncertainty records). This change resolves
-the lock-expression mismatch; it does not claim that IRQGuard detects the
-historical qedi deadlock. The remaining call/context and dependency evidence
-must be investigated separately. The run command was:
-
-```sh
-./build/deadlock-analyzer analyze \
-  --source /tmp/irqguard-qedi-affected/drivers/scsi/qedi/qedi_main.c \
-  --compile-commands /tmp/irqguard-qedi-build \
-  --format json --output /tmp/qedi-after-final.json
-```
-
-The `/tmp` paths refer to the local pinned worktree and Kbuild output used for
-this validation; they are not committed project inputs.
-
-Run the focused fixture with:
+The supported abstraction is covered by a focused fixture. Run it with:
 
 ```sh
 ctest --test-dir build -R analyzer_percpu_identity --output-on-failure
