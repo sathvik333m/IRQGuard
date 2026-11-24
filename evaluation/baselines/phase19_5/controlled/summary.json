@@ -1,0 +1,903 @@
+{
+  "schema_version": 1,
+  "dataset_id": "irqguard-phase17-v1",
+  "analyzer": "/home/sathvik/os_project/build/deadlock-analyzer",
+  "analyzer_sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc",
+  "dataset_sha256": "8a5f0bc8d735126de0964d30c1476da53196fe1bfd40ba46e7ada73ee27e9b52",
+  "kernel_pin": {
+    "release": "v6.6.87",
+    "commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "subsystem": "drivers/net/ethernet/intel/e1000e",
+    "source_archive": "results/linux-v6.6.87/phase15-analyzer-reports.tar.gz",
+    "measurements": "results/linux-v6.6.87/phase15-raw-measurements.json"
+  },
+  "kernel_pin_validation": {
+    "status": "matched",
+    "path": "/home/sathvik/os_project/third_party/linux-v6.6.87",
+    "expected_commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "actual_commit": "814637ca257f4faf57a73fd4e38888cce88b5911"
+  },
+  "archived_kernel_environment": {
+    "python": "3.12.3",
+    "kernel_host": "6.18.58.1-microsoft-standard-WSL2",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "make": "GNU Make 4.3",
+    "time": "time (GNU Time) UNKNOWN",
+    "cmake": "cmake version 3.28.3",
+    "host_linker": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+    "lld": "unavailable",
+    "libelf_dev_package": "0.190-1.1ubuntu0.1",
+    "analyzer_sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc"
+  },
+  "kernel_evidence_sha256": {
+    "reports_archive": null,
+    "raw_measurements": "b952742f68d4169b240eb2e043423d0274df7c413107f07e4f9b8167c13c1eaf"
+  },
+  "kernel_measurements_source": "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/raw-measurements.json",
+  "kernel_configuration": {
+    "architecture": "x86_64",
+    "compiler_mode": "Clang via Kbuild LLVM=",
+    "config_base": "x86_64_defconfig",
+    "driver_config": "CONFIG_E1000E=m",
+    "kbuild_variables": {
+      "ARCH": "x86_64",
+      "LLVM": "/usr/lib/llvm-20/bin/",
+      "LD": "/usr/bin/ld",
+      "HOSTLD": "/usr/bin/ld"
+    },
+    "build_limitations": [],
+    "subsystem": "drivers/net/ethernet/intel/e1000e",
+    "requested_files": [
+      "drivers/net/ethernet/intel/e1000e/netdev.c",
+      "drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "drivers/net/ethernet/intel/e1000e/phy.c",
+      "drivers/net/ethernet/intel/e1000e/nvm.c"
+    ],
+    "config_sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1",
+    "missing_object_files": [],
+    "compile_commands_count": 11
+  },
+  "kernel_validation": {
+    "objtool_mode": "enabled",
+    "objtool_build": "succeeded",
+    "objtool_object_checks": "succeeded",
+    "kernel_object_compilation": "succeeded",
+    "source_analysis": "completed",
+    "unwinder_orc_configured": true,
+    "stack_validation_configured": false,
+    "stack_validation": "not_configured_by_defconfig",
+    "skip_stack_validation_variable_supported_by_kernel": false,
+    "objtool_deferred_to_composite": true,
+    "objtool_invocations": 1,
+    "objtool_command": "/usr/bin/ld -m elf_x86_64 -z noexecstack --no-warn-rwx-segments   -r -o drivers/net/ethernet/intel/e1000e/e1000e.o @drivers/net/ethernet/intel/e1000e/e1000e.mod  ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --ibt --orc --retpoline --rethunk --static-call --uaccess --prefix=16  --link  --module drivers/net/ethernet/intel/e1000e/e1000e.o",
+    "objtool_options": [
+      "--orc",
+      "--retpoline",
+      "--ibt",
+      "--module",
+      "--link"
+    ],
+    "kernel_module_link": "not_attempted; composite object target only",
+    "orc_sections_present": true
+  },
+  "controlled_fixture_cases": [
+    {
+      "case_id": "syn-positive-normal-cycle",
+      "group": "synthetic_positive",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "matching cycle category=candidate_lock_order_cycle, lock markers=['opposite_a', 'opposite_b']; found 1",
+      "source": "tests/fixtures/phase16_feasibility.c",
+      "measurements": {
+        "functions": 17,
+        "lock_acquisitions": 26,
+        "lock_releases": 26,
+        "lock_operations": 52,
+        "lock_dependencies": 12,
+        "interrupt_graph_edges": 83,
+        "candidate_cycles": 4,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1,
+          "interrupt_aware_candidate": 1,
+          "rejected_candidate": 2
+        },
+        "uncertainty_events": 9,
+        "unique_uncertainty_records": 9,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_resolution": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "interrupt_state": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "unresolved_call": {
+            "event_count": 3,
+            "unique_record_count": 3
+          }
+        },
+        "uncertainty_by_stage": {
+          "handler_discovery": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interprocedural": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interrupt_state": {
+            "event_count": 3,
+            "unique_record_count": 3
+          }
+        },
+        "diagnostics": 0
+      }
+    },
+    {
+      "case_id": "syn-positive-interrupt-cycle",
+      "group": "synthetic_positive",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "matching cycle category=interrupt_aware_candidate, lock markers=[]; found 2",
+      "source": "tests/fixtures/interrupts.c",
+      "measurements": {
+        "functions": 22,
+        "lock_acquisitions": 31,
+        "lock_releases": 15,
+        "lock_operations": 47,
+        "lock_dependencies": 13,
+        "interrupt_graph_edges": 235,
+        "candidate_cycles": 5,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1,
+          "inconclusive_analysis": 1,
+          "interrupt_aware_candidate": 2,
+          "rejected_candidate": 1
+        },
+        "uncertainty_events": 8,
+        "unique_uncertainty_records": 8,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_resolution": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "interrupt_state": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "lock_identity": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "unresolved_call": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "unsupported_api": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_discovery": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interprocedural": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "interrupt_state": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "lock_extraction": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "diagnostics": 0
+      }
+    },
+    {
+      "case_id": "syn-negative-exclusive-branches",
+      "group": "synthetic_negative",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "matching cycle category=rejected_candidate, lock markers=['exclusive_a', 'exclusive_b']; found 1",
+      "source": "tests/fixtures/phase16_feasibility.c",
+      "measurements": {
+        "functions": 17,
+        "lock_acquisitions": 26,
+        "lock_releases": 26,
+        "lock_operations": 52,
+        "lock_dependencies": 12,
+        "interrupt_graph_edges": 83,
+        "candidate_cycles": 4,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1,
+          "interrupt_aware_candidate": 1,
+          "rejected_candidate": 2
+        },
+        "uncertainty_events": 9,
+        "unique_uncertainty_records": 9,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_resolution": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "interrupt_state": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "unresolved_call": {
+            "event_count": 3,
+            "unique_record_count": 3
+          }
+        },
+        "uncertainty_by_stage": {
+          "handler_discovery": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interprocedural": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interrupt_state": {
+            "event_count": 3,
+            "unique_record_count": 3
+          }
+        },
+        "diagnostics": 0
+      }
+    },
+    {
+      "case_id": "syn-negative-release-before-next-acquire",
+      "group": "synthetic_negative",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "dependency state_a -> state_b absent in release_before_next_acquire; found 0",
+      "source": "tests/fixtures/interrupts.c",
+      "measurements": {
+        "functions": 22,
+        "lock_acquisitions": 31,
+        "lock_releases": 15,
+        "lock_operations": 47,
+        "lock_dependencies": 13,
+        "interrupt_graph_edges": 235,
+        "candidate_cycles": 5,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1,
+          "inconclusive_analysis": 1,
+          "interrupt_aware_candidate": 2,
+          "rejected_candidate": 1
+        },
+        "uncertainty_events": 8,
+        "unique_uncertainty_records": 8,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_resolution": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "interrupt_state": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "lock_identity": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "unresolved_call": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "unsupported_api": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_discovery": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interprocedural": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "interrupt_state": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "lock_extraction": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "diagnostics": 0
+      }
+    },
+    {
+      "case_id": "edge-irqsave-restore-macro",
+      "group": "edge_case",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "API operation {'api': 'spin_lock_irqsave', 'kind': 'lock_acquire_irqsave'}; found 7",
+      "source": "tests/fixtures/kernel_lock_api_macros.c",
+      "measurements": {
+        "functions": 14,
+        "lock_acquisitions": 16,
+        "lock_releases": 16,
+        "lock_operations": 36,
+        "lock_dependencies": 5,
+        "interrupt_graph_edges": 5,
+        "candidate_cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 5,
+        "unique_uncertainty_records": 5,
+        "uncertainty_by_category": {
+          "interrupt_state": {
+            "event_count": 4,
+            "unique_record_count": 4
+          },
+          "lock_identity": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "uncertainty_by_stage": {
+          "interrupt_state": {
+            "event_count": 4,
+            "unique_record_count": 4
+          },
+          "lock_extraction": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "diagnostics": 2
+      }
+    },
+    {
+      "case_id": "edge-saved-irqstate-pair",
+      "group": "edge_case",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "matching irqsave/irqrestore lock and flags identities in irqsave_protects_handler_path; found 1",
+      "source": "tests/fixtures/phase16_feasibility.c",
+      "measurements": {
+        "functions": 17,
+        "lock_acquisitions": 26,
+        "lock_releases": 26,
+        "lock_operations": 52,
+        "lock_dependencies": 12,
+        "interrupt_graph_edges": 83,
+        "candidate_cycles": 4,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1,
+          "interrupt_aware_candidate": 1,
+          "rejected_candidate": 2
+        },
+        "uncertainty_events": 9,
+        "unique_uncertainty_records": 9,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_resolution": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "interrupt_state": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "unresolved_call": {
+            "event_count": 3,
+            "unique_record_count": 3
+          }
+        },
+        "uncertainty_by_stage": {
+          "handler_discovery": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interprocedural": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interrupt_state": {
+            "event_count": 3,
+            "unique_record_count": 3
+          }
+        },
+        "diagnostics": 0
+      }
+    },
+    {
+      "case_id": "edge-locking-wrapper",
+      "group": "edge_case",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "API operation {'api': 'spin_lock_irqsave', 'caller': 'irqsave_lock_wrapper'}; found 1",
+      "source": "tests/fixtures/interrupts.c",
+      "measurements": {
+        "functions": 22,
+        "lock_acquisitions": 31,
+        "lock_releases": 15,
+        "lock_operations": 47,
+        "lock_dependencies": 13,
+        "interrupt_graph_edges": 235,
+        "candidate_cycles": 5,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1,
+          "inconclusive_analysis": 1,
+          "interrupt_aware_candidate": 2,
+          "rejected_candidate": 1
+        },
+        "uncertainty_events": 8,
+        "unique_uncertainty_records": 8,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_resolution": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "interrupt_state": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "lock_identity": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "unresolved_call": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "unsupported_api": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "handler_discovery": {
+            "event_count": 3,
+            "unique_record_count": 3
+          },
+          "interprocedural": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "interrupt_state": {
+            "event_count": 2,
+            "unique_record_count": 2
+          },
+          "lock_extraction": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "diagnostics": 0
+      }
+    },
+    {
+      "case_id": "edge-interprocedural-symbolic-lock",
+      "group": "edge_case",
+      "label_status": "controlled_expected_behavior",
+      "status": "passed",
+      "assertion": "lock operations present; found 23",
+      "source": "tests/fixtures/symbolic_identity.c",
+      "measurements": {
+        "functions": 12,
+        "lock_acquisitions": 12,
+        "lock_releases": 11,
+        "lock_operations": 23,
+        "lock_dependencies": 4,
+        "interrupt_graph_edges": 4,
+        "candidate_cycles": 1,
+        "cycle_categories": {
+          "candidate_lock_order_cycle": 1
+        },
+        "uncertainty_events": 4,
+        "unique_uncertainty_records": 4,
+        "uncertainty_by_category": {
+          "lock_identity": {
+            "event_count": 4,
+            "unique_record_count": 4
+          }
+        },
+        "uncertainty_by_stage": {
+          "lock_extraction": {
+            "event_count": 4,
+            "unique_record_count": 4
+          }
+        },
+        "diagnostics": 0
+      }
+    }
+  ],
+  "controlled_fixture_passed": 8,
+  "controlled_fixture_failed": 0,
+  "fixture_source_runs": {
+    "tests/fixtures/phase16_feasibility.c": {
+      "elapsed_seconds": 0.029817,
+      "peak_rss_kib": 82256,
+      "stderr": ""
+    },
+    "tests/fixtures/interrupts.c": {
+      "elapsed_seconds": 0.03651,
+      "peak_rss_kib": 81628,
+      "stderr": ""
+    },
+    "tests/fixtures/kernel_lock_api_macros.c": {
+      "elapsed_seconds": 0.030042,
+      "peak_rss_kib": 82664,
+      "stderr": ""
+    },
+    "tests/fixtures/symbolic_identity.c": {
+      "elapsed_seconds": 0.028294,
+      "peak_rss_kib": 82188,
+      "stderr": ""
+    }
+  },
+  "real_kernel_cases": [
+    {
+      "case_id": "kernel-e1000e-netdev-v6.6.87",
+      "group": "real_kernel_exploratory",
+      "label_status": "unlabeled_exploratory",
+      "status": "fresh_phase17_observation",
+      "source": "drivers/net/ethernet/intel/e1000e/netdev.c",
+      "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "report_sha256": "f98895f56532c51a51e26f3d32b7768681f5d191b4012c33cf83dc5db195e84e",
+      "measurements": {
+        "functions": 154,
+        "lock_acquisitions": 5,
+        "lock_releases": 5,
+        "lock_operations": 10,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "candidate_cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 24685,
+        "unique_uncertainty_records": 2120,
+        "uncertainty_by_category": {
+          "control_flow": {
+            "event_count": 4,
+            "unique_record_count": 2
+          },
+          "handler_lifecycle": {
+            "event_count": 39,
+            "unique_record_count": 5
+          },
+          "interrupt_state": {
+            "event_count": 12245,
+            "unique_record_count": 995
+          },
+          "lock_identity": {
+            "event_count": 118,
+            "unique_record_count": 89
+          },
+          "unresolved_call": {
+            "event_count": 12245,
+            "unique_record_count": 995
+          },
+          "unsupported_api": {
+            "event_count": 34,
+            "unique_record_count": 34
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 34,
+            "unique_record_count": 34
+          },
+          "control_flow": {
+            "event_count": 4,
+            "unique_record_count": 2
+          },
+          "handler_discovery": {
+            "event_count": 39,
+            "unique_record_count": 5
+          },
+          "interprocedural": {
+            "event_count": 12245,
+            "unique_record_count": 995
+          },
+          "interrupt_state": {
+            "event_count": 12245,
+            "unique_record_count": 995
+          },
+          "lock_extraction": {
+            "event_count": 118,
+            "unique_record_count": 89
+          }
+        },
+        "diagnostics": 2
+      },
+      "elapsed_seconds": 2.775,
+      "peak_rss_kib": 236264,
+      "validation_note": "Fresh Phase 17 report; exploratory, not a ground-truth label."
+    },
+    {
+      "case_id": "kernel-e1000e-ethtool-v6.6.87",
+      "group": "real_kernel_exploratory",
+      "label_status": "unlabeled_exploratory",
+      "status": "fresh_phase17_observation",
+      "source": "drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "report_sha256": "ca6e6eabf950077307fd1c0a963ce0afbe90918495a5e82f9f27df93e68db561",
+      "measurements": {
+        "functions": 51,
+        "lock_acquisitions": 0,
+        "lock_releases": 0,
+        "lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "candidate_cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 1790,
+        "unique_uncertainty_records": 733,
+        "uncertainty_by_category": {
+          "handler_lifecycle": {
+            "event_count": 2,
+            "unique_record_count": 1
+          },
+          "interrupt_state": {
+            "event_count": 890,
+            "unique_record_count": 362
+          },
+          "unresolved_call": {
+            "event_count": 890,
+            "unique_record_count": 362
+          },
+          "unsupported_api": {
+            "event_count": 8,
+            "unique_record_count": 8
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 8,
+            "unique_record_count": 8
+          },
+          "handler_discovery": {
+            "event_count": 2,
+            "unique_record_count": 1
+          },
+          "interprocedural": {
+            "event_count": 890,
+            "unique_record_count": 362
+          },
+          "interrupt_state": {
+            "event_count": 890,
+            "unique_record_count": 362
+          }
+        },
+        "diagnostics": 0
+      },
+      "elapsed_seconds": 1.265,
+      "peak_rss_kib": 175020,
+      "validation_note": "Fresh Phase 17 report; exploratory, not a ground-truth label."
+    },
+    {
+      "case_id": "kernel-e1000e-ich8lan-v6.6.87",
+      "group": "real_kernel_exploratory",
+      "label_status": "unlabeled_exploratory",
+      "status": "fresh_phase17_observation",
+      "source": "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "report_sha256": "ea04a245870a0528243e0eb4b8f138691cb9feacfe6dd56357f5787b3faa84be",
+      "measurements": {
+        "functions": 98,
+        "lock_acquisitions": 1,
+        "lock_releases": 1,
+        "lock_operations": 2,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "candidate_cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 6396,
+        "unique_uncertainty_records": 1234,
+        "uncertainty_by_category": {
+          "interrupt_state": {
+            "event_count": 3159,
+            "unique_record_count": 578
+          },
+          "unresolved_call": {
+            "event_count": 3159,
+            "unique_record_count": 578
+          },
+          "unsupported_api": {
+            "event_count": 78,
+            "unique_record_count": 78
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 78,
+            "unique_record_count": 78
+          },
+          "interprocedural": {
+            "event_count": 3159,
+            "unique_record_count": 578
+          },
+          "interrupt_state": {
+            "event_count": 3159,
+            "unique_record_count": 578
+          }
+        },
+        "diagnostics": 0
+      },
+      "elapsed_seconds": 1.609,
+      "peak_rss_kib": 175432,
+      "validation_note": "Fresh Phase 17 report; exploratory, not a ground-truth label."
+    },
+    {
+      "case_id": "kernel-e1000e-phy-v6.6.87",
+      "group": "real_kernel_exploratory",
+      "label_status": "unlabeled_exploratory",
+      "status": "fresh_phase17_observation",
+      "source": "drivers/net/ethernet/intel/e1000e/phy.c",
+      "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "report_sha256": "a4d39a54e585b1e60af0e597b4cd79bc566982975fb7cb7a1d5e3df95d6f0d28",
+      "measurements": {
+        "functions": 76,
+        "lock_acquisitions": 0,
+        "lock_releases": 0,
+        "lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "candidate_cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 2887,
+        "unique_uncertainty_records": 425,
+        "uncertainty_by_category": {
+          "interrupt_state": {
+            "event_count": 1443,
+            "unique_record_count": 212
+          },
+          "unresolved_call": {
+            "event_count": 1443,
+            "unique_record_count": 212
+          },
+          "unsupported_api": {
+            "event_count": 1,
+            "unique_record_count": 1
+          }
+        },
+        "uncertainty_by_stage": {
+          "api_model": {
+            "event_count": 1,
+            "unique_record_count": 1
+          },
+          "interprocedural": {
+            "event_count": 1443,
+            "unique_record_count": 212
+          },
+          "interrupt_state": {
+            "event_count": 1443,
+            "unique_record_count": 212
+          }
+        },
+        "diagnostics": 0
+      },
+      "elapsed_seconds": 1.316,
+      "peak_rss_kib": 174376,
+      "validation_note": "Fresh Phase 17 report; exploratory, not a ground-truth label."
+    },
+    {
+      "case_id": "kernel-e1000e-nvm-v6.6.87",
+      "group": "real_kernel_exploratory",
+      "label_status": "unlabeled_exploratory",
+      "status": "fresh_phase17_observation",
+      "source": "drivers/net/ethernet/intel/e1000e/nvm.c",
+      "kernel_revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "report_sha256": "166b8870b122927351f3d7abfdc192af5ae020ed3032a09650c3e748b3ed8f71",
+      "measurements": {
+        "functions": 17,
+        "lock_acquisitions": 0,
+        "lock_releases": 0,
+        "lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "candidate_cycles": 0,
+        "cycle_categories": {},
+        "uncertainty_events": 572,
+        "unique_uncertainty_records": 132,
+        "uncertainty_by_category": {
+          "interrupt_state": {
+            "event_count": 286,
+            "unique_record_count": 66
+          },
+          "unresolved_call": {
+            "event_count": 286,
+            "unique_record_count": 66
+          }
+        },
+        "uncertainty_by_stage": {
+          "interprocedural": {
+            "event_count": 286,
+            "unique_record_count": 66
+          },
+          "interrupt_state": {
+            "event_count": 286,
+            "unique_record_count": 66
+          }
+        },
+        "diagnostics": 0
+      },
+      "elapsed_seconds": 1.152,
+      "peak_rss_kib": 162340,
+      "validation_note": "Fresh Phase 17 report; exploratory, not a ground-truth label."
+    }
+  ],
+  "real_kernel_aggregate": {
+    "files_requested": 5,
+    "files_analyzed": 5,
+    "files_skipped_or_failed": 0,
+    "analysis_elapsed_seconds_sum": 8.116,
+    "peak_rss_kib_max_across_separate_runs": 236264,
+    "counts_sum_across_translation_units": {
+      "functions": 396,
+      "lock_operations": 12,
+      "lock_acquisitions": 6,
+      "lock_releases": 6,
+      "other_lock_operations": 0,
+      "lock_dependencies": 0,
+      "interrupt_graph_edges": 0,
+      "interrupt_graph_nodes": 0,
+      "interrupt_cycles": 0,
+      "uncertainties": 36330,
+      "diagnostics": 2
+    },
+    "finding_category_counts_sum": {}
+  },
+  "ground_truth": {
+    "independent_bug_cases": 0,
+    "precision": null,
+    "recall": null,
+    "reason": "The dataset contains no independently verified Linux deadlock labels."
+  },
+  "notes": [
+    "Fixture assertion counts are controlled regression outcomes, not statistical accuracy metrics.",
+    "Kernel rows summarize preserved Phase 15 reports and are exploratory; they are not reanalysis results.",
+    "Fixture peak RSS is measured per analyzer process with GNU time when available; otherwise it is null."
+  ]
+}

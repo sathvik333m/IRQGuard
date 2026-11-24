@@ -1,13 +1,13 @@
 """Build output/doc/IRQGuard_IEEE_Project_Report.docx from the local template.
 
 Requirements: Python 3 standard library and Graphviz `dot`. Evaluation figures
-use the pinned Phase 19.3 raw-measurements.json evidence in this repository.
+use the frozen Phase 19.5 evidence in this repository.
 Run from any directory with: python3 scripts/build_project_report.py
 """
 from zipfile import ZipFile, ZIP_DEFLATED
 from xml.etree import ElementTree as ET
 from pathlib import Path
-import gzip, json, re, subprocess, struct
+import gzip, json, re, subprocess, struct, math
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'output/doc/IRQGuard_IEEE_Project_Report.docx'
@@ -50,9 +50,9 @@ def render_figures():
     }'''
     (FIGDIR / 'architecture.dot').write_text(architecture)
     subprocess.run(['dot','-Tpng','-Gdpi=150',str(FIGDIR/'architecture.dot'),'-o',str(ARCH_PNG)],check=True)
-    raw_path=ROOT/'evaluation/results/phase19.3/evidence/raw-measurements.json'
+    raw_path=ROOT/'evaluation/baselines/phase19_5/kernel/raw-measurements.json'
     raw=json.loads(raw_path.read_text())
-    fixture_path=ROOT/'evaluation/results/phase17/fixture-tests__fixtures__interrupts.c.json'
+    fixture_path=ROOT/'evaluation/baselines/phase19_5/controlled/fixture-tests__fixtures__interrupts.c.json'
     fixture=json.loads(fixture_path.read_text())
     cycle=next(c for c in fixture['interrupt_cycles'] if c['classification']=='interrupt_preemption_candidate' and 'cross_a' in c['lock_sequence'][0])
     edges=cycle['edges']
@@ -83,11 +83,14 @@ def render_figures():
     subprocess.run(['dot','-Tpng','-Gdpi=150',str(FIGDIR/'e1000e-uncertainty-events.dot'),'-o',str(EVAL_PNG)],check=True)
     times=[(Path(unit['file']).name,unit['elapsed_seconds']) for unit in raw['translation_units']]
     maxt=max(v for _,v in times)
+    time_axis_max=max(0.5, math.ceil(maxt*2)/2)
     timerows=[]
     for name,val in times:
-        bw=max(3,round(val/2.5*240)); rest=240-bw
+        bw=max(3,round(val/time_axis_max*240)); rest=240-bw
         timerows.append(f'<TR><TD ALIGN="LEFT" WIDTH="75"><FONT FACE="Times New Roman" POINT-SIZE="11">{name}</FONT></TD><TD><TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0"><TR><TD BGCOLOR="#4d78a8" WIDTH="{bw}" HEIGHT="15"></TD><TD BGCOLOR="#e7eef7" WIDTH="{rest}" HEIGHT="15"></TD></TR></TABLE></TD><TD ALIGN="RIGHT" WIDTH="58"><FONT FACE="Times New Roman" POINT-SIZE="11">{val:.3f} s</FONT></TD></TR>')
-    timechart='digraph G { graph [bgcolor="white", pad="0.10", fontname="Times New Roman", fontsize=12, labelloc="t", label="Analysis time per Linux v6.6.87 translation unit"]; node [shape=plaintext]; chart [label=< <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="6">'+''.join(timerows)+axis_row(['0','0.5','1.0','1.5','2.0','2.5 s'],240)+'</TABLE> >]; }'
+    time_ticks=[f'{time_axis_max*i/5:g}' for i in range(6)]
+    time_ticks[-1]+=' s'
+    timechart='digraph G { graph [bgcolor="white", pad="0.10", fontname="Times New Roman", fontsize=12, labelloc="t", label="Analysis time per Linux v6.6.87 translation unit"]; node [shape=plaintext]; chart [label=< <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="6">'+''.join(timerows)+axis_row(time_ticks,240)+'</TABLE> >]; }'
     (FIGDIR / 'e1000e-analysis-time.dot').write_text(timechart)
     subprocess.run(['dot','-Tpng','-Gdpi=150',str(FIGDIR/'e1000e-analysis-time.dot'),'-o',str(TIME_PNG)],check=True)
     operations=[(Path(u['file']).name,u['counts']['lock_acquisitions'],u['counts']['lock_releases']) for u in raw['translation_units']]
@@ -103,8 +106,12 @@ def render_figures():
     opschart='digraph G { graph [bgcolor="white", pad="0.10", fontname="Times New Roman", fontsize=12, labelloc="t", label="Lock API operations per translation unit (acquire / release)"]; node [shape=plaintext]; chart [label=< <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="6">'+''.join(oprows)+axis_row(['0','2','4','6','8','10 ops'],220)+opslegend+'</TABLE> >]; }'
     (FIGDIR/'e1000e-lock-operations.dot').write_text(opschart)
     subprocess.run(['dot','-Tpng','-Gdpi=150',str(FIGDIR/'e1000e-lock-operations.dot'),'-o',str(OPS_PNG)],check=True)
-    summary=json.load(gzip.open(ROOT/'evaluation/results/phase19.3/evidence/uncertainty-summary.json.gz'))['aggregate']['by_category']
-    cause_values=[(category,data['event_count']) for category,data in summary.items()]
+    summary={}
+    for unit in raw['translation_units']:
+        report=json.loads((ROOT/'evaluation/baselines/phase19_5/kernel'/unit['report_path']).read_text())
+        for category,data in report.get('uncertainty_summary',{}).get('by_category',{}).items():
+            summary[category]=summary.get(category,0)+data['event_count']
+    cause_values=list(summary.items())
     cause_values.sort(key=lambda item:item[1],reverse=True); causemax=max(v for _,v in cause_values); causerows=[]
     for name,val in cause_values:
         bw=max(3,round(val/20000*240)); rest=240-bw
@@ -297,8 +304,23 @@ with ZipFile(TEMPLATE) as zin:
     affiliation = paragraph('Department of Computer Science and Engineering, IIITDM Kurnool, Kurnool, India', 'Affiliation')
     affiliation.find('w:pPr',NS).append(ET.Element(q('jc'),{q('val'):'center'}))
 
+    raw_eval=json.loads((ROOT/'evaluation/baselines/phase19_5/kernel/raw-measurements.json').read_text())
+    fixture_eval=json.loads((ROOT/'evaluation/baselines/phase19_5/controlled/summary.json').read_text())
+    kernel_counts=raw_eval['aggregate']['counts_sum_across_translation_units']
+    kernel_reports=[json.loads((ROOT/'evaluation/baselines/phase19_5/kernel'/unit['report_path']).read_text()) for unit in raw_eval['translation_units']]
+    uncertainty_events=sum(r.get('uncertainty_summary',{}).get('event_count',0) for r in kernel_reports)
+    uncertainty_records=sum(r.get('uncertainty_summary',{}).get('unique_record_count',0) for r in kernel_reports)
+    uncertainty_roots=sum(r.get('uncertainty_summary',{}).get('unique_root_cause_count',0) for r in kernel_reports)
+    uncertainty_propagated=sum(r.get('uncertainty_summary',{}).get('propagated_event_count',0) for r in kernel_reports)
+    registration_count=sum(len(r.get('interrupt_registrations',[])) for r in kernel_reports)
+    call_count=sum(len(r.get('calls',[])) for r in kernel_reports)
+    diagnostic_text='; '.join(str(d.get('message','') if isinstance(d,dict) else d)
+                              for r in kernel_reports for d in r.get('diagnostics',[]))
+    kernel_seconds=raw_eval['aggregate']['analysis_elapsed_seconds_sum']
+    kernel_peak=raw_eval['aggregate']['peak_rss_kib_max_across_separate_runs']
     content = []
-    content.append(paragraph('Abstract—Interrupt-induced deadlocks can occur when a hardware interrupt preempts kernel code holding a lock and the handler attempts to acquire a conflicting lock. This report presents IRQGuard, an undergraduate research prototype for scoped static analysis of Linux-style C source. The tool uses Clang AST and control-flow information to extract calls, supported lock operations, interrupt registrations, symbolic lock identities, and source locations. It propagates selected effects through function summaries, builds process and hard-IRQ dependency graphs, and applies bounded feasibility checks. A separate pthread harness compares static predictions with structured userspace traces but does not emulate hardware interrupts. Eight controlled evaluation assertions passed in the recorded dataset run. A pinned Linux v6.6.87 analysis of five e1000e translation units extracted 396 functions and 12 lock operations but produced no dependency edges or cycle findings; it recorded 36,330 uncertainty events, 2,431 unique root causes, and two parser or control-flow diagnostics. A historical MIPS GIC case is a partial match, while an 8250 serial lock-order case is missed. These results demonstrate functioning extraction and case-specific behavior, not kernel-wide detection accuracy, soundness, or deadlock freedom.', 'Abstract'))
+    abstract=(f'Abstract—Interrupt-induced deadlocks can occur when a hardware interrupt preempts kernel code holding a lock and the handler attempts to acquire a conflicting lock. This report presents IRQGuard, an undergraduate research prototype for scoped static analysis of Linux-style C source. The tool uses Clang AST and control-flow information to extract calls, supported lock operations, interrupt registrations, symbolic lock identities, and source locations. It propagates selected effects through function summaries, builds process and hard-IRQ dependency graphs, and applies bounded feasibility checks. A separate pthread harness compares static predictions with structured userspace traces but does not emulate hardware interrupts. {fixture_eval["controlled_fixture_passed"]} of {fixture_eval["controlled_fixture_passed"] + fixture_eval["controlled_fixture_failed"]} controlled evaluation assertions passed. A pinned Linux v6.6.87 analysis of five e1000e translation units extracted {kernel_counts["functions"]} functions and {kernel_counts["lock_operations"]} lock operations but produced no dependency edges or cycle findings; it recorded {uncertainty_events:,} uncertainty events, {uncertainty_roots:,} root causes and {kernel_counts["diagnostics"]} parser or control-flow diagnostics. A historical MIPS GIC case is a partial match, while an 8250 serial lock-order case is missed. These results demonstrate functioning extraction and case-specific behavior, not kernel-wide detection accuracy, soundness, or deadlock freedom.')
+    content.append(paragraph(abstract, 'Abstract'))
     content.append(paragraph('Keywords—Linux kernel, static analysis, lock dependency, interrupt preemption, deadlock analysis', 'Keywords'))
 
     def h1(text): content.append(paragraph(text, 'Heading1'))
@@ -412,7 +434,7 @@ with ZipFile(TEMPLATE) as zin:
     bodytext('The versioned controlled set contains positive lock-order cases, negative cases such as mutually exclusive paths or release-before-next-acquire, and edge cases for wrappers, macros, saved IRQ state, symbolic identities, and incomplete evidence. The versioned Phase 17 dataset run passed eight fixture assertions with zero failures. The project also has CTest and web test suites; their historical run counts are not used as accuracy metrics here. These are regression outcomes on controlled inputs, not precision or recall estimates.')
     h2('B. Pinned Linux v6.6.87 source')
     bodytext('The real-source evaluation uses Linux stable v6.6.87, commit 814637ca257f4faf57a73fd4e38888cce88b5911, and five selected Intel e1000e translation units: netdev.c, ethtool.c, ich8lan.c, phy.c, and nvm.c [2]. Kbuild generated the compilation commands for x86_64_defconfig with CONFIG_E1000E=m. The recorded environment is Ubuntu 24.04 on WSL 2 with Clang/LLVM 20.1.2. This is a five-file experiment, not a whole-driver or whole-kernel call graph.')
-    bodytext('Table II summarizes the latest recorded repeat. The analysis completed all five files and extracted eight resolved request_irq registration records. It produced no dependency edges or cycle findings. Therefore this scope cannot measure whether feasibility refinement reduces inconclusive cycle classifications. Two call-to-CFG mapping diagnostics occurred in e1000_tx_csum. Unknown calls and effects produced substantial uncertainty.')
+    bodytext(f'Table II summarizes the fresh evaluation repeat. The analysis completed all five files and extracted {registration_count} resolved request_irq registration records. It produced no dependency edges or cycle findings. Therefore this scope cannot measure whether feasibility refinement reduces inconclusive cycle classifications. Diagnostics: {diagnostic_text}. Unknown calls and effects produced substantial uncertainty.')
 
     # IEEE-style table with template table styles.
     content.append(paragraph('TABLE II. SELECTED LINUX V6.6.87 EVALUATION RESULTS', 'tablehead'))
@@ -429,12 +451,13 @@ with ZipFile(TEMPLATE) as zin:
         col=ET.SubElement(grid,q('gridCol')); col.set(q('w'),w)
     rows = [
         ('Measure','Recorded result'),
-        ('Files and functions','5 of 5; 396 functions'),
-        ('Lock operations','12 total; 6 acquisitions and 6 releases'),
-        ('Dependencies and cycles','0 dependencies; 0 interrupt edges; 0 cycles'),
-        ('Uncertainty','36,330 events; 2,431 unique root causes (category records include linked effects)'),
-        ('Diagnostics','2 call-to-CFG mapping diagnostics'),
-        ('Time and memory','6.551 s summed; 236,700 KiB maximum per-process RSS'),
+        ('Files and functions',f'{raw_eval["aggregate"]["files_analyzed"]} of {raw_eval["aggregate"]["files_requested"]}; {kernel_counts["functions"]} functions'),
+        ('Calls',f'{call_count:,} extracted call records'),
+        ('Lock operations',f'{kernel_counts["lock_operations"]} total; {kernel_counts["lock_acquisitions"]} acquisitions and {kernel_counts["lock_releases"]} releases'),
+        ('Dependencies and cycles',f'{kernel_counts["lock_dependencies"]} dependencies; {kernel_counts["interrupt_graph_edges"]} interrupt edges; {kernel_counts["interrupt_cycles"]} cycles'),
+        ('Uncertainty',f'{uncertainty_events:,} events; {uncertainty_records:,} unique records; {uncertainty_roots:,} root causes'),
+        ('Diagnostics',f'{kernel_counts["diagnostics"]} parser or CFG diagnostics'),
+        ('Time and memory',f'{kernel_seconds:.3f} s summed; {kernel_peak:,} KiB maximum per-process RSS'),
         ('Build coverage','Selected objects and objtool/ORC checks succeeded; no final module link; separate stack validation not configured'),
     ]
     for ri,rowdata in enumerate(rows):
@@ -446,7 +469,6 @@ with ZipFile(TEMPLATE) as zin:
             run=ET.SubElement(p,q('r')); t=ET.SubElement(run,q('t')); t.text=value
     content.append(table)
     content.append(paragraph('TABLE III. PER-FILE KERNEL MEASUREMENTS', 'tablehead'))
-    raw_eval=json.loads((ROOT/'evaluation/results/phase19.3/evidence/raw-measurements.json').read_text())
     file_table=ET.Element(q('tbl')); fpr=ET.SubElement(file_table,q('tblPr')); fw=ET.SubElement(fpr,q('tblW')); fw.set(q('w'),'4860'); fw.set(q('type'),'dxa'); fl=ET.SubElement(fpr,q('tblLayout')); fl.set(q('type'),'fixed')
     fb=ET.SubElement(fpr,q('tblBorders'))
     for edge in ('top','left','bottom','right','insideH','insideV'):
@@ -464,14 +486,14 @@ with ZipFile(TEMPLATE) as zin:
             p=ET.SubElement(tc,q('p')); ppr=ET.SubElement(p,q('pPr')); jc=ET.SubElement(ppr,q('jc')); jc.set(q('val'),'center' if ci else 'left'); ps=ET.SubElement(ppr,q('pStyle')); ps.set(q('val'),'tablehead' if ri==0 else 'tablecopy')
             run=ET.SubElement(p,q('r')); t=ET.SubElement(run,q('t')); t.text=value
     content.append(file_table)
-    content.append(paragraph('Per-file RSS is measured per analyzer process; 6.551 s is the sum of five separate process times.', 'figurecaption'))
+    content.append(paragraph(f'Per-file RSS is measured per analyzer process; {kernel_seconds:.3f} s is the sum of five separate process times.', 'figurecaption'))
     content.extend([paragraph('FIGURE 2. CONTROLLED INTERRUPT-AWARE LOCK CYCLE', 'figurecaption'), image_paragraph(LOCK_PNG, 'rId14', 'Controlled fixture lock cycle', 3000000, 'cross_a to cross_b to cross_a; process_cross_context to registered cross_handler; source lines 91, 48, and 49; potentially feasible fixture candidate'), paragraph('Extracted from tests/fixtures/interrupts.c and its saved Phase 17 JSON report: cross_a → cross_b (process_cross_context:91, cross_handler:48; registered at 75), then cross_b → cross_a (cross_handler:48–49). This potentially feasible fixture candidate is not a Linux-kernel finding or confirmed deadlock.', 'figurecaption')])
-    content.extend([paragraph('FIGURE 3. UNCERTAINTY EVENTS BY FILE', 'figurecaption'), image_paragraph(EVAL_PNG, 'rId15', 'Uncertainty events across five e1000e files', 3000000), paragraph('Values are raw events from the pinned Linux v6.6.87 analysis, not unique bugs. The five files sum to 36,330 events.', 'figurecaption')])
+    content.extend([paragraph('FIGURE 3. UNCERTAINTY EVENTS BY FILE', 'figurecaption'), image_paragraph(EVAL_PNG, 'rId15', 'Uncertainty events across five e1000e files', 3000000), paragraph(f'Values are raw events from the pinned Linux v6.6.87 analysis, not unique bugs. The five files sum to {uncertainty_events:,} events.', 'figurecaption')])
     bodytext('The distribution is concentrated in netdev.c, which accounts for 24,685 events (67.9%); ich8lan.c contributes 6,396 (17.6%). The other three files together contribute 5,249 events. These values identify where review effort would be concentrated, but they are not normalized by file size or function count and should not be read as a comparison of defect rates.')
-    bodytext('The aggregate uncertainty report separates 36,330 event occurrences into 4,644 unique records and 31,686 repeated propagation events. Those unique records include 2,431 root causes and linked secondary effects. No dependency edges or candidate cycles were produced in this kernel scope, so these uncertainties were not attached to a cycle finding. That absence does not establish that the analyzed code is deadlock-free; it describes the result under the current API, call-summary, and translation-unit coverage.')
-    content.extend([paragraph('FIGURE 4. ANALYSIS TIME BY TRANSLATION UNIT', 'figurecaption'), image_paragraph(TIME_PNG, 'rId16', 'Analysis time across five e1000e files', 3000000), paragraph('Times are actual single-process elapsed times from the same pinned-source run; 6.551 s is the sum across separate analyzer processes.', 'figurecaption')])
+    bodytext(f'The aggregate uncertainty report separates {uncertainty_events:,} event occurrences into {uncertainty_records:,} unique records and {uncertainty_propagated:,} repeated propagation events. Those records contain {uncertainty_roots:,} root causes and linked secondary effects. No dependency edges or candidate cycles were produced in this kernel scope, so these uncertainties were not attached to a cycle finding. That absence does not establish that the analyzed code is deadlock-free; it describes the result under the current API, call-summary, and translation-unit coverage.')
+    content.extend([paragraph('FIGURE 4. ANALYSIS TIME BY TRANSLATION UNIT', 'figurecaption'), image_paragraph(TIME_PNG, 'rId16', 'Analysis time across five e1000e files', 3000000), paragraph(f'Times are actual single-process elapsed times from the same pinned-source run; {kernel_seconds:.3f} s is the sum across separate analyzer processes.', 'figurecaption')])
     content.extend([paragraph('FIGURE 5. EXTRACTED LOCK OPERATIONS BY FILE', 'figurecaption'), image_paragraph(OPS_PNG, 'rId17', 'Lock acquisitions and releases per e1000e file', 3000000), paragraph('Bars show extracted acquisitions and releases (blue / orange); labels are acquisition count / release count. The sum is 6 / 6.', 'figurecaption')])
-    content.extend([paragraph('FIGURE 6. UNCERTAINTY EVENTS BY CATEGORY', 'figurecaption'), image_paragraph(CAUSE_PNG, 'rId18', 'Uncertainty event categories', 3000000), paragraph('Interrupt-state effects (18,023 events) share root causes with unresolved-call events; categories are not independent bug counts.', 'figurecaption')])
+    content.extend([paragraph('FIGURE 6. UNCERTAINTY EVENTS BY CATEGORY', 'figurecaption'), image_paragraph(CAUSE_PNG, 'rId18', 'Uncertainty event categories', 3000000), paragraph('Interrupt-state effects and unresolved-call events overlap through propagated causes; categories are not independent bug counts.', 'figurecaption')])
     content.append(paragraph('TABLE IV. EVIDENCE SUMMARY', 'tablehead'))
     summary_table = ET.Element(q('tbl'))
     stpr=ET.SubElement(summary_table,q('tblPr')); stw=ET.SubElement(stpr,q('tblW')); stw.set(q('w'),'4860'); stw.set(q('type'),'dxa')

@@ -85,8 +85,8 @@ export function KernelEvaluationPage({
   }
 
   const { aggregate, kernel, configuration } = evaluation
-  const current = evaluation.phase19_2_uncertainty?.after
-  const uncertainty = evaluation.phase19_2_uncertainty
+  const uncertainty = evaluation.latest_uncertainty ?? evaluation.phase19_2_uncertainty
+  const current = uncertainty?.after
   const counts: Record<string, any> = current ?? aggregate
   const files = uncertainty?.per_file ?? evaluation.translation_units.map((unit) => ({
     source_file: unit.file,
@@ -132,6 +132,11 @@ export function KernelEvaluationPage({
           <p className="page-caption">
             Five selected Intel <code>e1000e</code> driver files from commit <code>{kernel.commit.slice(0, 12)}</code>, analyzed with generated Kbuild compiler commands.
           </p>
+          {evaluation.evaluation_baseline && (
+            <a className="baseline-report-link" href={evaluation.evaluation_baseline.summary_url} target="_blank" rel="noreferrer">
+              Open frozen evaluation summary
+            </a>
+          )}
         </div>
         <span className={`status-pill ${evaluation.status === 'completed' ? 'good' : 'muted'}`}>
           {evaluation.status}

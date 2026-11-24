@@ -366,6 +366,15 @@ export interface KernelEvaluation {
   } | null
   phase17_evaluation?: Phase17Evaluation | null
   phase19_2_uncertainty?: Phase19_2UncertaintySummary | null
+  latest_uncertainty?: Record<string, any> | null
+  evaluation_baseline?: {
+    id: string
+    report: string
+    manifest: string
+    summary_csv: string
+    latest_uncertainty_json: string
+    summary_url: string
+  } | null
   phase12_validation?: {
     full_validation: {
       status: string

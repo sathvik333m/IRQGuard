@@ -892,6 +892,8 @@ code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospac
 .kernel-eval-table td code { color: var(--text-secondary); font-size: 11px; }
 .kernel-eval-table .status-pill { margin: 0; }
 .historical-evidence-panel { margin-bottom: 15px; padding: 0 14px 13px; }
+.baseline-report-link { display: inline-block; margin-top: 6px; color: var(--accent-strong); font-size: 12px; text-decoration: none; }
+.baseline-report-link:hover { text-decoration: underline; }
 .historical-evidence-panel > .panel-heading { padding: 12px 0 9px; }
 .historical-evidence-panel .panel-heading h2 { margin: 3px 0 0; font-size: 15px; }
 .historical-evidence-intro { margin: 0 0 4px; color: var(--text-secondary); font-size: 12px; line-height: 1.55; }

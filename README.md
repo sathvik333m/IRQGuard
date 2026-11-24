@@ -251,7 +251,7 @@ The API listens on `127.0.0.1:8000`; Vite serves the UI on `127.0.0.1:5173` and 
 
 The saved research evaluation uses Linux stable **v6.6.87**, commit `814637ca257f4faf57a73fd4e38888cce88b5911`, and five selected `drivers/net/ethernet/intel/e1000e` translation units. These are exploratory source measurements, not labeled ground-truth bug cases.
 
-The archived Phase 17 run reports:
+The latest frozen evaluation is under [`evaluation/baselines/phase19_5/`](evaluation/baselines/phase19_5/), with a detailed [evaluation report](docs/phase19_5-final-evaluation.md), per-run JSON, CSV summary, manifest, logs, and checksums. Its fresh Linux run reports:
 
 | Measure | Recorded result |
 |---|---:|
@@ -260,19 +260,18 @@ The archived Phase 17 run reports:
 | Lock operations | 12 (6 acquisitions, 6 releases) |
 | Lock dependencies / interrupt graph edges | 0 / 0 |
 | Candidate cycles | 0 |
-| Uncertainty events | 43,632 |
-| Unique uncertainty records | 4,922, summed across per-file reports (not deduplicated across files) |
+| Uncertainty events | 36,330 |
+| Unique uncertainty records | 4,644, summed across per-file reports |
+| Unique root-cause IDs | 2,431 |
 | Parser diagnostics | 2 |
-| Sum of per-file analysis times | 6.993 s |
-| Maximum per-process peak RSS | 240,964 KiB |
+| Sum of per-file analysis times | 8.116 s |
+| Maximum per-process peak RSS | 236,264 KiB |
 
-Those numbers describe that pinned run and tool configuration. Zero dependencies or cycles do not establish deadlock freedom. The five-file e1000e run remains exploratory. The evaluation dataset now also contains two independently documented historical locking cases, each evaluated on adjacent affected and fixed revisions: a MIPS GIC partial match and an 8250 serial lock-order miss. The sample is too small for precision or recall. See [`historical-case/results/REPORT.md`](historical-case/results/REPORT.md), the raw reports under `historical-case/results/`, and the dataset manifest at `evaluation/dataset-v1.json`.
+The run also recorded 3,571 call records and eight resolved IRQ registrations. Uncertainty categories include 18,023 unresolved-call events and 18,023 linked interrupt-state events; they overlap and are not separate bug counts. Zero dependencies or cycles do not establish deadlock freedom. The five-file e1000e run remains exploratory. The historical set has one partial match and one miss; it is too small for precision or recall. See the [final evaluation report](docs/phase19_5-final-evaluation.md) for per-case evidence and limits.
 
 Phase 19.1 independently inventoried every lock operation from archived and fresh reports. All three snapshots agree on **6 acquisitions and 6 releases**. It traced the earlier “10 acquisitions and 2 releases” statement to a documentation error; no extractor misclassification was found. See [`evaluation/results/phase19.1/REPORT.md`](evaluation/results/phase19.1/REPORT.md) and its machine-readable inventory/comparison artifacts.
 
-The later Phase 19.2 uncertainty investigation reran the same five pinned files. It recorded **36,330 uncertainty events, 4,644 category records, and 2,431 unique root causes**, down from the fresh Phase 19.1 baseline of 43,632 events and 2,570 root causes. The reduction came from seven narrowly modeled, source-verified no-lock/no-IRQ effects; unknown helpers and callbacks remain unresolved. No dependencies or cycles were reported, which does not prove deadlock freedom. The [Phase 19.2 report](docs/phase19.2-uncertainty-root-cause.md) documents the root-cause links, per-file results, and limitations. The kernel evaluation page uses the same compact summary served by the local API.
-
-A fresh repeat of the same pinned-source analysis completed all five files with **0 dependencies, 0 graph cycles, and 0 findings**. This scope therefore cannot measure whether feasibility checks reduce inconclusive cycle classifications. The run reproduced 36,330 uncertainty events and 2,431 unique root causes; see the [latest kernel feasibility evaluation](evaluation/results/phase19.3/REPORT.md) and its checksummed evidence bundle.
+The Phase 15 and Phase 17 operation inventories agree with this fresh run: **6 acquisitions and 6 releases**. The earlier “10 acquisitions and 2 releases” statement was a documentation error, not an extractor discrepancy. The fresh run has no dependency cycles, so it cannot measure feasibility refinement against real-kernel positive findings. The kernel evaluation page now reads the frozen measurements and links to `/api/v1/evaluations/phase19.5` for the machine-readable summary. Static builds bundle the same summary at `/evaluation/phase19_5-summary.json`. See the [final evaluation report](docs/phase19_5-final-evaluation.md). Run `python3 scripts/build_project_report.py` to generate the IEEE DOCX at `output/doc/IRQGuard_IEEE_Project_Report.docx`.
 
 ### Historical kernel bug case
 

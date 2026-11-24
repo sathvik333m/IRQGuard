@@ -1,0 +1,1844 @@
+{
+  "schema_version": 1,
+  "baseline_id": "irqguard-phase19.5-final-evaluation",
+  "created_utc": "2026-11-24T06:31:59Z",
+  "repository": {
+    "revision": "9c1b6732410a5b6032237a80d278fc1f38669993",
+    "working_tree_at_evaluation_start": "clean",
+    "analyzer_sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc",
+    "analyzer_path": "build/deadlock-analyzer"
+  },
+  "kernel": {
+    "release": "v6.6.87",
+    "revision": "814637ca257f4faf57a73fd4e38888cce88b5911",
+    "subsystem": "drivers/net/ethernet/intel/e1000e",
+    "translation_units": [
+      "third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+      "third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ethtool.c",
+      "third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+      "third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/phy.c",
+      "third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/nvm.c"
+    ],
+    "config_sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1",
+    "compilation_database_commands": 11,
+    "validation": {
+      "objtool_mode": "enabled",
+      "objtool_build": "succeeded",
+      "objtool_object_checks": "succeeded",
+      "kernel_object_compilation": "succeeded",
+      "source_analysis": "completed",
+      "unwinder_orc_configured": true,
+      "stack_validation_configured": false,
+      "stack_validation": "not_configured_by_defconfig",
+      "skip_stack_validation_variable_supported_by_kernel": false,
+      "objtool_deferred_to_composite": true,
+      "objtool_invocations": 1,
+      "objtool_command": "/usr/bin/ld -m elf_x86_64 -z noexecstack --no-warn-rwx-segments   -r -o drivers/net/ethernet/intel/e1000e/e1000e.o @drivers/net/ethernet/intel/e1000e/e1000e.mod  ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --ibt --orc --retpoline --rethunk --static-call --uaccess --prefix=16  --link  --module drivers/net/ethernet/intel/e1000e/e1000e.o",
+      "objtool_options": [
+        "--orc",
+        "--retpoline",
+        "--ibt",
+        "--module",
+        "--link"
+      ],
+      "kernel_module_link": "not_attempted; composite object target only",
+      "orc_sections_present": true
+    }
+  },
+  "environment": {
+    "python": "3.12.3",
+    "kernel_host": "6.18.58.1-microsoft-standard-WSL2",
+    "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+    "make": "GNU Make 4.3",
+    "time": "time (GNU Time) UNKNOWN",
+    "cmake": "cmake version 3.28.3",
+    "host_linker": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+    "lld": "unavailable",
+    "libelf_dev_package": "0.190-1.1ubuntu0.1",
+    "analyzer_sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc",
+    "distribution": "Ubuntu 24.04 LTS on WSL 2",
+    "host_architecture": "x86_64"
+  },
+  "controlled_dataset": {
+    "id": "irqguard-phase17-v1",
+    "sha256": "8a5f0bc8d735126de0964d30c1476da53196fe1bfd40ba46e7ada73ee27e9b52",
+    "passed": 8,
+    "failed": 0,
+    "cases": [
+      {
+        "case_id": "syn-positive-normal-cycle",
+        "group": "synthetic_positive",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "matching cycle category=candidate_lock_order_cycle, lock markers=['opposite_a', 'opposite_b']; found 1",
+        "source": "tests/fixtures/phase16_feasibility.c",
+        "measurements": {
+          "functions": 17,
+          "lock_acquisitions": 26,
+          "lock_releases": 26,
+          "lock_operations": 52,
+          "lock_dependencies": 12,
+          "interrupt_graph_edges": 83,
+          "candidate_cycles": 4,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1,
+            "interrupt_aware_candidate": 1,
+            "rejected_candidate": 2
+          },
+          "uncertainty_events": 9,
+          "unique_uncertainty_records": 9,
+          "uncertainty_by_category": {
+            "handler_lifecycle": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_resolution": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "interrupt_state": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "unresolved_call": {
+              "event_count": 3,
+              "unique_record_count": 3
+            }
+          },
+          "uncertainty_by_stage": {
+            "handler_discovery": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interprocedural": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interrupt_state": {
+              "event_count": 3,
+              "unique_record_count": 3
+            }
+          },
+          "diagnostics": 0
+        }
+      },
+      {
+        "case_id": "syn-positive-interrupt-cycle",
+        "group": "synthetic_positive",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "matching cycle category=interrupt_aware_candidate, lock markers=[]; found 2",
+        "source": "tests/fixtures/interrupts.c",
+        "measurements": {
+          "functions": 22,
+          "lock_acquisitions": 31,
+          "lock_releases": 15,
+          "lock_operations": 47,
+          "lock_dependencies": 13,
+          "interrupt_graph_edges": 235,
+          "candidate_cycles": 5,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1,
+            "inconclusive_analysis": 1,
+            "interrupt_aware_candidate": 2,
+            "rejected_candidate": 1
+          },
+          "uncertainty_events": 8,
+          "unique_uncertainty_records": 8,
+          "uncertainty_by_category": {
+            "handler_lifecycle": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_resolution": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "interrupt_state": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "lock_identity": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "unresolved_call": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "unsupported_api": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "uncertainty_by_stage": {
+            "api_model": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_discovery": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interprocedural": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "interrupt_state": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "lock_extraction": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "diagnostics": 0
+        }
+      },
+      {
+        "case_id": "syn-negative-exclusive-branches",
+        "group": "synthetic_negative",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "matching cycle category=rejected_candidate, lock markers=['exclusive_a', 'exclusive_b']; found 1",
+        "source": "tests/fixtures/phase16_feasibility.c",
+        "measurements": {
+          "functions": 17,
+          "lock_acquisitions": 26,
+          "lock_releases": 26,
+          "lock_operations": 52,
+          "lock_dependencies": 12,
+          "interrupt_graph_edges": 83,
+          "candidate_cycles": 4,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1,
+            "interrupt_aware_candidate": 1,
+            "rejected_candidate": 2
+          },
+          "uncertainty_events": 9,
+          "unique_uncertainty_records": 9,
+          "uncertainty_by_category": {
+            "handler_lifecycle": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_resolution": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "interrupt_state": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "unresolved_call": {
+              "event_count": 3,
+              "unique_record_count": 3
+            }
+          },
+          "uncertainty_by_stage": {
+            "handler_discovery": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interprocedural": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interrupt_state": {
+              "event_count": 3,
+              "unique_record_count": 3
+            }
+          },
+          "diagnostics": 0
+        }
+      },
+      {
+        "case_id": "syn-negative-release-before-next-acquire",
+        "group": "synthetic_negative",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "dependency state_a -> state_b absent in release_before_next_acquire; found 0",
+        "source": "tests/fixtures/interrupts.c",
+        "measurements": {
+          "functions": 22,
+          "lock_acquisitions": 31,
+          "lock_releases": 15,
+          "lock_operations": 47,
+          "lock_dependencies": 13,
+          "interrupt_graph_edges": 235,
+          "candidate_cycles": 5,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1,
+            "inconclusive_analysis": 1,
+            "interrupt_aware_candidate": 2,
+            "rejected_candidate": 1
+          },
+          "uncertainty_events": 8,
+          "unique_uncertainty_records": 8,
+          "uncertainty_by_category": {
+            "handler_lifecycle": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_resolution": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "interrupt_state": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "lock_identity": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "unresolved_call": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "unsupported_api": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "uncertainty_by_stage": {
+            "api_model": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_discovery": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interprocedural": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "interrupt_state": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "lock_extraction": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "diagnostics": 0
+        }
+      },
+      {
+        "case_id": "edge-irqsave-restore-macro",
+        "group": "edge_case",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "API operation {'api': 'spin_lock_irqsave', 'kind': 'lock_acquire_irqsave'}; found 7",
+        "source": "tests/fixtures/kernel_lock_api_macros.c",
+        "measurements": {
+          "functions": 14,
+          "lock_acquisitions": 16,
+          "lock_releases": 16,
+          "lock_operations": 36,
+          "lock_dependencies": 5,
+          "interrupt_graph_edges": 5,
+          "candidate_cycles": 0,
+          "cycle_categories": {},
+          "uncertainty_events": 5,
+          "unique_uncertainty_records": 5,
+          "uncertainty_by_category": {
+            "interrupt_state": {
+              "event_count": 4,
+              "unique_record_count": 4
+            },
+            "lock_identity": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "uncertainty_by_stage": {
+            "interrupt_state": {
+              "event_count": 4,
+              "unique_record_count": 4
+            },
+            "lock_extraction": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "diagnostics": 2
+        }
+      },
+      {
+        "case_id": "edge-saved-irqstate-pair",
+        "group": "edge_case",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "matching irqsave/irqrestore lock and flags identities in irqsave_protects_handler_path; found 1",
+        "source": "tests/fixtures/phase16_feasibility.c",
+        "measurements": {
+          "functions": 17,
+          "lock_acquisitions": 26,
+          "lock_releases": 26,
+          "lock_operations": 52,
+          "lock_dependencies": 12,
+          "interrupt_graph_edges": 83,
+          "candidate_cycles": 4,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1,
+            "interrupt_aware_candidate": 1,
+            "rejected_candidate": 2
+          },
+          "uncertainty_events": 9,
+          "unique_uncertainty_records": 9,
+          "uncertainty_by_category": {
+            "handler_lifecycle": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_resolution": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "interrupt_state": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "unresolved_call": {
+              "event_count": 3,
+              "unique_record_count": 3
+            }
+          },
+          "uncertainty_by_stage": {
+            "handler_discovery": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interprocedural": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interrupt_state": {
+              "event_count": 3,
+              "unique_record_count": 3
+            }
+          },
+          "diagnostics": 0
+        }
+      },
+      {
+        "case_id": "edge-locking-wrapper",
+        "group": "edge_case",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "API operation {'api': 'spin_lock_irqsave', 'caller': 'irqsave_lock_wrapper'}; found 1",
+        "source": "tests/fixtures/interrupts.c",
+        "measurements": {
+          "functions": 22,
+          "lock_acquisitions": 31,
+          "lock_releases": 15,
+          "lock_operations": 47,
+          "lock_dependencies": 13,
+          "interrupt_graph_edges": 235,
+          "candidate_cycles": 5,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1,
+            "inconclusive_analysis": 1,
+            "interrupt_aware_candidate": 2,
+            "rejected_candidate": 1
+          },
+          "uncertainty_events": 8,
+          "unique_uncertainty_records": 8,
+          "uncertainty_by_category": {
+            "handler_lifecycle": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_resolution": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "interrupt_state": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "lock_identity": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "unresolved_call": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "unsupported_api": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "uncertainty_by_stage": {
+            "api_model": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "handler_discovery": {
+              "event_count": 3,
+              "unique_record_count": 3
+            },
+            "interprocedural": {
+              "event_count": 1,
+              "unique_record_count": 1
+            },
+            "interrupt_state": {
+              "event_count": 2,
+              "unique_record_count": 2
+            },
+            "lock_extraction": {
+              "event_count": 1,
+              "unique_record_count": 1
+            }
+          },
+          "diagnostics": 0
+        }
+      },
+      {
+        "case_id": "edge-interprocedural-symbolic-lock",
+        "group": "edge_case",
+        "label_status": "controlled_expected_behavior",
+        "status": "passed",
+        "assertion": "lock operations present; found 23",
+        "source": "tests/fixtures/symbolic_identity.c",
+        "measurements": {
+          "functions": 12,
+          "lock_acquisitions": 12,
+          "lock_releases": 11,
+          "lock_operations": 23,
+          "lock_dependencies": 4,
+          "interrupt_graph_edges": 4,
+          "candidate_cycles": 1,
+          "cycle_categories": {
+            "candidate_lock_order_cycle": 1
+          },
+          "uncertainty_events": 4,
+          "unique_uncertainty_records": 4,
+          "uncertainty_by_category": {
+            "lock_identity": {
+              "event_count": 4,
+              "unique_record_count": 4
+            }
+          },
+          "uncertainty_by_stage": {
+            "lock_extraction": {
+              "event_count": 4,
+              "unique_record_count": 4
+            }
+          },
+          "diagnostics": 0
+        }
+      }
+    ]
+  },
+  "historical_cases": {
+    "mips_gic": {
+      "schema_version": 1,
+      "case_id": "linux-mips-gic-recursive-lock-2026",
+      "created_utc": "2026-11-24T06:06:10.954680+00:00",
+      "pins": {
+        "affected": "03c4d26933d54556a89379db5923ae9e474569e8",
+        "fixed": "1bae25dcc6beb8b874f23601d2efa142ac4f9f36"
+      },
+      "introducing_commit": "322a9063876890895cb8308cc6f59de312e8aad5",
+      "source_file": "drivers/irqchip/irq-mips-gic.c",
+      "analyzer": {
+        "path": "/home/sathvik/os_project/build/deadlock-analyzer",
+        "sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc"
+      },
+      "environment": {
+        "python": "3.12.3",
+        "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+        "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "make": "GNU Make 4.3",
+        "architecture": "mips",
+        "defconfig": "malta_defconfig",
+        "host_linker_override": "HOSTLDFLAGS=-fuse-ld=bfd; avoids missing lld-20"
+      },
+      "results": {
+        "affected": {
+          "revision": "03c4d26933d54556a89379db5923ae9e474569e8",
+          "source_sha256": "2ee8051f63c28c2c1e948fdadbbcfbbc413b095d7317ac0551f90cf2dc7706c7",
+          "config_sha256": "789134579dbd3d59491c501b0b78cb166130f9a79327fc8b10b24a59f74b4e56",
+          "compile_commands_sha256": "75155465cd0887944ab005ca9ead7dc62ec5b368bb2bccacfccce7a94d2c8863",
+          "setup_and_object_build_seconds": 24.215,
+          "analysis_seconds": 0.884,
+          "measurements": {
+            "functions": 35,
+            "calls": 239,
+            "lock_operations": 8,
+            "lock_acquisitions": 4,
+            "lock_releases": 4,
+            "dependencies": 1,
+            "cycles": 1,
+            "cycle_categories": {
+              "inconclusive_analysis": 1
+            },
+            "uncertainty_events": 855,
+            "unique_uncertainty_records": 419,
+            "parser_diagnostics": 0
+          },
+          "report": "affected.json",
+          "build_log": "affected.log"
+        },
+        "fixed": {
+          "revision": "1bae25dcc6beb8b874f23601d2efa142ac4f9f36",
+          "source_sha256": "be4a8f42fe15343a38f82224128842004d00afac55d049a09de9dad22cd4b9c2",
+          "config_sha256": "789134579dbd3d59491c501b0b78cb166130f9a79327fc8b10b24a59f74b4e56",
+          "compile_commands_sha256": "406c2b3b332184119e1a6573526f388b498a279c72b17527f3df4ecd989de66b",
+          "setup_and_object_build_seconds": 18.038,
+          "analysis_seconds": 0.912,
+          "measurements": {
+            "functions": 36,
+            "calls": 239,
+            "lock_operations": 6,
+            "lock_acquisitions": 3,
+            "lock_releases": 3,
+            "dependencies": 0,
+            "cycles": 0,
+            "cycle_categories": {},
+            "uncertainty_events": 892,
+            "unique_uncertainty_records": 422,
+            "parser_diagnostics": 0
+          },
+          "report": "fixed.json",
+          "build_log": "fixed.log"
+        }
+      },
+      "limitations": [
+        "This is one translation unit, not a whole-kernel interprocedural analysis.",
+        "The fixed revision uses guard(raw_spinlock_irqsave); current extraction does not emit that guard as a lock operation.",
+        "The analyzer reports high uncertainty and classifies the affected cycle as inconclusive.",
+        "A source-level candidate and upstream fix do not establish runtime reproduction in this environment."
+      ],
+      "validation": {
+        "classification": "partial_match",
+        "affected_recursive_lock_pattern_detected": true,
+        "fixed_revision_has_no_reported_cycle": true,
+        "fixed_guard_lock_operation_extracted": false,
+        "explanation": "The affected source produces the upstream-described gic_set_affinity -> gic_set_type same-lock edge and cycle. The cycle is classified inconclusive because its summary is uncertain. The fixed revision removes that recursive helper call, but its guard(raw_spinlock_irqsave) acquisition is not extracted, so this is a partial match rather than evidence of complete fixed-version lock coverage."
+      }
+    },
+    "serial_8250": {
+      "schema_version": 1,
+      "case_id": "linux-8250-startup-lock-order-2020",
+      "created_utc": "2026-11-24T06:07:03.818137+00:00",
+      "pins": {
+        "affected": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+        "fixed": "730037c3ee57f892e6df019bc88d417a5944737c"
+      },
+      "compilation_database_generator_revision": "03c4d26933d54556a89379db5923ae9e474569e8",
+      "source_file": "drivers/tty/serial/8250/8250_port.c",
+      "analyzer": {
+        "path": "/home/sathvik/os_project/build/deadlock-analyzer",
+        "sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc"
+      },
+      "environment": {
+        "python": "3.12.3",
+        "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+        "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "make": "GNU Make 4.3",
+        "architecture": "x86_64",
+        "defconfig": "x86_64_defconfig",
+        "kernel_release": "5.8.0 source revision; Clang 20 and GCC 13 host tools",
+        "build_validation": "one C object compiled; objtool/ORC validation skipped; no kernel link",
+        "build_overrides": [
+          "CC=/usr/lib/llvm-20/bin/clang",
+          "HOSTLDFLAGS=-fuse-ld=bfd",
+          "CONFIG_SYSTEM_TRUSTED_KEYRING=n for Kbuild host-tool selection (OpenSSL headers unavailable)",
+          "CONFIG_STACK_VALIDATION= and CONFIG_UNWINDER_ORC= with SKIP_STACK_VALIDATION=1"
+        ],
+        "build_limitation": "The 5.8 objtool host tool fails under GCC 13 with -Werror=use-after-free; source-object compilation proceeds with stack validation explicitly omitted."
+      },
+      "results": {
+        "affected": {
+          "revision": "547bbf7d214fff2d29bc885ea7efea0fbc127791",
+          "source_sha256": "b476bd2739ba4c424f8e651113060088b882d40c7c780e5ce8706d28ff66f013",
+          "config_sha256": "e4028cadb6803142f6cf4e1740773c1ff450f683f89328a0e454f9697cb2d603",
+          "compile_commands_sha256": "ec3f01c988c2a68e7384f95e31c75a4ed1780a692752e0f966041dbfeb4a781d",
+          "object_build_and_setup_seconds": 25.794,
+          "analysis_seconds": 1.014,
+          "measurements": {
+            "functions": 113,
+            "calls": 645,
+            "lock_operations": 39,
+            "lock_acquisitions": 15,
+            "lock_releases": 16,
+            "dependencies": 0,
+            "cycles": 0,
+            "cycle_categories": {},
+            "uncertainty_events": 2865,
+            "unique_uncertainty_records": 813,
+            "parser_diagnostics": 0
+          },
+          "report": "affected.json",
+          "build_log": "affected.log"
+        },
+        "fixed": {
+          "revision": "730037c3ee57f892e6df019bc88d417a5944737c",
+          "source_sha256": "f8c5b3244d6dc177a51e3bf16e85a0587d256fb5781c126324f16dfd80d97c31",
+          "config_sha256": "e4028cadb6803142f6cf4e1740773c1ff450f683f89328a0e454f9697cb2d603",
+          "compile_commands_sha256": "11e87ab28068376fe0e991a392e7964e6dd0b77a307d968467ee6aa0eccb685e",
+          "object_build_and_setup_seconds": 19.967,
+          "analysis_seconds": 0.825,
+          "measurements": {
+            "functions": 113,
+            "calls": 645,
+            "lock_operations": 39,
+            "lock_acquisitions": 15,
+            "lock_releases": 16,
+            "dependencies": 0,
+            "cycles": 0,
+            "cycle_categories": {},
+            "uncertainty_events": 2865,
+            "unique_uncertainty_records": 813,
+            "parser_diagnostics": 0
+          },
+          "report": "fixed.json",
+          "build_log": "fixed.log"
+        }
+      },
+      "limitations": [
+        "The analysis is limited to 8250_port.c; it does not include genirq or console implementation translation units.",
+        "disable_irq_nosync is unresolved and its lock effects are not summarized.",
+        "The official source carries a lockdep circular-dependency report; this run does not reproduce the runtime schedule.",
+        "No accuracy metric is inferred from this case."
+      ],
+      "validation": {
+        "classification": "miss",
+        "affected_lockdep_pattern_reported": false,
+        "fixed_lockdep_pattern_reported": false,
+        "affected_external_disable_irq_call_seen": true,
+        "unsupported_disable_irq_api_uncertainty": true,
+        "explanation": "The upstream lockdep report documents a dependency involving port->lock, the IRQ descriptor lock, printk/console locking, and a hard-IRQ error path. IRQGuard extracts the local port lock and reports disable_irq_nosync as an unresolved external call, but has no summary for the IRQ descriptor lock and analyzes only this translation unit. It therefore emits no dependency or cycle in either revision. This is a miss, with the key unsupported effect visible as uncertainty."
+      }
+    }
+  },
+  "real_kernel_run": {
+    "evaluation_schema": 1,
+    "kernel": {
+      "release_tag": "v6.6.87",
+      "commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "checkout_commit": "814637ca257f4faf57a73fd4e38888cce88b5911",
+      "git_describe": "v6.6.87"
+    },
+    "analyzer": {
+      "path": "/home/sathvik/os_project/build/deadlock-analyzer"
+    },
+    "configuration": {
+      "architecture": "x86_64",
+      "compiler_mode": "Clang via Kbuild LLVM=",
+      "config_base": "x86_64_defconfig",
+      "driver_config": "CONFIG_E1000E=m",
+      "kbuild_variables": {
+        "ARCH": "x86_64",
+        "LLVM": "/usr/lib/llvm-20/bin/",
+        "LD": "/usr/bin/ld",
+        "HOSTLD": "/usr/bin/ld"
+      },
+      "build_limitations": [],
+      "subsystem": "drivers/net/ethernet/intel/e1000e",
+      "requested_files": [
+        "drivers/net/ethernet/intel/e1000e/netdev.c",
+        "drivers/net/ethernet/intel/e1000e/ethtool.c",
+        "drivers/net/ethernet/intel/e1000e/ich8lan.c",
+        "drivers/net/ethernet/intel/e1000e/phy.c",
+        "drivers/net/ethernet/intel/e1000e/nvm.c"
+      ],
+      "config_sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1",
+      "missing_object_files": [],
+      "compile_commands_count": 11
+    },
+    "validation": {
+      "objtool_mode": "enabled",
+      "objtool_build": "succeeded",
+      "objtool_object_checks": "succeeded",
+      "kernel_object_compilation": "succeeded",
+      "source_analysis": "completed",
+      "unwinder_orc_configured": true,
+      "stack_validation_configured": false,
+      "stack_validation": "not_configured_by_defconfig",
+      "skip_stack_validation_variable_supported_by_kernel": false,
+      "objtool_deferred_to_composite": true,
+      "objtool_invocations": 1,
+      "objtool_command": "/usr/bin/ld -m elf_x86_64 -z noexecstack --no-warn-rwx-segments   -r -o drivers/net/ethernet/intel/e1000e/e1000e.o @drivers/net/ethernet/intel/e1000e/e1000e.mod  ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --ibt --orc --retpoline --rethunk --static-call --uaccess --prefix=16  --link  --module drivers/net/ethernet/intel/e1000e/e1000e.o",
+      "objtool_options": [
+        "--orc",
+        "--retpoline",
+        "--ibt",
+        "--module",
+        "--link"
+      ],
+      "kernel_module_link": "not_attempted; composite object target only",
+      "orc_sections_present": true
+    },
+    "setup_steps": [
+      {
+        "stage": "x86_64_defconfig",
+        "command": [
+          "make",
+          "ARCH=x86_64",
+          "LLVM=/usr/lib/llvm-20/bin/",
+          "LD=/usr/bin/ld",
+          "HOSTLD=/usr/bin/ld",
+          "O=/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "x86_64_defconfig"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 5.29
+      },
+      {
+        "stage": "enable_e1000e",
+        "command": [
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/scripts/config",
+          "--file",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild/.config",
+          "--module",
+          "E1000E"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.069
+      },
+      {
+        "stage": "olddefconfig",
+        "command": [
+          "make",
+          "ARCH=x86_64",
+          "LLVM=/usr/lib/llvm-20/bin/",
+          "LD=/usr/bin/ld",
+          "HOSTLD=/usr/bin/ld",
+          "O=/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "olddefconfig"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.385
+      },
+      {
+        "stage": "prepare",
+        "command": [
+          "make",
+          "ARCH=x86_64",
+          "LLVM=/usr/lib/llvm-20/bin/",
+          "LD=/usr/bin/ld",
+          "HOSTLD=/usr/bin/ld",
+          "O=/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "prepare"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 15.488
+      },
+      {
+        "stage": "selected_objects",
+        "command": [
+          "make",
+          "ARCH=x86_64",
+          "LLVM=/usr/lib/llvm-20/bin/",
+          "LD=/usr/bin/ld",
+          "HOSTLD=/usr/bin/ld",
+          "O=/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "V=1",
+          "-j2",
+          "drivers/net/ethernet/intel/e1000e/netdev.o",
+          "drivers/net/ethernet/intel/e1000e/ethtool.o",
+          "drivers/net/ethernet/intel/e1000e/ich8lan.o",
+          "drivers/net/ethernet/intel/e1000e/phy.o",
+          "drivers/net/ethernet/intel/e1000e/nvm.o",
+          "drivers/net/ethernet/intel/e1000e/e1000e.o"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 6.936
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/scripts/clang-tools/gen_compile_commands.py",
+          "-d",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "-o",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild/compile_commands.json",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild/drivers/net/ethernet/intel/e1000e"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.065
+      }
+    ],
+    "translation_units": [
+      {
+        "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+        "status": "analyzed",
+        "skip_reason": null,
+        "command": [
+          "/usr/bin/time",
+          "-v",
+          "-o",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/netdev.time.txt",
+          "/home/sathvik/os_project/build/deadlock-analyzer",
+          "analyze",
+          "--source",
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/netdev.c",
+          "--compile-commands",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "--format",
+          "json",
+          "--output",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/netdev.json"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 2.775,
+        "peak_rss_kib": 236264,
+        "report_path": "reports/netdev.json",
+        "stderr_path": "reports/netdev.stderr.txt",
+        "time_path": "reports/netdev.time.txt",
+        "counts": {
+          "functions": 154,
+          "lock_operations": 10,
+          "lock_acquisitions": 5,
+          "lock_releases": 5,
+          "other_lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "interrupt_cycles": 0,
+          "finding_categories": {},
+          "uncertainties": 24685,
+          "diagnostics": 2
+        },
+        "mode_views": {
+          "analysis_kind": "interrupt_aware_lock_analysis",
+          "schema_version": 4,
+          "counts": {
+            "functions": 154,
+            "lock_operations": 10,
+            "lock_dependencies": 0,
+            "interrupt_graph_edges": 0,
+            "interrupt_graph_nodes": 0,
+            "uncertainties": 24685,
+            "unique_uncertainty_records": 2120,
+            "diagnostics": 2
+          },
+          "uncertainty_counts": {
+            "event_count": 24685,
+            "unique_record_count": 2120,
+            "propagated_event_count": 22565,
+            "high_impact_unique_records": 1156,
+            "lock_identity_events": 118,
+            "interrupt_state_events": 12245,
+            "unresolved_call_events": 12245,
+            "candidate_affecting_unique_records": 0,
+            "affected_candidate_count": 0,
+            "candidate_record_association_count": 0,
+            "proven_non_affecting_event_count": 0,
+            "by_category": {
+              "control_flow": {
+                "event_count": 4,
+                "unique_record_count": 2
+              },
+              "handler_lifecycle": {
+                "event_count": 39,
+                "unique_record_count": 5
+              },
+              "interrupt_state": {
+                "event_count": 12245,
+                "unique_record_count": 995
+              },
+              "lock_identity": {
+                "event_count": 118,
+                "unique_record_count": 89
+              },
+              "unresolved_call": {
+                "event_count": 12245,
+                "unique_record_count": 995
+              },
+              "unsupported_api": {
+                "event_count": 34,
+                "unique_record_count": 34
+              }
+            },
+            "by_stage": {
+              "api_model": {
+                "event_count": 34,
+                "unique_record_count": 34
+              },
+              "control_flow": {
+                "event_count": 4,
+                "unique_record_count": 2
+              },
+              "handler_discovery": {
+                "event_count": 39,
+                "unique_record_count": 5
+              },
+              "interprocedural": {
+                "event_count": 12245,
+                "unique_record_count": 995
+              },
+              "interrupt_state": {
+                "event_count": 12245,
+                "unique_record_count": 995
+              },
+              "lock_extraction": {
+                "event_count": 118,
+                "unique_record_count": 89
+              }
+            }
+          },
+          "basic_lock_cycle_view": {
+            "cyclic_scc_count": 0
+          },
+          "interrupt_aware_view": {
+            "candidate_lock_order_cycles": 0,
+            "interrupt_aware_candidates": 0,
+            "candidate_findings_total": 0
+          },
+          "feasibility_refined_view": {
+            "candidate_lock_order_cycle": 0,
+            "interrupt_aware_candidate": 0,
+            "rejected_candidate": 0,
+            "inconclusive_analysis": 0,
+            "finding_categories": {}
+          },
+          "limits": [
+            "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+            "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+            "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+          ]
+        }
+      },
+      {
+        "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ethtool.c",
+        "status": "analyzed",
+        "skip_reason": null,
+        "command": [
+          "/usr/bin/time",
+          "-v",
+          "-o",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/ethtool.time.txt",
+          "/home/sathvik/os_project/build/deadlock-analyzer",
+          "analyze",
+          "--source",
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ethtool.c",
+          "--compile-commands",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "--format",
+          "json",
+          "--output",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/ethtool.json"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.265,
+        "peak_rss_kib": 175020,
+        "report_path": "reports/ethtool.json",
+        "stderr_path": "reports/ethtool.stderr.txt",
+        "time_path": "reports/ethtool.time.txt",
+        "counts": {
+          "functions": 51,
+          "lock_operations": 0,
+          "lock_acquisitions": 0,
+          "lock_releases": 0,
+          "other_lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "interrupt_cycles": 0,
+          "finding_categories": {},
+          "uncertainties": 1790,
+          "diagnostics": 0
+        },
+        "mode_views": {
+          "analysis_kind": "interrupt_aware_lock_analysis",
+          "schema_version": 4,
+          "counts": {
+            "functions": 51,
+            "lock_operations": 0,
+            "lock_dependencies": 0,
+            "interrupt_graph_edges": 0,
+            "interrupt_graph_nodes": 0,
+            "uncertainties": 1790,
+            "unique_uncertainty_records": 733,
+            "diagnostics": 0
+          },
+          "uncertainty_counts": {
+            "event_count": 1790,
+            "unique_record_count": 733,
+            "propagated_event_count": 1057,
+            "high_impact_unique_records": 378,
+            "lock_identity_events": 0,
+            "interrupt_state_events": 890,
+            "unresolved_call_events": 890,
+            "candidate_affecting_unique_records": 0,
+            "affected_candidate_count": 0,
+            "candidate_record_association_count": 0,
+            "proven_non_affecting_event_count": 0,
+            "by_category": {
+              "handler_lifecycle": {
+                "event_count": 2,
+                "unique_record_count": 1
+              },
+              "interrupt_state": {
+                "event_count": 890,
+                "unique_record_count": 362
+              },
+              "unresolved_call": {
+                "event_count": 890,
+                "unique_record_count": 362
+              },
+              "unsupported_api": {
+                "event_count": 8,
+                "unique_record_count": 8
+              }
+            },
+            "by_stage": {
+              "api_model": {
+                "event_count": 8,
+                "unique_record_count": 8
+              },
+              "handler_discovery": {
+                "event_count": 2,
+                "unique_record_count": 1
+              },
+              "interprocedural": {
+                "event_count": 890,
+                "unique_record_count": 362
+              },
+              "interrupt_state": {
+                "event_count": 890,
+                "unique_record_count": 362
+              }
+            }
+          },
+          "basic_lock_cycle_view": {
+            "cyclic_scc_count": 0
+          },
+          "interrupt_aware_view": {
+            "candidate_lock_order_cycles": 0,
+            "interrupt_aware_candidates": 0,
+            "candidate_findings_total": 0
+          },
+          "feasibility_refined_view": {
+            "candidate_lock_order_cycle": 0,
+            "interrupt_aware_candidate": 0,
+            "rejected_candidate": 0,
+            "inconclusive_analysis": 0,
+            "finding_categories": {}
+          },
+          "limits": [
+            "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+            "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+            "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+          ]
+        }
+      },
+      {
+        "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+        "status": "analyzed",
+        "skip_reason": null,
+        "command": [
+          "/usr/bin/time",
+          "-v",
+          "-o",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/ich8lan.time.txt",
+          "/home/sathvik/os_project/build/deadlock-analyzer",
+          "analyze",
+          "--source",
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/ich8lan.c",
+          "--compile-commands",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "--format",
+          "json",
+          "--output",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/ich8lan.json"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.609,
+        "peak_rss_kib": 175432,
+        "report_path": "reports/ich8lan.json",
+        "stderr_path": "reports/ich8lan.stderr.txt",
+        "time_path": "reports/ich8lan.time.txt",
+        "counts": {
+          "functions": 98,
+          "lock_operations": 2,
+          "lock_acquisitions": 1,
+          "lock_releases": 1,
+          "other_lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "interrupt_cycles": 0,
+          "finding_categories": {},
+          "uncertainties": 6396,
+          "diagnostics": 0
+        },
+        "mode_views": {
+          "analysis_kind": "interrupt_aware_lock_analysis",
+          "schema_version": 4,
+          "counts": {
+            "functions": 98,
+            "lock_operations": 2,
+            "lock_dependencies": 0,
+            "interrupt_graph_edges": 0,
+            "interrupt_graph_nodes": 0,
+            "uncertainties": 6396,
+            "unique_uncertainty_records": 1234,
+            "diagnostics": 0
+          },
+          "uncertainty_counts": {
+            "event_count": 6396,
+            "unique_record_count": 1234,
+            "propagated_event_count": 5162,
+            "high_impact_unique_records": 677,
+            "lock_identity_events": 0,
+            "interrupt_state_events": 3159,
+            "unresolved_call_events": 3159,
+            "candidate_affecting_unique_records": 0,
+            "affected_candidate_count": 0,
+            "candidate_record_association_count": 0,
+            "proven_non_affecting_event_count": 0,
+            "by_category": {
+              "interrupt_state": {
+                "event_count": 3159,
+                "unique_record_count": 578
+              },
+              "unresolved_call": {
+                "event_count": 3159,
+                "unique_record_count": 578
+              },
+              "unsupported_api": {
+                "event_count": 78,
+                "unique_record_count": 78
+              }
+            },
+            "by_stage": {
+              "api_model": {
+                "event_count": 78,
+                "unique_record_count": 78
+              },
+              "interprocedural": {
+                "event_count": 3159,
+                "unique_record_count": 578
+              },
+              "interrupt_state": {
+                "event_count": 3159,
+                "unique_record_count": 578
+              }
+            }
+          },
+          "basic_lock_cycle_view": {
+            "cyclic_scc_count": 0
+          },
+          "interrupt_aware_view": {
+            "candidate_lock_order_cycles": 0,
+            "interrupt_aware_candidates": 0,
+            "candidate_findings_total": 0
+          },
+          "feasibility_refined_view": {
+            "candidate_lock_order_cycle": 0,
+            "interrupt_aware_candidate": 0,
+            "rejected_candidate": 0,
+            "inconclusive_analysis": 0,
+            "finding_categories": {}
+          },
+          "limits": [
+            "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+            "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+            "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+          ]
+        }
+      },
+      {
+        "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/phy.c",
+        "status": "analyzed",
+        "skip_reason": null,
+        "command": [
+          "/usr/bin/time",
+          "-v",
+          "-o",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/phy.time.txt",
+          "/home/sathvik/os_project/build/deadlock-analyzer",
+          "analyze",
+          "--source",
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/phy.c",
+          "--compile-commands",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "--format",
+          "json",
+          "--output",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/phy.json"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.316,
+        "peak_rss_kib": 174376,
+        "report_path": "reports/phy.json",
+        "stderr_path": "reports/phy.stderr.txt",
+        "time_path": "reports/phy.time.txt",
+        "counts": {
+          "functions": 76,
+          "lock_operations": 0,
+          "lock_acquisitions": 0,
+          "lock_releases": 0,
+          "other_lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "interrupt_cycles": 0,
+          "finding_categories": {},
+          "uncertainties": 2887,
+          "diagnostics": 0
+        },
+        "mode_views": {
+          "analysis_kind": "interrupt_aware_lock_analysis",
+          "schema_version": 4,
+          "counts": {
+            "functions": 76,
+            "lock_operations": 0,
+            "lock_dependencies": 0,
+            "interrupt_graph_edges": 0,
+            "interrupt_graph_nodes": 0,
+            "uncertainties": 2887,
+            "unique_uncertainty_records": 425,
+            "diagnostics": 0
+          },
+          "uncertainty_counts": {
+            "event_count": 2887,
+            "unique_record_count": 425,
+            "propagated_event_count": 2462,
+            "high_impact_unique_records": 250,
+            "lock_identity_events": 0,
+            "interrupt_state_events": 1443,
+            "unresolved_call_events": 1443,
+            "candidate_affecting_unique_records": 0,
+            "affected_candidate_count": 0,
+            "candidate_record_association_count": 0,
+            "proven_non_affecting_event_count": 0,
+            "by_category": {
+              "interrupt_state": {
+                "event_count": 1443,
+                "unique_record_count": 212
+              },
+              "unresolved_call": {
+                "event_count": 1443,
+                "unique_record_count": 212
+              },
+              "unsupported_api": {
+                "event_count": 1,
+                "unique_record_count": 1
+              }
+            },
+            "by_stage": {
+              "api_model": {
+                "event_count": 1,
+                "unique_record_count": 1
+              },
+              "interprocedural": {
+                "event_count": 1443,
+                "unique_record_count": 212
+              },
+              "interrupt_state": {
+                "event_count": 1443,
+                "unique_record_count": 212
+              }
+            }
+          },
+          "basic_lock_cycle_view": {
+            "cyclic_scc_count": 0
+          },
+          "interrupt_aware_view": {
+            "candidate_lock_order_cycles": 0,
+            "interrupt_aware_candidates": 0,
+            "candidate_findings_total": 0
+          },
+          "feasibility_refined_view": {
+            "candidate_lock_order_cycle": 0,
+            "interrupt_aware_candidate": 0,
+            "rejected_candidate": 0,
+            "inconclusive_analysis": 0,
+            "finding_categories": {}
+          },
+          "limits": [
+            "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+            "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+            "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+          ]
+        }
+      },
+      {
+        "file": "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/nvm.c",
+        "status": "analyzed",
+        "skip_reason": null,
+        "command": [
+          "/usr/bin/time",
+          "-v",
+          "-o",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/nvm.time.txt",
+          "/home/sathvik/os_project/build/deadlock-analyzer",
+          "analyze",
+          "--source",
+          "/home/sathvik/os_project/third_party/linux-v6.6.87/drivers/net/ethernet/intel/e1000e/nvm.c",
+          "--compile-commands",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/kbuild",
+          "--format",
+          "json",
+          "--output",
+          "/home/sathvik/os_project/evaluation/baselines/phase19_5/kernel/reports/nvm.json"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.152,
+        "peak_rss_kib": 162340,
+        "report_path": "reports/nvm.json",
+        "stderr_path": "reports/nvm.stderr.txt",
+        "time_path": "reports/nvm.time.txt",
+        "counts": {
+          "functions": 17,
+          "lock_operations": 0,
+          "lock_acquisitions": 0,
+          "lock_releases": 0,
+          "other_lock_operations": 0,
+          "lock_dependencies": 0,
+          "interrupt_graph_edges": 0,
+          "interrupt_graph_nodes": 0,
+          "interrupt_cycles": 0,
+          "finding_categories": {},
+          "uncertainties": 572,
+          "diagnostics": 0
+        },
+        "mode_views": {
+          "analysis_kind": "interrupt_aware_lock_analysis",
+          "schema_version": 4,
+          "counts": {
+            "functions": 17,
+            "lock_operations": 0,
+            "lock_dependencies": 0,
+            "interrupt_graph_edges": 0,
+            "interrupt_graph_nodes": 0,
+            "uncertainties": 572,
+            "unique_uncertainty_records": 132,
+            "diagnostics": 0
+          },
+          "uncertainty_counts": {
+            "event_count": 572,
+            "unique_record_count": 132,
+            "propagated_event_count": 440,
+            "high_impact_unique_records": 69,
+            "lock_identity_events": 0,
+            "interrupt_state_events": 286,
+            "unresolved_call_events": 286,
+            "candidate_affecting_unique_records": 0,
+            "affected_candidate_count": 0,
+            "candidate_record_association_count": 0,
+            "proven_non_affecting_event_count": 0,
+            "by_category": {
+              "interrupt_state": {
+                "event_count": 286,
+                "unique_record_count": 66
+              },
+              "unresolved_call": {
+                "event_count": 286,
+                "unique_record_count": 66
+              }
+            },
+            "by_stage": {
+              "interprocedural": {
+                "event_count": 286,
+                "unique_record_count": 66
+              },
+              "interrupt_state": {
+                "event_count": 286,
+                "unique_record_count": 66
+              }
+            }
+          },
+          "basic_lock_cycle_view": {
+            "cyclic_scc_count": 0
+          },
+          "interrupt_aware_view": {
+            "candidate_lock_order_cycles": 0,
+            "interrupt_aware_candidates": 0,
+            "candidate_findings_total": 0
+          },
+          "feasibility_refined_view": {
+            "candidate_lock_order_cycle": 0,
+            "interrupt_aware_candidate": 0,
+            "rejected_candidate": 0,
+            "inconclusive_analysis": 0,
+            "finding_categories": {}
+          },
+          "limits": [
+            "The three views are projections over one analyzer report, not separately configured analyzer executions.",
+            "A cyclic SCC is not a count of distinct simple cycles and is not a deadlock confirmation.",
+            "Static candidates require independent source review; no precision or recall is computed without labeled ground truth."
+          ]
+        }
+      }
+    ],
+    "aggregate": {
+      "files_requested": 5,
+      "files_analyzed": 5,
+      "files_skipped_or_failed": 0,
+      "analysis_elapsed_seconds_sum": 8.116,
+      "peak_rss_kib_max_across_separate_runs": 236264,
+      "counts_sum_across_translation_units": {
+        "functions": 396,
+        "lock_operations": 12,
+        "lock_acquisitions": 6,
+        "lock_releases": 6,
+        "other_lock_operations": 0,
+        "lock_dependencies": 0,
+        "interrupt_graph_edges": 0,
+        "interrupt_graph_nodes": 0,
+        "interrupt_cycles": 0,
+        "uncertainties": 36330,
+        "diagnostics": 2
+      },
+      "finding_category_counts_sum": {}
+    },
+    "comparison_note": "Mode counts are derived projections from a single analyzer report; they are not separately configured analyzer runs.",
+    "precision_recall": null,
+    "status": "completed",
+    "environment": {
+      "python": "3.12.3",
+      "kernel_host": "6.18.58.1-microsoft-standard-WSL2",
+      "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "clang": "Ubuntu clang version 20.1.2 (0ubuntu1~24.04.3)",
+      "make": "GNU Make 4.3",
+      "time": "time (GNU Time) UNKNOWN",
+      "cmake": "cmake version 3.28.3",
+      "host_linker": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+      "lld": "unavailable",
+      "libelf_dev_package": "0.190-1.1ubuntu0.1",
+      "analyzer_sha256": "2d78fbcc2eecc4fb827a134965ac24b6bd5849f16287caf06cdaeb2e174a77bc"
+    }
+  },
+  "comparison": {
+    "phase15_and_phase17_lock_inventories": {
+      "phase15": {
+        "raw": "evaluation/results/linux-v6.6.87/phase15-raw-measurements.json",
+        "lock_operations": 12,
+        "acquisitions": 6,
+        "releases": 6
+      },
+      "phase17": {
+        "raw": "evaluation/results/phase17/kernel-raw-measurements.json",
+        "lock_operations": 12,
+        "acquisitions": 6,
+        "releases": 6
+      },
+      "phase19_5": {
+        "raw": "kernel/raw-measurements.json",
+        "lock_operations": 12,
+        "acquisitions": 6,
+        "releases": 6
+      },
+      "discrepancy_resolution": "No extraction discrepancy reproduced. Phase 19.1 traced 10-acquisition/2-release prose to a documentation counting error; the saved Phase 15 and Phase 17 source inventories both contain 6 acquisitions and 6 releases."
+    },
+    "accuracy_metrics": null,
+    "accuracy_metrics_reason": "The controlled set tests expected behaviors but is not an independent representative ground-truth dataset; the two historical cases are too few and include one miss and one partial match."
+  },
+  "reproduction_commands": [
+    "cmake --build build -j2",
+    "ctest --test-dir build --output-on-failure",
+    "(cd web && npm test -- --run && npm run build)",
+    "(cd web && VITE_STATIC=1 npm run build)",
+    "node --check backend/server.mjs",
+    "python3 evaluation/run_phase17.py --analyzer build/deadlock-analyzer --dataset evaluation/dataset-v1.json --output evaluation/baselines/phase19_5/controlled --kernel third_party/linux-v6.6.87 --kernel-raw evaluation/baselines/phase19_5/kernel/raw-measurements.json --kernel-reports-dir evaluation/baselines/phase19_5/kernel/reports",
+    "python3 evaluation/run_kernel_eval.py --kernel third_party/linux-v6.6.87 --analyzer build/deadlock-analyzer --llvm /usr/lib/llvm-20/bin --output evaluation/baselines/phase19_5/kernel --jobs 2 --timeout 120",
+    "python3 evaluation/run_historical_case.py --analyzer build/deadlock-analyzer --source-root historical-case --output evaluation/baselines/phase19_5/historical/mips-gic --llvm /usr/lib/llvm-20/bin",
+    "python3 evaluation/run_serial8250_case.py --analyzer build/deadlock-analyzer --llvm /usr/lib/llvm-20/bin --output evaluation/baselines/phase19_5/historical/serial8250",
+    "python3 evaluation/test_historical_case.py evaluation/baselines/phase19_5/historical/mips-gic/summary.json",
+    "python3 evaluation/test_historical_serial8250.py evaluation/baselines/phase19_5/historical/serial8250/summary.json",
+    "python3 evaluation/freeze_phase19_5.py"
+  ],
+  "artifacts": {
+    "README.md": {
+      "sha256": "0a7f29308cf1e5c6e0310cf7cd1491780fab1cc89b32cf70138f218a0dd4eec8",
+      "bytes": 2635
+    },
+    "backend-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "build.log": {
+      "sha256": "8c35b1682f73592d30612d7b0fabdb384fcfff35cb5a076cb48b85b1368aa794",
+      "bytes": 22
+    },
+    "controlled/REPORT.md": {
+      "sha256": "aab1c966f37a9238ef7c393a5b5c311142030f4ce408092735738e3b56948705",
+      "bytes": 3729
+    },
+    "controlled/fixture-tests__fixtures__interrupts.c.json": {
+      "sha256": "43b0497cb783b6387fb5e50d5f038db2840fff39b7ed83d8fd04d7d2f62e3c91",
+      "bytes": 1002948
+    },
+    "controlled/fixture-tests__fixtures__kernel_lock_api_macros.c.json": {
+      "sha256": "7e2f01c9e4935d02b1c830630ad7ff1d5bc902588345df0ff14b8a9d5a5b8d2a",
+      "bytes": 319384
+    },
+    "controlled/fixture-tests__fixtures__phase16_feasibility.c.json": {
+      "sha256": "24922c84080fc3216551ed5fffd7b8387811b312fceb346aea822db7541ceb5b",
+      "bytes": 625482
+    },
+    "controlled/fixture-tests__fixtures__symbolic_identity.c.json": {
+      "sha256": "a7c606b2596353b855239f8f948a8bfb0cfb67161ac4dcf3ff316b88f69cb471",
+      "bytes": 199911
+    },
+    "controlled/kernel-raw-measurements.json": {
+      "sha256": "b952742f68d4169b240eb2e043423d0274df7c413107f07e4f9b8167c13c1eaf",
+      "bytes": 27376
+    },
+    "controlled/runner.log": {
+      "sha256": "af4830257da4b568750a83b4b9093b74582b82e99092fd10b9eabc2b6efdc998",
+      "bytes": 1065
+    },
+    "controlled/summary.json": {
+      "sha256": "790ad75f58b1c1965c3f8e7def40c16767fc6d2a9f57242a6818d3f0ed8d6ce4",
+      "bytes": 28880
+    },
+    "ctest.log": {
+      "sha256": "02f49c3e60c3e021284f166e42af56c23f80d874cea6d851654e3a1f0f32c5cb",
+      "bytes": 3092
+    },
+    "evidence/controlled-dataset-v1.json": {
+      "sha256": "8a5f0bc8d735126de0964d30c1476da53196fe1bfd40ba46e7ada73ee27e9b52",
+      "bytes": 15424
+    },
+    "evidence/mips-gic-upstream-evidence.json": {
+      "sha256": "1ee5e60a187ffb553d293a01a7311e840286128bdd061efa0d1da1ff7ee6966c",
+      "bytes": 1450
+    },
+    "evidence/serial8250-upstream-evidence.json": {
+      "sha256": "0b9d3d3cb40608185fdc374aaa30e1d0231a03f20f7dd0d81b30705928b127c0",
+      "bytes": 1563
+    },
+    "historical/mips-gic/affected-kbuild/.config": {
+      "sha256": "789134579dbd3d59491c501b0b78cb166130f9a79327fc8b10b24a59f74b4e56",
+      "bytes": 92088
+    },
+    "historical/mips-gic/affected-kbuild/compile_commands.json": {
+      "sha256": "75155465cd0887944ab005ca9ead7dc62ec5b368bb2bccacfccce7a94d2c8863",
+      "bytes": 3237
+    },
+    "historical/mips-gic/affected-kbuild/drivers/irqchip/irq-mips-gic.o": {
+      "sha256": "5a15dd908fc8a13ff89190717f98b7099363a8a0ed82b08e11b11f6047f83016",
+      "bytes": 23736
+    },
+    "historical/mips-gic/affected.json": {
+      "sha256": "8930533abb4e1516d436fc7be5c6dda3009ae99ea90154c72bab0959195deb70",
+      "bytes": 1684354
+    },
+    "historical/mips-gic/affected.log": {
+      "sha256": "9f014e0064e3d6f37dbc131a8426fe2bd5df05a70d49eb26af924612730d432b",
+      "bytes": 9238
+    },
+    "historical/mips-gic/fixed-kbuild/.config": {
+      "sha256": "789134579dbd3d59491c501b0b78cb166130f9a79327fc8b10b24a59f74b4e56",
+      "bytes": 92088
+    },
+    "historical/mips-gic/fixed-kbuild/compile_commands.json": {
+      "sha256": "406c2b3b332184119e1a6573526f388b498a279c72b17527f3df4ecd989de66b",
+      "bytes": 3195
+    },
+    "historical/mips-gic/fixed-kbuild/drivers/irqchip/irq-mips-gic.o": {
+      "sha256": "d8412e57b601857a3c44315f7da3ed7edfd743c9c21d54ccc4c75e05c5173432",
+      "bytes": 23720
+    },
+    "historical/mips-gic/fixed.json": {
+      "sha256": "8fb60e7a9a43ce756c279436fe853c536c1b48769f8e01fda3790fe028ea3070",
+      "bytes": 1680623
+    },
+    "historical/mips-gic/fixed.log": {
+      "sha256": "71af587f9083388ed34356ea1c6c070e5cec1d0217fe44b0d4df552fab2bb7f9",
+      "bytes": 8398
+    },
+    "historical/mips-gic/summary.json": {
+      "sha256": "0d92072fdba0f8f1d098b09e5894a92f5d64b79ab414b6449e4e63c4479af0a7",
+      "bytes": 3763
+    },
+    "historical/regression-tests.log": {
+      "sha256": "852ea2ef7f40a3a87fb2c8eec91ec514da7b68f064b7eb0c2aaa0306cd90bfc2",
+      "bytes": 326
+    },
+    "historical/serial8250/affected-kbuild/.config": {
+      "sha256": "e4028cadb6803142f6cf4e1740773c1ff450f683f89328a0e454f9697cb2d603",
+      "bytes": 125760
+    },
+    "historical/serial8250/affected-kbuild/compile_commands.json": {
+      "sha256": "ec3f01c988c2a68e7384f95e31c75a4ed1780a692752e0f966041dbfeb4a781d",
+      "bytes": 2653
+    },
+    "historical/serial8250/affected-kbuild/drivers/tty/serial/8250/8250_port.o": {
+      "sha256": "5d589b04dbca5c7e4f29d7732043777750e7b1a64e3d2d44e065bc4948dd0d6f",
+      "bytes": 55216
+    },
+    "historical/serial8250/affected.json": {
+      "sha256": "9720cc8fda7f35d029b646b49cb6597702fb6f888beb5c184703628164831e04",
+      "bytes": 5651758
+    },
+    "historical/serial8250/affected.log": {
+      "sha256": "b4bb79abdb66535485d68e89d069218092eb08fc5ebe17997839864f29d65cd5",
+      "bytes": 6984
+    },
+    "historical/serial8250/fixed-kbuild/.config": {
+      "sha256": "e4028cadb6803142f6cf4e1740773c1ff450f683f89328a0e454f9697cb2d603",
+      "bytes": 125760
+    },
+    "historical/serial8250/fixed-kbuild/compile_commands.json": {
+      "sha256": "11e87ab28068376fe0e991a392e7964e6dd0b77a307d968467ee6aa0eccb685e",
+      "bytes": 2620
+    },
+    "historical/serial8250/fixed-kbuild/drivers/tty/serial/8250/8250_port.o": {
+      "sha256": "ca0fb3d7f0279ec1d49616eedd473fbaa901d93e13ead35e1e9bd0e5eca85754",
+      "bytes": 55200
+    },
+    "historical/serial8250/fixed.json": {
+      "sha256": "b992be2e6117fee7d835628daa82932c3ffdf9d1e6b35d60a034b484f3d76b40",
+      "bytes": 5557216
+    },
+    "historical/serial8250/fixed.log": {
+      "sha256": "e55727ed5d204b5b76d9cf762fa7d5e8cb71e7a7c9eb42aeff40dbbb89b86327",
+      "bytes": 5810
+    },
+    "historical/serial8250/summary.json": {
+      "sha256": "b284dcd3f47689812dd4c0e7c395cee148e2eea5d67413b1472cfb2cc464cb9c",
+      "bytes": 4406
+    },
+    "kernel/build.log": {
+      "sha256": "3f17c96bcd2118eed390b4ade6ddceda659bd6b939b1bd037a2b8c7d4f6bc226",
+      "bytes": 61338
+    },
+    "kernel/kbuild/.config": {
+      "sha256": "488d466afc9efc70b31b8025cb664cb757b6079ba68e57246bb37d5f2d136cd1",
+      "bytes": 139876
+    },
+    "kernel/kbuild/Makefile": {
+      "sha256": "094bb04c8bcc5f3587d82440c8173b6da2a2d21e57903eae63ef270dafbccda0",
+      "bytes": 169
+    },
+    "kernel/kbuild/compile_commands.json": {
+      "sha256": "caa0e4ca0c414b07d0be842d8e96873af36833ad0d508408673707c0fe3fe2c4",
+      "bytes": 35189
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/.e1000e.o.cmd": {
+      "sha256": "87e30e882adcfceb3ef06f9019897fdc93addbeccf3a0cb03717a1d73220cc36",
+      "bytes": 506
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/e1000e.o": {
+      "sha256": "8711b1c1e938d7fabf38cf3157b94b9ca03b824a2fe036a88fc6ac88daac58a0",
+      "bytes": 573960
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/ethtool.o": {
+      "sha256": "c9d89e0f54b921c49739609f4fc7eb24bb10d2481032aa8628dbec47dd73c855",
+      "bytes": 42440
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/ich8lan.o": {
+      "sha256": "69b1a5487cd1cabd3bf23f42126f6ff0af134088577d9265c725af49a6f1c2a1",
+      "bytes": 73448
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/netdev.o": {
+      "sha256": "4bcad35abd57a3e9a87d1dde5380fdd361ebbf7bd85ebec64523faac505e0a61",
+      "bytes": 152440
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/nvm.o": {
+      "sha256": "6f95313866d01bb62f9be3673f347bef8a86ecacd19242111b248fce06944ca4",
+      "bytes": 8512
+    },
+    "kernel/kbuild/drivers/net/ethernet/intel/e1000e/phy.o": {
+      "sha256": "06851e1099d5eee056a97378c6ba20889a6f3f9c0761bf33b51ebcc0f9c4de12",
+      "bytes": 47632
+    },
+    "kernel/kbuild/tools/objtool/objtool": {
+      "sha256": "cbd020bf647d574a12bba27e942d4462eb657959febd0ca44901cd0ae32d94ab",
+      "bytes": 591560
+    },
+    "kernel/raw-measurements.json": {
+      "sha256": "b952742f68d4169b240eb2e043423d0274df7c413107f07e4f9b8167c13c1eaf",
+      "bytes": 27376
+    },
+    "kernel/reports/ethtool.json": {
+      "sha256": "ca6e6eabf950077307fd1c0a963ce0afbe90918495a5e82f9f27df93e68db561",
+      "bytes": 3738877
+    },
+    "kernel/reports/ethtool.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "kernel/reports/ethtool.time.txt": {
+      "sha256": "f129d6982ea08cfc213f3b57c50bc7ae2707bed37b4dd9fdc60023707ef8591e",
+      "bytes": 1076
+    },
+    "kernel/reports/ich8lan.json": {
+      "sha256": "ea04a245870a0528243e0eb4b8f138691cb9feacfe6dd56357f5787b3faa84be",
+      "bytes": 10729320
+    },
+    "kernel/reports/ich8lan.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "kernel/reports/ich8lan.time.txt": {
+      "sha256": "81835b66ca3098a5da3877f6d120a0f22d03cb611958529283da6dbca8524b66",
+      "bytes": 1077
+    },
+    "kernel/reports/netdev.json": {
+      "sha256": "f98895f56532c51a51e26f3d32b7768681f5d191b4012c33cf83dc5db195e84e",
+      "bytes": 33794181
+    },
+    "kernel/reports/netdev.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "kernel/reports/netdev.time.txt": {
+      "sha256": "19790e3a0c043bfe1608e219139659ca2e2786da8d640c01d91c9538f96cd20f",
+      "bytes": 1076
+    },
+    "kernel/reports/nvm.json": {
+      "sha256": "166b8870b122927351f3d7abfdc192af5ae020ed3032a09650c3e748b3ed8f71",
+      "bytes": 965745
+    },
+    "kernel/reports/nvm.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "kernel/reports/nvm.time.txt": {
+      "sha256": "94f8c6e52ebcfcef5499167fcbf27a62952b99e3cac076cabbe812428e34e397",
+      "bytes": 1069
+    },
+    "kernel/reports/phy.json": {
+      "sha256": "a4d39a54e585b1e60af0e597b4cd79bc566982975fb7cb7a1d5e3df95d6f0d28",
+      "bytes": 4277167
+    },
+    "kernel/reports/phy.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "kernel/reports/phy.time.txt": {
+      "sha256": "f94ae895e8371a024d567df849d03ba5dfd7567fa7b5a6e1806c7173a0f57f48",
+      "bytes": 1068
+    },
+    "latest-uncertainty.json": {
+      "sha256": "6ce8fb348ebbc2e9bcba12e4c297af851dae53808e052502d7078ecfd1e4f08e",
+      "bytes": 19902
+    },
+    "project-report-build.log": {
+      "sha256": "5b1abdfe97b9191b1ea75efbb12ecbd91a7b57787ff9d76310267ccbd3ebe880",
+      "bytes": 146
+    },
+    "summary.csv": {
+      "sha256": "7dda4acf0e48c9cf732bfeb5ed6d270df876b2ba1ea9e0522f882555b1092c71",
+      "bytes": 5287
+    },
+    "web-build.log": {
+      "sha256": "fdf581c582c532748c86514423c6e30b0719e35d7efb01feed77e3c3bace02f5",
+      "bytes": 724
+    },
+    "web-static-build.log": {
+      "sha256": "28edb38e2610d38598f99cff515ae5076435b3fbb59168738de987e335aa413c",
+      "bytes": 724
+    },
+    "web-test.log": {
+      "sha256": "88530b7db8c43ccb3b0944f79c8cac3184e30f89f738ed294ba81b06d6ecf2e6",
+      "bytes": 2924
+    }
+  }
+}

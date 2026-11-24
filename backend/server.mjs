@@ -451,7 +451,8 @@ async function route(request, response) {
     }); return
   }
   if (request.method === 'GET' && pathname === '/api/v1/evaluations/linux-v6.6.87') {
-    const measurementPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/raw-measurements.json')
+    const latestMeasurementPath = path.join(repoRoot, 'evaluation/baselines/phase19_5/kernel/raw-measurements.json')
+    const archivedMeasurementPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/raw-measurements.json')
     const cycleReviewPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/cycle-review-phase11.json')
     const phase12Directory = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase12')
     const phase13ComparisonPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase13-before-after.json')
@@ -459,11 +460,20 @@ async function route(request, response) {
     const phase15LatestRunPath = path.join(repoRoot, 'evaluation/results/linux-v6.6.87/phase15-comparison.json')
     const phase17SummaryPath = path.join(repoRoot, 'evaluation/results/phase17/summary.json')
     const phase19_2SummaryPath = path.join(repoRoot, 'web/src/demo/phase19-2-summary.json')
+    const latestUncertaintyPath = path.join(repoRoot, 'evaluation/baselines/phase19_5/latest-uncertainty.json')
     let measurement
-    try { measurement = JSON.parse(await readFile(measurementPath, 'utf8')) }
+    let usingFrozenBaseline = false
+    try {
+      measurement = JSON.parse(await readFile(latestMeasurementPath, 'utf8'))
+      usingFrozenBaseline = true
+    }
     catch (error) {
-      if (error.code === 'ENOENT') throw new HttpError(404, 'The recorded Linux v6.6.87 evaluation is not available in this checkout')
-      throw new HttpError(500, `Could not read the recorded kernel evaluation: ${error.message}`)
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the frozen kernel evaluation: ${error.message}`)
+      try { measurement = JSON.parse(await readFile(archivedMeasurementPath, 'utf8')) }
+      catch (archivedError) {
+        if (archivedError.code === 'ENOENT') throw new HttpError(404, 'The recorded Linux v6.6.87 evaluation is not available in this checkout')
+        throw new HttpError(500, `Could not read the recorded kernel evaluation: ${archivedError.message}`)
+      }
     }
     let cycleReview = null
     try { cycleReview = JSON.parse(await readFile(cycleReviewPath, 'utf8')) }
@@ -503,6 +513,11 @@ async function route(request, response) {
     try { phase19_2Uncertainty = JSON.parse(await readFile(phase19_2SummaryPath, 'utf8')) }
     catch (error) {
       if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the Phase 19.2 uncertainty summary: ${error.message}`)
+    }
+    let latestUncertainty = null
+    try { latestUncertainty = JSON.parse(await readFile(latestUncertaintyPath, 'utf8')) }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw new HttpError(500, `Could not read the frozen uncertainty summary: ${error.message}`)
     }
     const readPhase12Measurement = async (filename) => {
       try { return JSON.parse(await readFile(path.join(phase12Directory, filename), 'utf8')) }
@@ -560,13 +575,24 @@ async function route(request, response) {
           diagnostics: unit.counts?.diagnostics ?? 0,
         },
       })),
-      interpretation: 'The aggregate Phase 6 measurements and three archived netdev cycles predate the Phase 9 lock extraction fix. Phase 12 includes a post-install bounded build that ran deferred objtool checks and generated ORC sections for the e1000e composite object. It did not link the final module or build the full kernel; separate stack validation is not configured.',
+      interpretation: usingFrozenBaseline
+        ? 'Current values are from the frozen evaluation baseline. Five selected translation units were analyzed; zero cycles do not prove deadlock freedom. The run did not link the final kernel module or build the full kernel, and separate stack validation was not configured.'
+        : 'These values are from the archived Linux evaluation. The current frozen evaluation baseline is unavailable in this checkout.',
       cycle_review: cycleReview,
       phase13_comparison: phase13Comparison,
       phase13_latest_rerun: phase13LatestRun,
       phase15_latest_run: phase15LatestRun,
       phase17_evaluation: phase17Evaluation,
       phase19_2_uncertainty: phase19_2Uncertainty,
+      latest_uncertainty: latestUncertainty,
+      evaluation_baseline: usingFrozenBaseline ? {
+        id: 'irqguard-phase19.5-final-evaluation',
+        report: 'docs/phase19_5-final-evaluation.md',
+        manifest: 'evaluation/baselines/phase19_5/manifest.json',
+        summary_csv: 'evaluation/baselines/phase19_5/summary.csv',
+        latest_uncertainty_json: 'evaluation/baselines/phase19_5/latest-uncertainty.json',
+        summary_url: '/api/v1/evaluations/phase19.5',
+      } : null,
       phase12_validation: fullValidation || sourceOnlyValidation ? {
         full_validation: fullValidation ? {
           status: fullValidation.status,
@@ -590,6 +616,31 @@ async function route(request, response) {
       } : null,
       precision_recall: measurement.precision_recall ?? null,
     }); return
+  }
+  if (request.method === 'GET' && pathname === '/api/v1/evaluations/phase19.5') {
+    const summaryPath = path.join(repoRoot, 'evaluation/baselines/phase19_5/latest-uncertainty.json')
+    const manifestPath = path.join(repoRoot, 'evaluation/baselines/phase19_5/manifest.json')
+    try {
+      const [summary, manifest] = await Promise.all([
+        readFile(summaryPath, 'utf8').then(JSON.parse),
+        readFile(manifestPath, 'utf8').then(JSON.parse),
+      ])
+      json(response, 200, {
+        api_version: apiVersion,
+        baseline_id: manifest.baseline_id,
+        repository: manifest.repository,
+        kernel: manifest.kernel,
+        environment: manifest.environment,
+        controlled: summary.controlled,
+        historical: summary.historical,
+        real_kernel: summary.after,
+        per_file: summary.per_file,
+        report: 'docs/phase19_5-final-evaluation.md',
+      }); return
+    } catch (error) {
+      if (error.code === 'ENOENT') throw new HttpError(404, 'The frozen evaluation baseline is not available in this checkout')
+      throw new HttpError(500, `Could not read the frozen evaluation baseline: ${error.message}`)
+    }
   }
   if (request.method === 'GET' && pathname === '/api/v1/runtime/runs') {
     json(response, 200, { api_version: apiVersion, runs: [...runtimeRuns].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 50).map(runtimeMetadata) }); return

@@ -126,6 +126,13 @@ describe('RunItYourselfPage', () => {
 })
 
 describe('KernelEvaluationPage', () => {
+  it('includes the frozen results in the bundled evaluation demo', () => {
+    render(<KernelEvaluationPage evaluation={DEMO_KERNEL_EVALUATION} />)
+    expect(screen.getByRole('link', { name: 'Open frozen evaluation summary' }))
+      .toHaveAttribute('href', '/evaluation/phase19_5-summary.json')
+    expect(screen.getByText(/8\.116s/)).toBeInTheDocument()
+  })
+
   it('shows acquire and release totals from saved kernel operation records', () => {
     render(<KernelEvaluationPage evaluation={DEMO_KERNEL_EVALUATION} />)
     expect(screen.getByText('6 acquires · 6 releases')).toBeInTheDocument()
@@ -139,6 +146,25 @@ describe('KernelEvaluationPage', () => {
     expect(screen.getByText(/__const_udelay/)).toBeInTheDocument()
     expect(screen.getAllByText(/Zero cycles do not prove deadlock freedom/).length).toBeGreaterThan(0)
     expect(screen.queryByText(/Historical Runs|Archived baseline|Phase [0-9]/i)).not.toBeInTheDocument()
+  })
+
+  it('prefers the frozen uncertainty payload and links to its machine-readable summary', () => {
+    const archived = DEMO_KERNEL_EVALUATION.phase19_2_uncertainty!
+    render(<KernelEvaluationPage evaluation={{
+      ...DEMO_KERNEL_EVALUATION,
+      latest_uncertainty: { ...archived, after: { ...archived.after, analysis_seconds: 8.116 } },
+      evaluation_baseline: {
+        id: 'irqguard-phase19.5-final-evaluation',
+        report: 'docs/phase19_5-final-evaluation.md',
+        manifest: 'evaluation/baselines/phase19_5/manifest.json',
+        summary_csv: 'evaluation/baselines/phase19_5/summary.csv',
+        latest_uncertainty_json: 'evaluation/baselines/phase19_5/latest-uncertainty.json',
+        summary_url: '/api/v1/evaluations/phase19.5',
+      },
+    }} />)
+    expect(screen.getByRole('link', { name: 'Open frozen evaluation summary' }))
+      .toHaveAttribute('href', '/api/v1/evaluations/phase19.5')
+    expect(screen.getByText(/8\.116s/)).toBeInTheDocument()
   })
 
   it('shows an upstream case IRQGuard reported without presenting miss cases as detections', () => {

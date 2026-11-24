@@ -3,6 +3,7 @@ import interruptsRaw from './interrupts-report.json'
 import basicRaw from './basic-report.json'
 import kernelEvalRaw from './kernel-eval-demo.json'
 import phase19_2Raw from './phase19-2-summary.json'
+import latestUncertaintyRaw from './phase19-5-summary.json'
 import { getDemoSourceSnippet } from './sources'
 
 export interface DemoExample {
@@ -38,6 +39,15 @@ export const DEMO_BASIC_REPORT: AnalysisReport = basicRaw as unknown as Analysis
 export const DEMO_KERNEL_EVALUATION: KernelEvaluation = {
   ...(kernelEvalRaw as unknown as KernelEvaluation),
   phase19_2_uncertainty: phase19_2Raw as KernelEvaluation['phase19_2_uncertainty'],
+  latest_uncertainty: latestUncertaintyRaw as KernelEvaluation['latest_uncertainty'],
+  evaluation_baseline: {
+    id: 'irqguard-phase19.5-final-evaluation',
+    report: 'docs/phase19_5-final-evaluation.md',
+    manifest: 'evaluation/baselines/phase19_5/manifest.json',
+    summary_csv: 'evaluation/baselines/phase19_5/summary.csv',
+    latest_uncertainty_json: 'evaluation/baselines/phase19_5/latest-uncertainty.json',
+    summary_url: '/evaluation/phase19_5-summary.json',
+  },
 }
 
 export const DEMO_METADATA_LIST: AnalysisMetadata[] = [
