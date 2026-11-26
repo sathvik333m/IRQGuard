@@ -32,6 +32,18 @@ with tempfile.TemporaryDirectory(prefix="irqguard-cli-test-") as temporary:
     assert {item["name"] for item in report["functions"]} >= {"worker", "update_state"}
     assert report["lock_dependencies"], "ordinary source example should show an interprocedural dependency"
 
+    interrupts_text = invoke("analyze", "--source", ROOT / "tests/fixtures/interrupts.c")
+    assert "[INTERRUPT ANALYSIS]" in interrupts_text.stdout
+    assert "Handler registrations" in interrupts_text.stdout
+    assert "process -> hardirq (interrupt_preemption)" in interrupts_text.stdout
+    assert "IRQ-state API operations" in interrupts_text.stdout
+    assert "Candidate cycles        3" in interrupts_text.stdout
+    assert "Inconclusive cycles     1" in interrupts_text.stdout
+    assert "Rejected by feasibility 1" in interrupts_text.stdout
+    assert "cross_a -> cross_b -> cross_a" in interrupts_text.stdout
+    assert "unary(&,decl@" not in interrupts_text.stdout, "text view should use readable lock labels"
+    assert "Confirmed deadlocks     Not established" in interrupts_text.stdout
+
     dot_path = temp / "locks.dot"
     invoke("graph", "--source", ROOT / "runtime/fixtures/lock_orders.c",
            "--api-config", ROOT / "runtime/apis.json", "--clang-arg", "-Iruntime", "--output", dot_path)

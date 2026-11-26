@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <limits>
 #include <map>
@@ -915,6 +916,41 @@ std::string toText(const AnalysisResult &result, bool verbose) {
         return source.file.substr(slash == std::string::npos ? 0 : slash + 1) + ':' +
             std::to_string(source.line) + ':' + std::to_string(source.column);
     };
+    std::map<std::string, std::pair<std::string, std::string>> lockNames;
+    for (const auto &operation : result.apiOperations) {
+        if (!operation.lock || operation.lock->identityTemplate.empty()) continue;
+        const auto found = lockNames.find(operation.lock->identityTemplate);
+        if (found == lockNames.end()) {
+            lockNames[operation.lock->identityTemplate] =
+                {operation.lock->text, operation.lock->identityStatus};
+        } else if (found->second.first != operation.lock->text) {
+            // A summary parameter template can stand for different actual
+            // locks at different call sites. Keep its symbolic name instead
+            // of choosing one call site's expression as if it were unique.
+            found->second = {"", "context_dependent"};
+        }
+    }
+    auto lockLabel = [&](const std::string &identity) {
+        const auto known = lockNames.find(identity);
+        if (known != lockNames.end()) {
+            std::string expression = known->second.first;
+            while (!expression.empty() && std::isspace(static_cast<unsigned char>(expression.front())))
+                expression.erase(expression.begin());
+            if (!expression.empty() && expression.front() == '&') expression.erase(expression.begin());
+            if (known->second.second == "unresolved") expression = "? " + expression;
+            return expression.empty() ? identity : expression;
+        }
+        if (identity.find("@param[") != std::string::npos) return identity;
+        if (identity.rfind("unary(&,decl@", 0) == 0) {
+            const auto colon = identity.find_last_of(':');
+            if (colon != std::string::npos) {
+                auto name = identity.substr(colon + 1);
+                if (!name.empty() && name.back() == ')') name.pop_back();
+                if (!name.empty()) return name;
+            }
+        }
+        return identity;
+    };
     std::ostringstream out;
     std::size_t acquireCount = 0, releaseCount = 0;
     for (const auto &operation : result.apiOperations) {
@@ -954,13 +990,66 @@ std::string toText(const AnalysisResult &result, bool verbose) {
         << "Releases                " << releaseCount << '\n'
         << "Lock dependencies       " << result.lockDependencies.size() << '\n'
         << "Interrupt registrations " << result.interruptRegistrations.size() << '\n'
-        << "Context-aware edges     " << result.interruptLockEdges.size() << "\n\n";
+        << "Context-aware edges     " << result.interruptLockEdges.size() << '\n';
+    const auto preemptionEdges = std::count_if(result.interruptLockEdges.begin(), result.interruptLockEdges.end(),
+        [](const InterruptLockEdge &edge) {
+            return edge.kind == "interrupt_preemption" || edge.kind == "interrupt_preemption_rejected";
+        });
+    out << "IRQ-preemption edges    " << preemptionEdges << "\n\n";
+
+        const bool hasIrqApi = std::any_of(result.apiOperations.begin(), result.apiOperations.end(),
+            [](const ApiOperation &operation) {
+                return operation.api.find("irq") != std::string::npos ||
+                       operation.api.find("_bh") != std::string::npos;
+            });
+        if (!result.interruptRegistrations.empty() || preemptionEdges > 0 || hasIrqApi) {
+        out << "[INTERRUPT ANALYSIS]\n";
+        if (!result.interruptRegistrations.empty()) {
+            out << "Handler registrations   " << result.interruptRegistrations.size() << " sites\n";
+            for (const auto &registration : result.interruptRegistrations) {
+                out << "  " << registration.api << " in " << registration.caller << " -> ";
+                if (registration.handlerNames.empty()) out << "<unresolved handler>";
+                else {
+                    for (std::size_t i = 0; i < registration.handlerNames.size(); ++i)
+                        out << (i ? ", " : "") << registration.handlerNames[i];
+                }
+                out << " @ " << loc(registration.location.expansion);
+                if (!registration.resolution.empty()) out << " [" << registration.resolution << ']';
+                out << '\n';
+            }
+        }
+        std::map<std::string, std::size_t> contextEdges;
+        for (const auto &edge : result.interruptLockEdges) {
+            const auto key = edge.fromContext + " -> " + edge.toContext + " (" + edge.kind + ')';
+            ++contextEdges[key];
+        }
+        if (!contextEdges.empty()) {
+            out << "Execution-context edges\n";
+            for (const auto &entry : contextEdges)
+                out << "  " << entry.first << " : " << entry.second << '\n';
+        }
+        std::map<std::string, std::size_t> irqApis;
+        std::size_t unknownIrqSnapshots = 0;
+        for (const auto &operation : result.apiOperations) {
+            if (operation.api.find("irq") != std::string::npos || operation.api.find("_bh") != std::string::npos)
+                ++irqApis[operation.api];
+        }
+        for (const auto &snapshot : result.interruptSnapshots)
+            if (snapshot.irqState == "unknown") ++unknownIrqSnapshots;
+        if (!irqApis.empty()) {
+            out << "IRQ-state API operations\n";
+            for (const auto &entry : irqApis) out << "  " << entry.first << " : " << entry.second << '\n';
+        }
+        out << "IRQ-state snapshots     " << result.interruptSnapshots.size()
+            << " (unknown: " << unknownIrqSnapshots << ")\n\n";
+    }
 
     if (!result.lockDependencies.empty()) {
         out << "[DEPENDENCIES]\n";
         for (std::size_t i = 0; i < result.lockDependencies.size(); ++i) {
             const auto &dependency = result.lockDependencies[i];
-            out << "  " << dependency.fromLock << " ──────────► " << dependency.toLock << '\n'
+            out << "  " << lockLabel(dependency.fromLock) << " ──────────► "
+                << lockLabel(dependency.toLock) << '\n'
                 << "    Type       : " << (dependency.origin == "direct" ? "Direct" : "Inferred through calls") << '\n'
                 << "    Certainty  : " << dependency.certainty << '\n'
                 << "    Function   : " << dependency.reportingFunction
@@ -979,21 +1068,36 @@ std::string toText(const AnalysisResult &result, bool verbose) {
         out << '\n';
     }
 
+    std::size_t candidateCycles = 0, inconclusiveCycles = 0, rejectedCycles = 0;
+    for (const auto &cycle : result.interruptCycles) {
+        if (cycle.category == "rejected_candidate" || cycle.feasibility == "rejected") ++rejectedCycles;
+        else if (cycle.category == "inconclusive_analysis") ++inconclusiveCycles;
+        else ++candidateCycles;
+    }
     out << "[DEADLOCK ANALYSIS]\n"
-        << "Candidate cycles        " << result.interruptCycles.size() << '\n'
+        << "Candidate cycles        " << candidateCycles << '\n'
+        << "Inconclusive cycles     " << inconclusiveCycles << '\n'
+        << "Rejected by feasibility " << rejectedCycles << '\n'
+        << "Cycle records total     " << result.interruptCycles.size() << '\n'
         << "Confirmed deadlocks     Not established\n";
-    if (result.interruptCycles.empty()) {
+    if (candidateCycles == 0 && inconclusiveCycles == 0 && rejectedCycles > 0) {
+        out << "\n[RESULT]\n"
+            << "No cycle candidate remains after feasibility checks; " << rejectedCycles
+            << " counterfactual path(s) were rejected.\n";
+    } else if (result.interruptCycles.empty()) {
         out << "\n[RESULT]\n"
             << "No cycle candidate identified in this source analysis.\n";
     } else {
         out << "\n[FINDINGS]\n";
         for (std::size_t i = 0; i < result.interruptCycles.size(); ++i) {
             const auto &cycle = result.interruptCycles[i];
-            out << "  C-" << i + 1 << "  " << cycle.classification
+            std::string category = cycle.category.empty() ? cycle.classification : cycle.category;
+            std::replace(category.begin(), category.end(), '_', ' ');
+            out << "  C-" << i + 1 << "  " << category
                 << " / " << cycle.feasibility << '\n'
                 << "    Lock sequence: ";
             for (std::size_t j = 0; j < cycle.lockSequence.size(); ++j)
-                out << (j ? " -> " : "") << cycle.lockSequence[j];
+                out << (j ? " -> " : "") << lockLabel(cycle.lockSequence[j]);
             out << "\n    Explanation: " << cycle.explanation << '\n';
             for (const auto edgeIndex : cycle.edgeIndexes) {
                 if (edgeIndex >= result.interruptLockEdges.size()) continue;
@@ -1003,6 +1107,11 @@ std::string toText(const AnalysisResult &result, bool verbose) {
                     << ", " << loc(edge.fromLocation.expansion) << " -> "
                     << loc(edge.toLocation.expansion) << " [" << edge.kind
                     << ", IRQ=" << edge.irqState << "]\n";
+                if (edge.kind == "interrupt_preemption" || edge.kind == "interrupt_preemption_rejected") {
+                    out << "      Handler evidence: " << (edge.handler.empty() ? edge.targetFunction : edge.handler)
+                        << " registered @ " << loc(edge.registrationLocation.expansion)
+                        << " [" << edge.registrationLifecycle << "]\n";
+                }
             }
         }
     }

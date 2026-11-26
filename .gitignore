@@ -105,4 +105,4 @@ Thumbs.db
 
 /output
 /scripts/*
-!/scripts/build_project_report.py
+/scripts/build_project_report.py
